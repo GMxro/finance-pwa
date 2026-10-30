@@ -1,0 +1,10 @@
+.categories-list {
+  padding-left: var(--space-5);
+  padding-right: var(--space-5);
+}
+
+.categories-confirm {
+  color: var(--color-stone);
+  font-size: var(--text-sm);
+  padding-bottom: var(--space-2);
+}

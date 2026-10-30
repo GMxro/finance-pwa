@@ -1,0 +1,24 @@
+.ui-select {
+  position: relative;
+  padding-right: var(--space-4);
+}
+
+.ui-select__input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: var(--space-8);
+  cursor: pointer;
+}
+
+.ui-select__arrow {
+  position: absolute;
+  right: var(--space-5);
+  color: var(--color-stone);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .ui-select__arrow {
+    right: var(--space-4);
+  }
+}

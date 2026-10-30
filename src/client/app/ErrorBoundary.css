@@ -1,0 +1,54 @@
+.ui-error-screen {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--page-gutter);
+  background: var(--color-canvas);
+}
+
+.ui-error-card {
+  width: 100%;
+  max-width: 520px;
+  padding: clamp(24px, 4vw, 40px);
+  border-radius: var(--radius-panel);
+  background: var(--color-paper);
+}
+
+.ui-error-kicker {
+  font-size: var(--text-caption);
+  color: var(--color-stone);
+  margin-bottom: var(--space-2);
+}
+
+.ui-error-card h1 {
+  font-size: var(--text-h1);
+  font-weight: var(--weight-display);
+}
+
+.ui-error-text {
+  margin-top: var(--space-3);
+  color: var(--color-stone);
+  font-size: var(--text-sm);
+}
+
+.ui-error-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-6);
+}
+
+.ui-error-details {
+  margin-top: var(--space-6);
+  font-size: var(--text-micro);
+  color: var(--color-stone);
+}
+
+.ui-error-details pre {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-inset);
+  overflow: auto;
+}

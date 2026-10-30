@@ -1,0 +1,106 @@
+.app-update-notice {
+  position: fixed;
+  z-index: 1000;
+  top: max(1rem, env(safe-area-inset-top));
+  left: 50%;
+  display: flex;
+  width: min(36rem, calc(100vw - 2rem));
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 8px 28px rgb(17 17 17 / 14%);
+  transform: translateX(-50%);
+}
+
+.app-update-notice p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+}
+
+.app-update-notice button {
+  flex: none;
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+  color: var(--color-on-ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.app-update-notice button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.app-update-notice button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.app-update-gate {
+  width: min(32rem, calc(100vw - 2rem));
+  margin: auto;
+  padding: 1.5rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 16px 48px rgb(17 17 17 / 24%);
+}
+
+.app-update-gate::backdrop {
+  background: rgb(17 17 17 / 68%);
+}
+
+.app-update-gate h1 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+  line-height: var(--leading-heading);
+}
+
+.app-update-gate p {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+}
+
+.app-update-gate button {
+  width: 100%;
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+  color: var(--color-on-ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  cursor: pointer;
+}
+
+.app-update-gate button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.app-update-gate button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+@media (max-width: 480px) {
+  .app-update-notice {
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+}

@@ -1,0 +1,24 @@
+.ui-category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-inset);
+  color: var(--color-ink);
+  flex-shrink: 0;
+}
+
+.ui-category-icon--md {
+  width: 40px;
+  height: 40px;
+}
+
+.ui-category-icon--sm {
+  width: 32px;
+  height: 32px;
+}
+
+.ui-category-icon--onInk {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-on-ink);
+}

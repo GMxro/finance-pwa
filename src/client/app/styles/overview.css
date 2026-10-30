@@ -1,0 +1,151 @@
+.overview-eyebrow {
+  color: var(--color-stone-strong);
+  font-weight: var(--weight-label);
+}
+
+.overview-hero__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.overview-hero__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-on-ink-line);
+}
+
+.overview-hero__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.overview-hero__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.overview-hero__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-lime);
+}
+
+.overview-hero__eye {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-on-ink);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.overview-hero__eye:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.overview-hero__eye:focus-visible {
+  outline: 2px solid var(--color-lime);
+  outline-offset: 2px;
+}
+
+.overview-hero__eye[aria-pressed="false"] {
+  opacity: 0.6;
+}
+
+/* Versión compacta cuando no hay movimientos */
+.overview-hero--compact .overview-hero__amount {
+  margin-top: var(--space-2);
+}
+
+.overview-hero--compact .overview-hero__rows {
+  gap: var(--space-1);
+  padding-top: var(--space-1);
+}
+
+.overview-hero--compact .overview-hero__row {
+  gap: var(--space-3);
+}
+
+.ui-page .ui-section.overview-recent {
+  margin-top: clamp(24px, 3vw, 32px);
+}
+
+.overview-skeleton {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--color-inset-strong) 25%,
+    #e2e2e2 37%,
+    var(--color-inset-strong) 63%
+  );
+  background-size: 400% 100%;
+  animation: overview-shimmer 1.4s ease infinite;
+}
+
+.overview-skeleton--onInk {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.12) 25%,
+    rgba(255, 255, 255, 0.22) 37%,
+    rgba(255, 255, 255, 0.12) 63%
+  );
+  background-size: 400% 100%;
+}
+
+.overview-skeleton--hero-amount {
+  width: min(240px, 62%);
+  height: clamp(2.4rem, 8vw, 3.2rem);
+  border-radius: 12px;
+}
+
+.overview-skeleton--value {
+  width: 96px;
+  height: 18px;
+}
+
+.overview-skeleton--count {
+  width: 28px;
+  height: 14px;
+}
+
+.overview-skeleton--budget {
+  width: 100%;
+  height: 58px;
+  border-radius: 16px;
+}
+
+.overview-skeleton--ledger {
+  width: 100%;
+  height: 56px;
+  border-radius: 16px;
+}
+
+.overview-skeleton-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.overview-skeleton-stack--ledger {
+  padding: var(--space-4);
+}
+
+@keyframes overview-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}

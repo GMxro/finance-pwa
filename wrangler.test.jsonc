@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/wrangler/main/wrangler.jsonc",
+  "name": "finance-pwa-test",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2024-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    { "binding": "DB", "database_name": "finance-pwa-test", "database_id": "local" }
+  ],
+  "r2_buckets": [
+    { "binding": "DELETION_JOURNAL", "bucket_name": "finance-pwa-deletion-journal-test" }
+  ],
+  "vars": {
+    "SYNC_EPOCH": "00000000-0000-0000-0000-000000000000",
+    "BETTER_AUTH_URL": "http://localhost:5173",
+    "BETTER_AUTH_SECRET": "test-secret-0123456789abcdef0123456789",
+    "GOOGLE_CLIENT_ID": "test-client-id",
+    "GOOGLE_CLIENT_SECRET": "test-client-secret"
+  }
+}

@@ -1,0 +1,115 @@
+.settings-page {
+  max-width: 840px;
+}
+
+.settings-leading {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-inset);
+  color: var(--color-ink);
+}
+
+.settings-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-ink);
+  color: var(--color-on-ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.settings-field__label {
+  font-size: var(--text-caption);
+  color: var(--color-stone);
+}
+
+.settings-field__value {
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.settings-link {
+  font-size: var(--text-caption);
+  color: var(--color-stone);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.settings-link:hover {
+  color: var(--color-ink);
+}
+
+@media (max-width: 640px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.settings-logout-dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  margin: auto;
+  padding: 1.5rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 16px 48px rgb(17 17 17 / 24%);
+}
+
+.settings-logout-dialog::backdrop {
+  background: rgb(17 17 17 / 68%);
+}
+
+.settings-logout-dialog h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+  line-height: var(--leading-heading);
+}
+
+.settings-logout-dialog p {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+}
+
+.settings-logout-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.settings-logout-dialog :focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .settings-logout-dialog__actions {
+    flex-direction: column-reverse;
+  }
+
+  .settings-logout-dialog__actions button {
+    width: 100%;
+  }
+}

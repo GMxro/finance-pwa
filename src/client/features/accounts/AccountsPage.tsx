@@ -1,0 +1,614 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Plus, ArrowRightLeft, Pencil, Archive, Wallet, Landmark, Smartphone, CircleDollarSign, Trash2 } from 'lucide-react';
+import { api } from '@shared/api/client';
+import type { AccountBalance, AccountKind, AccountWithBalances } from '@contracts/account';
+import type { TransferResponse } from '@contracts/transfer';
+import { parseAmount, formatAmount, type CurrencyCode } from '@domain/money';
+import { useCurrencyInput } from '@shared/hooks/useCurrencyInput';
+import { Page, PageHeader, Section, Stack, Grid, Inline } from '@shared/ui/Layout';
+import { Panel } from '@shared/ui/Panel';
+import { Button, IconButton } from '@shared/ui/Button';
+import { Input } from '@shared/ui/Input';
+import { Select } from '@shared/ui/Select';
+import { Modal } from '@shared/ui/Modal';
+import { Notice } from '@shared/ui/Notice';
+import { EmptyState } from '@shared/ui/EmptyState';
+import { LoadingSpinner } from '@shared/ui/LoadingSpinner';
+import { ListRow } from '@shared/ui/ListRow';
+import { Text } from '@shared/ui/Text';
+import '../../app/styles/accounts.css';
+
+const KIND_LABELS: Record<AccountKind, string> = {
+  cash: 'Efectivo',
+  bank: 'Banco',
+  wallet: 'Billetera',
+  other: 'Otra'
+};
+
+const KIND_ICONS: Record<AccountKind, React.ElementType> = {
+  cash: Wallet,
+  bank: Landmark,
+  wallet: Smartphone,
+  other: CircleDollarSign
+};
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+interface AccountForm {
+  name: string;
+  kind: AccountKind;
+}
+
+interface TransferForm {
+  fromAccountId: string;
+  toAccountId: string;
+  amountMinor: number | null;
+  currency: CurrencyCode;
+  crossCurrency: boolean;
+  toAmountMinor: number | null;
+  toCurrency: CurrencyCode;
+  occurredOn: string;
+  note: string;
+}
+
+const emptyTransferForm = (): TransferForm => ({
+  fromAccountId: '',
+  toAccountId: '',
+  amountMinor: null,
+  currency: 'ARS',
+  crossCurrency: false,
+  toAmountMinor: null,
+  toCurrency: 'USD',
+  occurredOn: today(),
+  note: ''
+});
+
+export function AccountsPage() {
+  const [accounts, setAccounts] = useState<AccountWithBalances[]>([]);
+  const [transfers, setTransfers] = useState<TransferResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [accountModal, setAccountModal] = useState<{ mode: 'create' | 'edit'; account?: AccountWithBalances } | null>(null);
+  const [accountForm, setAccountForm] = useState<AccountForm>({ name: '', kind: 'cash' });
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferForm, setTransferForm] = useState<TransferForm>(emptyTransferForm);
+
+  // Hooks para inputs de moneda con formateo ARS en vivo
+  const fromAmountInput = useCurrencyInput({
+    currency: transferForm.currency,
+    initialValue: transferForm.amountMinor,
+    allowEmpty: true,
+    onChange: (valueMinor) => setTransferForm(f => ({ ...f, amountMinor: valueMinor }))
+  });
+
+  const toAmountInput = useCurrencyInput({
+    currency: transferForm.toCurrency,
+    initialValue: transferForm.toAmountMinor,
+    allowEmpty: true,
+    onChange: (valueMinor) => setTransferForm(f => ({ ...f, toAmountMinor: valueMinor }))
+  });
+
+  const [archiveTarget, setArchiveTarget] = useState<AccountWithBalances | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<TransferResponse | null>(null);
+
+  // Actualizar hooks cuando cambia la moneda
+  useEffect(() => {
+    fromAmountInput.setValueMinor(transferForm.amountMinor);
+  }, [transferForm.currency, fromAmountInput]);
+
+  useEffect(() => {
+    toAmountInput.setValueMinor(transferForm.toAmountMinor);
+  }, [transferForm.toCurrency, toAmountInput]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [accountsRes, transfersRes] = await Promise.all([
+        api.listAccounts(),
+        api.listTransfers({ limit: 25 })
+      ]);
+      if (accountsRes.error) throw accountsRes.error;
+      if (transfersRes.error) throw transfersRes.error;
+      setAccounts(accountsRes.data ?? []);
+      setTransfers(transfersRes.data ?? []);
+    } catch (e: any) {
+      setError(e?.message ?? 'No pudimos cargar tus cuentas.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const totals = useMemo(() => {
+    const byCurrency = new Map<CurrencyCode, number>();
+    for (const account of accounts) {
+      for (const balance of account.balances) {
+        byCurrency.set(balance.currency, (byCurrency.get(balance.currency) ?? 0) + balance.amountMinor);
+      }
+    }
+    return Array.from(byCurrency.entries())
+      .filter(([, amount]) => amount !== 0)
+      .sort(([a], [b]) => a.localeCompare(b));
+  }, [accounts]);
+
+  const activeAccounts = accounts.filter(a => !a.archivedAt);
+
+  const openCreateAccount = () => {
+    setAccountForm({ name: '', kind: 'cash' });
+    setFormError(null);
+    setAccountModal({ mode: 'create' });
+  };
+
+  const openEditAccount = (account: AccountWithBalances) => {
+    setAccountForm({ name: account.name, kind: account.kind });
+    setFormError(null);
+    setAccountModal({ mode: 'edit', account });
+  };
+
+  const saveAccount = async () => {
+    if (!accountForm.name.trim()) {
+      setFormError('Poné un nombre.');
+      return;
+    }
+    setSaving(true);
+    setFormError(null);
+    try {
+      const response = accountModal?.mode === 'edit' && accountModal.account
+        ? await api.updateAccount(accountModal.account.id, {
+            name: accountForm.name.trim(),
+            kind: accountForm.kind
+          })
+        : await api.createAccount({
+            id: crypto.randomUUID(),
+            name: accountForm.name.trim(),
+            kind: accountForm.kind,
+            sortOrder: 0
+          });
+      if (response.error) throw new Error(response.error.message);
+      setAccountModal(null);
+      await load();
+    } catch (e: any) {
+      setFormError(e?.message ?? 'No pudimos guardar la cuenta.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const makeDefault = async (account: AccountWithBalances) => {
+    const response = await api.updateAccount(account.id, { isDefault: true });
+    if (response.error) {
+      setError(response.error.message);
+      return;
+    }
+    await load();
+  };
+
+  const confirmArchive = async () => {
+    if (!archiveTarget) return;
+    setSaving(true);
+    try {
+      const response = await api.updateAccount(archiveTarget.id, { archivedAt: Date.now() });
+      if (response.error) throw new Error(response.error.message);
+      setArchiveTarget(null);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? 'No pudimos archivar la cuenta.');
+      setArchiveTarget(null);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openTransfer = () => {
+    const from = activeAccounts.find(a => a.isDefault) ?? activeAccounts[0];
+    const to = activeAccounts.find(a => a.id !== from?.id);
+    setTransferForm({
+      ...emptyTransferForm(),
+      fromAccountId: from?.id ?? '',
+      toAccountId: to?.id ?? '',
+    });
+    setFormError(null);
+    setTransferOpen(true);
+  };
+
+  const saveTransfer = async () => {
+    const from = activeAccounts.find(a => a.id === transferForm.fromAccountId);
+    const to = activeAccounts.find(a => a.id === transferForm.toAccountId);
+
+    if (!from || !to) {
+      setFormError('Elegí las dos cuentas.');
+      return;
+    }
+    if (from.id === to.id) {
+      setFormError('Elegí dos cuentas distintas.');
+      return;
+    }
+
+    const fromAmountMinor = transferForm.amountMinor;
+    if (fromAmountMinor === null || fromAmountMinor <= 0) {
+      setFormError('El importe debe ser mayor a cero.');
+      return;
+    }
+
+    let toAmountMinor: number | undefined;
+    if (transferForm.crossCurrency) {
+      const toAmount = transferForm.toAmountMinor;
+      if (toAmount === null || toAmount <= 0) {
+        setFormError('El importe de destino debe ser mayor a cero.');
+        return;
+      }
+      toAmountMinor = toAmount;
+    }
+
+    setSaving(true);
+    setFormError(null);
+    try {
+      const response = await api.createTransfer({
+        id: crypto.randomUUID(),
+        fromAccountId: from.id,
+        toAccountId: to.id,
+        fromAmountMinor,
+        fromCurrency: transferForm.currency,
+        toAmountMinor,
+        toCurrency: transferForm.crossCurrency ? transferForm.toCurrency : transferForm.currency,
+        occurredOn: transferForm.occurredOn,
+        note: transferForm.note || undefined
+      });
+      if (response.error) throw new Error(response.error.message);
+      setTransferOpen(false);
+      await load();
+    } catch (e: any) {
+      setFormError(e?.message ?? 'No pudimos registrar la transferencia.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDeleteTransfer = async () => {
+    if (!deleteTarget) return;
+    setSaving(true);
+    try {
+      const response = await api.deleteTransfer(deleteTarget.id);
+      if (response.error) throw new Error(response.error.message);
+      setDeleteTarget(null);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? 'No pudimos eliminar la transferencia.');
+      setDeleteTarget(null);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const renderBalances = (balances: AccountBalance[]) => {
+    if (balances.length === 0) return <Text variant="small" tone="stone">Sin movimientos</Text>;
+    return (
+      <Inline gap="md" className="accounts-balances">
+        {balances.map(balance => (
+          <span key={balance.currency} className="accounts-balance">
+            {formatAmount(balance.amountMinor, balance.currency)}
+          </span>
+        ))}
+      </Inline>
+    );
+  };
+
+  return (
+    <Page>
+      <PageHeader
+        eyebrow="Tu plata"
+        title="Cuentas"
+        description="Las transferencias mueven plata entre tus cuentas: no cuentan como ingreso ni como gasto."
+        actions={
+          <Inline gap="sm">
+            <Button variant="secondary" leftIcon={<Plus size={16} />} onClick={openCreateAccount}>Nueva cuenta</Button>
+            <Button leftIcon={<ArrowRightLeft size={16} />} onClick={openTransfer} disabled={activeAccounts.length < 2}>
+              Transferir
+            </Button>
+          </Inline>
+        }
+      />
+
+      {error && (
+        <Notice tone="strong" action={{ label: 'Reintentar', onClick: () => void load() }}>{error}</Notice>
+      )}
+
+      {totals.length > 0 && (
+        <Panel tone="paper" radius="panel" padding="lg">
+          <Text variant="caption" tone="stone">Total entre cuentas</Text>
+          <Inline gap="lg" className="accounts-totals">
+            {totals.map(([currency, amount]) => (
+              <span key={currency} className="accounts-total">
+                {formatAmount(amount, currency)}
+              </span>
+            ))}
+          </Inline>
+        </Panel>
+      )}
+
+      {loading && accounts.length === 0 && <LoadingSpinner />}
+
+      {!loading && accounts.length === 0 && !error && (
+        <EmptyState
+          title="Sin cuentas"
+          message="Creá tu primera cuenta para separar efectivo, banco y billeteras."
+          action={{ label: 'Crear cuenta', onClick: openCreateAccount }}
+        />
+      )}
+
+      {accounts.length > 0 && (
+        <Section title="Tus cuentas">
+          <Panel tone="paper" radius="panel" padding="none">
+            <div className="accounts-list">
+              {accounts.map(account => {
+                const Icon = KIND_ICONS[account.kind];
+                return (
+                  <ListRow
+                    key={account.id}
+                    leading={<span className="accounts-icon"><Icon size={19} strokeWidth={1.6} aria-hidden="true" /></span>}
+                    title={
+                      <Inline gap="sm">
+                        <span>{account.name}</span>
+                        {account.isDefault && <span className="accounts-badge">Predeterminada</span>}
+                      </Inline>
+                    }
+                    subtitle={KIND_LABELS[account.kind]}
+                    meta={renderBalances(account.balances)}
+                    trailing={
+                      <Inline gap="xs" className="accounts-row-actions">
+                        {!account.isDefault && (
+                          <Button variant="ghost" size="sm" onClick={() => void makeDefault(account)}>
+                            Predeterminar
+                          </Button>
+                        )}
+                        <IconButton label={`Editar ${account.name}`} onClick={() => openEditAccount(account)}>
+                          <Pencil size={16} />
+                        </IconButton>
+                        <IconButton label={`Archivar ${account.name}`} onClick={() => setArchiveTarget(account)}>
+                          <Archive size={16} />
+                        </IconButton>
+                      </Inline>
+                    }
+                  />
+                );
+              })}
+            </div>
+          </Panel>
+        </Section>
+      )}
+
+      <Section title="Transferencias recientes">
+        {transfers.length === 0 ? (
+          <Panel tone="paper" radius="panel" padding="lg">
+            <Text variant="small" tone="stone">
+              Todavía no registraste transferencias. Mové plata entre tus cuentas sin que cuente como gasto.
+            </Text>
+          </Panel>
+        ) : (
+          <Panel tone="paper" radius="panel" padding="none">
+            <div className="accounts-list">
+              {transfers.map(transfer => (
+                <ListRow
+                  key={transfer.id}
+                  leading={<span className="accounts-icon"><ArrowRightLeft size={18} strokeWidth={1.6} aria-hidden="true" /></span>}
+                  title={`${transfer.fromAccountName} → ${transfer.toAccountName}`}
+                  subtitle={[transfer.occurredOn, transfer.note].filter(Boolean).join(' · ')}
+                  meta={
+                    <span className="accounts-balance">
+                      {formatAmount(transfer.fromAmountMinor, transfer.fromCurrency)}
+                      {transfer.toCurrency !== transfer.fromCurrency && (
+                        <> → {formatAmount(transfer.toAmountMinor, transfer.toCurrency)}</>
+                      )}
+                    </span>
+                  }
+                  trailing={
+                    <IconButton label="Eliminar transferencia" onClick={() => setDeleteTarget(transfer)}>
+                      <Trash2 size={16} />
+                    </IconButton>
+                  }
+                />
+              ))}
+            </div>
+          </Panel>
+        )}
+      </Section>
+
+      <Modal
+        open={accountModal !== null}
+        onClose={() => setAccountModal(null)}
+        title={accountModal?.mode === 'edit' ? 'Editar cuenta' : 'Nueva cuenta'}
+        description="Las cuentas agrupan tu plata: efectivo, banco, billeteras."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setAccountModal(null)} disabled={saving}>Cancelar</Button>
+            <Button type="submit" form="account-form" loading={saving}>
+              {accountModal?.mode === 'edit' ? 'Guardar' : 'Crear'}
+            </Button>
+          </>
+        }
+      >
+        <form id="account-form" onSubmit={event => { event.preventDefault(); void saveAccount(); }}>
+          <Stack gap="md">
+            {formError && <Notice tone="strong">{formError}</Notice>}
+            <Input
+              label="Nombre"
+              value={accountForm.name}
+              onChange={value => setAccountForm(form => ({ ...form, name: value }))}
+              placeholder="Ej.: Banco Nación"
+              maxLength={60}
+              required
+            />
+            <Select
+              label="Tipo"
+              value={accountForm.kind}
+              onChange={value => setAccountForm(form => ({ ...form, kind: value as AccountKind }))}
+              options={[
+                { value: 'cash', label: 'Efectivo' },
+                { value: 'bank', label: 'Banco' },
+                { value: 'wallet', label: 'Billetera virtual' },
+                { value: 'other', label: 'Otra' }
+              ]}
+            />
+          </Stack>
+        </form>
+      </Modal>
+
+      <Modal
+        open={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        title="Transferir entre cuentas"
+        description="Sale de una cuenta y entra en otra. No es gasto ni ingreso."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setTransferOpen(false)} disabled={saving}>Cancelar</Button>
+            <Button type="submit" form="transfer-form" loading={saving}>Transferir</Button>
+          </>
+        }
+      >
+        <form id="transfer-form" onSubmit={event => { event.preventDefault(); void saveTransfer(); }}>
+          <Stack gap="md">
+            {formError && <Notice tone="strong">{formError}</Notice>}
+            <Grid columns={2} gap="md">
+              <Select
+                label="Desde"
+                value={transferForm.fromAccountId}
+                onChange={value => setTransferForm(form => ({
+                  ...form,
+                  fromAccountId: value,
+                  toAccountId: form.toAccountId === value
+                    ? activeAccounts.find(a => a.id !== value)?.id ?? ''
+                    : form.toAccountId
+                }))}
+                options={activeAccounts.map(a => ({ value: a.id, label: a.name }))}
+                required
+              />
+              <Select
+                label="Hacia"
+                value={transferForm.toAccountId}
+                onChange={value => setTransferForm(form => ({ ...form, toAccountId: value }))}
+                options={activeAccounts
+                  .filter(a => a.id !== transferForm.fromAccountId)
+                  .map(a => ({ value: a.id, label: a.name }))}
+                required
+              />
+            </Grid>
+            <Grid columns={2} gap="md">
+              <div style={{ flex: 1 }}>
+                <Input
+                  label="Monto que sale"
+                  value={fromAmountInput.displayValue}
+                  onChange={fromAmountInput.onChangeString}
+                  onBlur={fromAmountInput.onBlur}
+                  onFocus={fromAmountInput.onFocus}
+                  placeholder="0,00"
+                  prefix="$"
+                  required
+                  inputMode="decimal"
+                  pattern="[0-9.,]*"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                />
+              </div>
+              <Select
+                label="Moneda"
+                value={transferForm.currency}
+                onChange={value => setTransferForm(form => ({ ...form, currency: value as CurrencyCode }))}
+                options={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]}
+              />
+            </Grid>
+            <label className="accounts-check">
+              <input
+                type="checkbox"
+                checked={transferForm.crossCurrency}
+                onChange={event => setTransferForm(form => ({ ...form, crossCurrency: event.target.checked }))}
+              />
+              <span>En la cuenta de destino entra otra moneda o distinto importe</span>
+            </label>
+            {transferForm.crossCurrency && (
+              <Grid columns={2} gap="md">
+                <div style={{ flex: 1 }}>
+<Input
+                    label="Monto que entra"
+                    value={toAmountInput.displayValue}
+                    onChange={toAmountInput.onChangeString}
+                    onBlur={toAmountInput.onBlur}
+                    onFocus={toAmountInput.onFocus}
+                    placeholder="0,00"
+                    prefix="$"
+                    required
+                    inputMode="decimal"
+                    pattern="[0-9.,]*"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                  />
+                </div>
+                <Select
+                  label="Moneda destino"
+                  value={transferForm.toCurrency}
+                  onChange={value => setTransferForm(form => ({ ...form, toCurrency: value as CurrencyCode }))}
+                  options={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]}
+                />
+              </Grid>
+            )}
+            <Grid columns={2} gap="md">
+              <Input
+                label="Fecha"
+                type="date"
+                value={transferForm.occurredOn}
+                onChange={value => setTransferForm(form => ({ ...form, occurredOn: value }))}
+                required
+              />
+              <Input
+                label="Nota (opcional)"
+                value={transferForm.note}
+                onChange={value => setTransferForm(form => ({ ...form, note: value }))}
+                maxLength={120}
+                placeholder="Ej.: pago tarjeta"
+              />
+            </Grid>
+          </Stack>
+        </form>
+      </Modal>
+
+      <Modal
+        open={archiveTarget !== null}
+        onClose={() => setArchiveTarget(null)}
+        title="Archivar cuenta"
+        description={archiveTarget ? `“${archiveTarget.name}” deja de aparecer al cargar movimientos. Su historial se conserva.` : undefined}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setArchiveTarget(null)} disabled={saving}>Cancelar</Button>
+            <Button variant="danger" onClick={() => void confirmArchive()} loading={saving}>Archivar</Button>
+          </>
+        }
+      >
+        <Text variant="small" tone="stone">Podés archivarla igual: los movimientos viejos no se tocan.</Text>
+      </Modal>
+
+      <Modal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title="Eliminar transferencia"
+        description={deleteTarget ? `${deleteTarget.fromAccountName} → ${deleteTarget.toAccountName}` : undefined}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteTarget(null)} disabled={saving}>Cancelar</Button>
+            <Button variant="danger" onClick={() => void confirmDeleteTransfer()} loading={saving}>Eliminar</Button>
+          </>
+        }
+      >
+        <Text variant="small" tone="stone">Los saldos de las dos cuentas vuelven atrás.</Text>
+      </Modal>
+    </Page>
+  );
+}

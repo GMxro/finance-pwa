@@ -1,0 +1,22 @@
+.ui-loading-screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  background: var(--color-canvas);
+}
+
+.ui-loading-screen__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  color: var(--color-ink);
+}
+
+.ui-loading-screen__brand img {
+  border-radius: 9px;
+}

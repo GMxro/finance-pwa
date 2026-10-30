@@ -1,0 +1,176 @@
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-label);
+  letter-spacing: -0.005em;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+
+.ui-btn:hover {
+  text-decoration: none;
+}
+
+.ui-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ui-btn--sm { min-height: var(--control-height-sm); padding: 0 var(--space-4); font-size: var(--text-caption); }
+.ui-btn--md { min-height: 48px; padding: 0 var(--space-5); }
+.ui-btn--lg { min-height: var(--control-height-lg); padding: 0 var(--space-6); font-size: var(--text-body); }
+.ui-btn--full { width: 100%; }
+
+.ui-btn--primary {
+  background: var(--color-ink);
+  color: var(--color-on-ink);
+  border-color: var(--color-ink);
+}
+
+.ui-btn--primary:hover:not(:disabled) {
+  background: var(--color-ink-soft);
+  border-color: var(--color-ink-soft);
+}
+
+.ui-btn--secondary {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border-color: var(--color-line-strong);
+}
+
+.ui-btn--secondary:hover:not(:disabled) {
+  background: var(--color-inset);
+  border-color: var(--color-ink);
+}
+
+.ui-btn--ghost {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.ui-btn--ghost:hover:not(:disabled) {
+  background: var(--color-inset);
+}
+
+.ui-btn--onInk {
+  background: var(--color-accent-on-ink);
+  color: var(--color-ink);
+  border-color: var(--color-accent-on-ink);
+}
+
+.ui-btn--onInk:hover:not(:disabled) {
+  background: var(--color-accent-on-ink-hover);
+  border-color: var(--color-accent-on-ink-hover);
+}
+
+.ui-btn--danger {
+  background: var(--color-danger);
+  color: #ffffff;
+  border-color: var(--color-danger);
+}
+
+.ui-btn--danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+}
+
+.ui-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-btn__text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ui-btn__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ui-spin 0.7s linear infinite;
+}
+
+.ui-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.ui-panel--ink .ui-btn--secondary,
+.ui-panel--ink .ui-btn--ghost {
+  color: var(--color-on-ink);
+  border-color: var(--color-on-ink-line);
+  background: transparent;
+}
+
+.ui-panel--ink .ui-btn--secondary:hover:not(:disabled),
+.ui-panel--ink .ui-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ui-panel--ink .ui-btn:focus-visible {
+  outline-color: var(--color-lime);
+}
+
+.ui-icon-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  color: var(--color-stone);
+  border: 1px solid transparent;
+  background: transparent;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.ui-icon-btn:hover:not(:disabled) {
+  background: var(--color-inset);
+  color: var(--color-ink);
+}
+
+.ui-icon-btn--sm {
+  width: 44px;
+  height: 44px;
+}
+
+.ui-icon-btn--danger:hover:not(:disabled) {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.ui-icon-btn--onInk {
+  color: var(--color-on-ink-muted);
+}
+
+.ui-icon-btn--onInk:hover:not(:disabled) {
+  color: var(--color-ink);
+  background: var(--color-accent-on-ink);
+}
+
+.ui-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@keyframes ui-spin {
+  to { transform: rotate(360deg); }
+}

@@ -1,0 +1,15 @@
+.budgets-toolbar {
+  margin-bottom: var(--space-4);
+}
+
+.budgets-confirm {
+  padding-bottom: var(--space-2);
+  color: var(--color-stone);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 640px) {
+  .budgets-count {
+    display: none;
+  }
+}
