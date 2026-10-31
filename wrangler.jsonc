@@ -29,7 +29,7 @@
   "vars": {
     "SYNC_EPOCH": "4486eb6b-23fd-433e-b3a8-22b5e2a8e922",
     "BETTER_AUTH_URL": "https://finance-pwa.audioideas.workers.dev",
-    "MIN_APP_VERSION": ""
+    "MIN_APP_VERSION": "0.1.0"
   },
   "observability": {
     "enabled": true,
