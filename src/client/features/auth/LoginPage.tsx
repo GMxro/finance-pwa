@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAuth } from '../../app/providers';
 import { Button } from '@shared/ui/Button';
 import { AuthLayout } from '@shared/ui/AuthLayout';
@@ -19,29 +19,33 @@ function GoogleMark() {
 export function LoginPage() {
   const { login, loading } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const handleLogin = async () => {
+    if (loading || submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
     setError(null);
     try {
       await login();
     } catch {
       setError('No pudimos iniciar sesión. Probá de nuevo.');
+      submittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
   return (
     <AuthLayout
       artTitle="Cada peso, en su lugar."
-      artText="Un registro simple de lo que entra y lo que sale. Sin planillas, sin ruido y sin depender de la conexión."
+      artText="Lo que entra, lo que sale y lo que te queda."
     >
-      <Stack gap="lg">
+      <Stack gap="md">
         <div>
-          <h1 className="ui-auth-title">
-            Tus finanzas,<br />
-            <span>en orden.</span>
-          </h1>
+          <h1 className="ui-auth-title ui-auth-title--login">Ingresá a tu cuenta</h1>
           <p className="ui-auth-lead">
-            Ingresos, gastos y presupuestos en una sola vista, en pesos y en dólares.
+            Ingresos, gastos y presupuestos en pesos y dólares.
           </p>
         </div>
 
@@ -53,17 +57,20 @@ export function LoginPage() {
             size="lg"
             fullWidth
             onClick={handleLogin}
-            disabled={loading}
-            aria-busy={loading}
-            leftIcon={loading ? undefined : <GoogleMark />}
+            disabled={loading || isSubmitting}
+            loading={isSubmitting}
+            aria-busy={loading || isSubmitting}
+            aria-label={isSubmitting ? 'Iniciando sesión con Google' : 'Continuar con Google'}
+            leftIcon={isSubmitting ? undefined : <GoogleMark />}
           >
-            {loading ? 'Iniciando sesión…' : 'Continuar con Google'}
+            {isSubmitting ? 'Iniciando sesión…' : 'Continuar con Google'}
           </Button>
         </div>
 
         <p className="ui-auth-legal">
-          Al continuar aceptás los <a href="/terminos">Términos</a> y la{' '}
-          <a href="/privacidad">Política de privacidad</a>. Solo usamos tu cuenta de Google para identificarte: no accedemos a tu correo, Drive ni otros datos.
+          Solo usamos tu cuenta de Google para identificarte. Al continuar aceptás los{' '}
+          <a href="/terminos">Términos</a> y la{' '}
+          <a href="/privacidad">Política de privacidad</a>.
         </p>
       </Stack>
     </AuthLayout>
