@@ -295,3 +295,76 @@ async function writeTransactionDeletionMarker(env: Env, userId: string, id: stri
     throw new Error('MARKER_FAILED');
   }
 }
+
+export async function getMonthlySummary(
+  env: Env,
+  userId: string,
+  periodMonth: string,
+  currency?: 'ARS' | 'USD'
+): Promise<{
+  periodMonth: string;
+  currency: 'ARS' | 'USD';
+  incomeMinor: number;
+  expenseMinor: number;
+  netMinor: number;
+  byCategory: Array<{ categoryId: string; kind: 'income' | 'expense'; amountMinor: number }>;
+  transactionCount: number;
+}> {
+  const currencies = currency ? [currency] : ['ARS', 'USD'];
+  const results: Array<{
+    periodMonth: string;
+    currency: 'ARS' | 'USD';
+    incomeMinor: number;
+    expenseMinor: number;
+    netMinor: number;
+    byCategory: Array<{ categoryId: string; kind: 'income' | 'expense'; amountMinor: number }>;
+    transactionCount: number;
+  }> = [];
+  
+  for (const curr of currencies) {
+    const incomeResult = await env.DB.prepare(`
+      SELECT COALESCE(SUM(amount_minor), 0) as total
+      FROM transactions
+      WHERE user_id = ? AND currency_code = ? AND kind = 'income'
+        AND occurred_on LIKE ? AND deleted_at IS NULL
+    `).bind(userId, curr, `${periodMonth}%`).first<{ total: number }>();
+    
+    const expenseResult = await env.DB.prepare(`
+      SELECT COALESCE(SUM(amount_minor), 0) as total
+      FROM transactions
+      WHERE user_id = ? AND currency_code = ? AND kind = 'expense'
+        AND occurred_on LIKE ? AND deleted_at IS NULL
+    `).bind(userId, curr, `${periodMonth}%`).first<{ total: number }>();
+    
+    const categoryResult = await env.DB.prepare(`
+      SELECT category_id, kind, COALESCE(SUM(amount_minor), 0) as total
+      FROM transactions
+      WHERE user_id = ? AND currency_code = ? AND occurred_on LIKE ? AND deleted_at IS NULL
+      GROUP BY category_id, kind
+    `).bind(userId, curr, `${periodMonth}%`).all<{ category_id: string; kind: 'income' | 'expense'; total: number }>();
+    
+    const countResult = await env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM transactions
+      WHERE user_id = ? AND currency_code = ? AND occurred_on LIKE ? AND deleted_at IS NULL
+    `).bind(userId, curr, `${periodMonth}%`).first<{ count: number }>();
+    
+    const byCategory = (categoryResult.results as any[]).map(row => ({
+      categoryId: row.category_id,
+      kind: row.kind,
+      amountMinor: Number(row.total)
+    }));
+    
+    results.push({
+      periodMonth,
+      currency: curr,
+      incomeMinor: Number(incomeResult?.total ?? 0),
+      expenseMinor: Number(expenseResult?.total ?? 0),
+      netMinor: Number(incomeResult?.total ?? 0) - Number(expenseResult?.total ?? 0),
+      byCategory,
+      transactionCount: Number(countResult?.count ?? 0)
+    });
+  }
+  
+  return results[0];
+}

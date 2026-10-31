@@ -7,7 +7,9 @@ import type { Env } from '@env';
 import { calendarDateSchema } from '@contracts/date';
 import { MAX_MINOR_UNITS } from '@domain/money';
 import { transactionListQuerySchema } from '@contracts/transaction';
+import { calendarMonthSchema } from '@contracts/date';
 import { createTransaction, updateTransaction, deleteTransaction, listTransactions } from '../application/transactions/transactions';
+import { getMonthlySummary } from '../application/transactions/transactions';
 
 const transactionsRoutes = new Hono<{ Bindings: Env }>();
 
@@ -86,6 +88,22 @@ transactionsRoutes.delete('/:id', async (c) => {
   
   await deleteTransaction(c.env, userId, id, result.data.version);
   return c.body(null, 204);
+});
+
+transactionsRoutes.get('/summary', async (c) => {
+  const userId = getUserId(c);
+  const period = c.req.query('period');
+  const currency = c.req.query('currency') as 'ARS' | 'USD' | undefined;
+  
+  if (!period || !calendarMonthSchema.safeParse(period).success) {
+    throw new ValidationError('Período mensual inválido.');
+  }
+  if (currency && !['ARS', 'USD'].includes(currency)) {
+    throw new ValidationError('Moneda inválida.');
+  }
+  
+  const summary = await getMonthlySummary(c.env, userId, period, currency);
+  return c.json(summary);
 });
 
 export { transactionsRoutes };

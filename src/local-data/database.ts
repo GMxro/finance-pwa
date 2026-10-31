@@ -64,17 +64,6 @@ export class FinanceDB extends Dexie {
         .map((name) => transaction.table(name).clear()));
     });
 
-    this.version(3).stores({
-      transactions: 'id, userId, occurredOn, kind, currency, synced, pendingOp, localVersion',
-      categories: 'id, userId, kind, synced',
-      budgets: 'id, userId, periodMonth, currency, synced',
-      syncMeta: 'id',
-      outbox: 'id, userId, entityType, entityId, createdAt'
-    }).upgrade(async (transaction) => {
-      await Promise.all(['transactions', 'categories', 'budgets', 'syncMeta', 'outbox']
-        .map((name) => transaction.table(name).clear()));
-    });
-
     this.transactions.hook('creating', (_id, row) => {
       row.localVersion = 1;
       row.synced = false;

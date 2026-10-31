@@ -147,6 +147,22 @@ export async function updatePreferences(defaultCurrency: CurrencyCode): Promise<
   });
 }
 
+export interface MonthlySummary {
+  periodMonth: string;
+  currency: CurrencyCode;
+  incomeMinor: number;
+  expenseMinor: number;
+  netMinor: number;
+  byCategory: Array<{ categoryId: string; kind: 'income' | 'expense'; amountMinor: number }>;
+  transactionCount: number;
+}
+
+export async function getMonthlySummary(period: string, currency?: CurrencyCode): Promise<ApiResponse<MonthlySummary>> {
+  const params = new URLSearchParams({ period });
+  if (currency) params.set('currency', currency);
+  return request<MonthlySummary>(`/transactions/summary?${params.toString()}`);
+}
+
 // Transactions
 export async function listTransactions(params: Partial<TransactionListQuery> = {}): Promise<ApiResponse<TransactionResponse[]>> {
   const search = new URLSearchParams();
@@ -361,6 +377,7 @@ export const api = {
   exportCSV,
   deleteAccount,
   getAccountDeletionStatus,
-  waitForAccountDeletion,
-  updatePreferences
-};
+waitForAccountDeletion,
+   updatePreferences,
+   getMonthlySummary
+ };
