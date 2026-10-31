@@ -112,7 +112,6 @@ export function OverviewPage() {
           : !previousSummary.data
             ? 'partial'
             : 'current');
-      const currentAvailable = currentTxRes.data !== null || (currentTxError && canUseStaleData(currentTxError) && cachedCurrent.length > 0);
       const transactionErrorMessages = [
         currentTxError && (currentAvailable
           ? `Mes actual: ${formatApiError(currentTxError, 'error de conexión')}. Se muestran datos locales y pueden estar desactualizados.`
