@@ -1,5 +1,5 @@
 // Local data: offline capture and cache for transactions.
-import { db, addToOutbox, type LocalTransaction } from './database';
+import { db, addToOutbox, getPendingOutbox, type LocalTransaction } from './database';
 import type { TransactionResponse } from '@contracts/transaction';
 
 export interface PendingInput {
@@ -60,10 +60,14 @@ export async function savePendingCreate(input: PendingInput): Promise<void> {
 
 /** Merge cached (possibly pending) rows with a server page. */
 export async function mergeWithCache(userId: string, serverRows: TransactionResponse[]): Promise<LocalTransaction[]> {
+  const outbox = await getPendingOutbox(userId);
+  const pendingIds = new Set(outbox
+    .filter((operation) => operation.entityType === 'transaction')
+    .map((operation) => operation.entityId));
   const pending = await db.transactions
     .where('userId')
     .equals(userId)
-    .filter((t) => !t.synced && !t.deletedAt)
+    .filter((t) => !t.synced && !t.deletedAt && pendingIds.has(t.id))
     .toArray();
 
   const byId = new Map<string, any>();

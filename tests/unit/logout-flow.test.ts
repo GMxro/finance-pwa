@@ -83,4 +83,15 @@ describe('logout flow', () => {
     expect(result).toEqual({ status: 'pending-confirmation', pendingCount: 3, offline: false });
     expect(calls).toEqual([`count:${USER_A}`, `sync:${USER_A}`, `count:${USER_A}`]);
   });
+
+  it('keeps the session and local data when synchronization fails', async () => {
+    const { calls, deps } = fakeDependencies(2);
+    deps.sync = async (userId: string) => {
+      calls.push(`sync:${userId}`);
+      throw new Error('network unavailable');
+    };
+
+    await expect(runLogoutFlow({ userId: USER_A, online: true }, deps)).rejects.toThrow('network unavailable');
+    expect(calls).toEqual([`count:${USER_A}`, `sync:${USER_A}`]);
+  });
 });

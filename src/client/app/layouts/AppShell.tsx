@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../providers';
 import { NAV_ITEMS } from '../navigation';
@@ -9,10 +9,9 @@ import './AppShell.css';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, syncState, syncNow } = useAuth();
-  const navigate = useNavigate();
 
   const syncLabel = syncState.error
-    ? 'Error de sincronización'
+    ? `${syncState.pendingCount} pendiente${syncState.pendingCount === 1 ? '' : 's'} · Error de sincronización`
     : syncState.status === 'syncing'
       ? 'Sincronizando'
       : syncState.pendingCount > 0
@@ -60,7 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             className={`ui-sync ui-sync--${syncTone}`}
-            onClick={() => syncNow()}
+            onClick={() => { void syncNow().catch(() => undefined); }}
             aria-label={`${syncLabel}. Sincronizar ahora`}
           >
             <Status label={syncLabel} tone={syncState.error ? 'danger' : 'onInk'} />

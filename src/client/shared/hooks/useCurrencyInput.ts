@@ -69,6 +69,8 @@ export function useCurrencyInput({
   
   const [displayValue, setDisplayValueState] = useState<string>('');
   const [valueMinor, setValueMinorState] = useState<number | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   const cursorPosRef = useRef<number>(0);
   const hadCommaRef = useRef<boolean>(false);
   const isComposingRef = useRef<boolean>(false);
@@ -107,8 +109,8 @@ export function useCurrencyInput({
   const updateValue = useCallback((minor: number | null, display: string) => {
     setValueMinorState(minor);
     setDisplayValueState(display);
-    onChange?.(minor);
-  }, [onChange]);
+    onChangeRef.current?.(minor);
+  }, []);
 
   // Handler para onChange del input
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,14 +183,16 @@ export function useCurrencyInput({
   const setValueMinor = useCallback((minor: number | null) => {
     if (minor === null || minor === undefined) {
       if (allowEmpty) {
-        updateValue(null, '');
+        setValueMinorState(null);
+        setDisplayValueState('');
       }
       return;
     }
     const hasDecimals = minor % 100 !== 0;
     const formatted = formatForDisplay(minor, hasDecimals);
-    updateValue(minor, formatted);
-  }, [allowEmpty, formatForDisplay, updateValue]);
+    setValueMinorState(minor);
+    setDisplayValueState(formatted);
+  }, [allowEmpty, formatForDisplay]);
 
   // Setear valor desde string formateado
   const setDisplayValue = useCallback((formatted: string) => {

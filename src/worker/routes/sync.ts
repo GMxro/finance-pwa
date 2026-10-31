@@ -1,6 +1,7 @@
 // Sync routes
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { syncPushSchema } from '@contracts/sync';
 import { getUserId } from '../middleware/session';
 import { ValidationError } from '../middleware/error-handler';
 import type { Env } from '@env';
@@ -39,22 +40,23 @@ syncRoutes.get('/transactions', async (c) => {
   return c.json(syncData);
 });
 
-const pushSchema = z.object({
-  epoch: z.string().uuid(),
-  items: z.array(z.object({
-    id: z.string().uuid(),
-    operationId: z.string().uuid(),
-    userId: z.string().uuid(),
-    type: z.enum(['create', 'update', 'delete']),
-    payload: z.record(z.unknown()),
-    version: z.number().int().positive().optional()
-  })).max(50)
-});
-
 syncRoutes.post('/transactions', async (c) => {
   const userId = getUserId(c);
-  const body = await c.req.json();
-  const result = pushSchema.safeParse(body);
+  const contentLength = Number(c.req.header('content-length') ?? 0);
+  if (contentLength > 256 * 1024) {
+    return c.json({ code: 'PAYLOAD_TOO_LARGE', message: 'El lote de sincronización supera el tamaño permitido.' }, 413);
+  }
+  const text = await c.req.text();
+  if (text.length > 256 * 1024) {
+    return c.json({ code: 'PAYLOAD_TOO_LARGE', message: 'El lote de sincronización supera el tamaño permitido.' }, 413);
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    throw new ValidationError('El cuerpo debe ser JSON válido.');
+  }
+  const result = syncPushSchema.safeParse(body);
   
   if (!result.success) {
     throw new ValidationError('Datos inválidos', result.error.flatten());
@@ -73,6 +75,9 @@ syncRoutes.post('/transactions', async (c) => {
   } catch (error) {
     if (error instanceof Error && error.message === 'SYNC_USER_MISMATCH') {
       return c.json({ code: 'SYNC_USER_MISMATCH', message: 'La operación pertenece a otra cuenta.' }, 403);
+    }
+    if (error instanceof Error && ['SYNC_INVALID_PAYLOAD', 'SYNC_DUPLICATE_OPERATION_ID'].includes(error.message)) {
+      return c.json({ code: error.message, message: 'El lote contiene operaciones inválidas.' }, 400);
     }
     throw error;
   }

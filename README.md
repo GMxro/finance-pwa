@@ -93,5 +93,12 @@ ARS y USD separados, historial con filtros y edición, resumen mensual, presupue
 categoría y mes, exportación CSV, borrado de cuenta con journal en R2, PWA instalable y
 captura sin conexión de altas.
 
-Fuera de alcance (deliberadamente): transferencias, cuentas bancarias, recurrencias,
-cuotas, cotizaciones, inversiones, espacios compartidos y edición offline.
+Incluye también: cuentas y transferencias entre cuentas, archivado/restauración de cuentas,
+categorías archivadas, sincronización offline de altas, resumen financiero con paginación
+completa, estadísticas con límite configurable, páginas legales (Términos y Privacidad),
+control de versión de cliente (`MIN_APP_VERSION`), rate limiting distribuido, exportación
+CSV con escaping seguro y BOM UTF-8.
+
+Fuera de alcance (deliberadamente): recurrencias, cuotas, cotizaciones, inversiones,
+espacios compartidos, edición offline de movimientos/presupuestos/categorías, importación
+bancaria, conversión automática de moneda.

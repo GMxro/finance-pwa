@@ -1,6 +1,14 @@
 // Domain: Money handling - exact arithmetic in minor units (cents)
 
 export type CurrencyCode = 'ARS' | 'USD';
+export const MAX_MINOR_UNITS = Number.MAX_SAFE_INTEGER;
+
+export class FinancialRangeError extends RangeError {
+  constructor() {
+    super('El total excede el rango exacto admitido.');
+    this.name = 'FinancialRangeError';
+  }
+}
 
 export const CURRENCIES: Record<CurrencyCode, { exponent: number; symbol: string; locale: string }> = {
   ARS: { exponent: 2, symbol: '$', locale: 'es-AR' },
@@ -15,17 +23,18 @@ export function parseAmount(input: string, currency: CurrencyCode): { amountMino
   const [intPart, decPart = ''] = trimmed.split('.');
   const exponent = CURRENCIES[currency].exponent;
   const paddedDec = (decPart + '00').slice(0, exponent);
-  const amountMinor = parseInt(intPart + paddedDec, 10);
+  const amountMinor = Number(intPart + paddedDec);
+  if (!Number.isSafeInteger(amountMinor)) {
+    return { amountMinor: 0, valid: false, error: 'Importe fuera de rango seguro.' };
+  }
   if (amountMinor <= 0) {
     return { amountMinor: 0, valid: false, error: 'El importe debe ser mayor a cero.' };
-  }
-  if (amountMinor > Number.MAX_SAFE_INTEGER) {
-    return { amountMinor: 0, valid: false, error: 'Importe fuera de rango seguro.' };
   }
   return { amountMinor, valid: true };
 }
 
 export function formatAmount(amountMinor: number, currency: CurrencyCode, options: Intl.NumberFormatOptions = {}): string {
+  assertSafeMinorUnits(amountMinor);
   const { exponent, locale, symbol } = CURRENCIES[currency];
   const major = Math.abs(amountMinor) / Math.pow(10, exponent);
   const formatted = new Intl.NumberFormat(locale, {
@@ -37,6 +46,7 @@ export function formatAmount(amountMinor: number, currency: CurrencyCode, option
 }
 
 export function formatAmountPlain(amountMinor: number, currency: CurrencyCode): string {
+  assertSafeMinorUnits(amountMinor);
   const { exponent, locale } = CURRENCIES[currency];
   const major = amountMinor / Math.pow(10, exponent);
   return new Intl.NumberFormat(locale, {
@@ -55,15 +65,23 @@ export function censorAmount(currency: CurrencyCode): string {
 }
 
 export function addAmounts(a: number, b: number): number {
+  assertSafeMinorUnits(a);
+  assertSafeMinorUnits(b);
   const sum = a + b;
-  if (sum > Number.MAX_SAFE_INTEGER || sum < Number.MIN_SAFE_INTEGER) {
-    throw new Error('Desbordamiento en suma de importes');
-  }
+  assertSafeMinorUnits(sum);
   return sum;
 }
 
 export function subtractAmounts(a: number, b: number): number {
-  return a - b;
+  assertSafeMinorUnits(a);
+  assertSafeMinorUnits(b);
+  const difference = a - b;
+  assertSafeMinorUnits(difference);
+  return difference;
+}
+
+export function assertSafeMinorUnits(amount: number): void {
+  if (!Number.isSafeInteger(amount)) throw new FinancialRangeError();
 }
 
 export function isValidCurrency(code: string): code is CurrencyCode {

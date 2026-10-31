@@ -88,13 +88,15 @@
   .ui-modal-overlay {
     align-items: flex-end;
     padding: 0;
+    /* --keyboard-inset lo setea Modal.tsx desde visualViewport. */
+    padding-bottom: var(--keyboard-inset, 0px);
   }
 
   .ui-modal {
     max-width: none;
-    max-height: calc(100dvh - var(--safe-top) - 12px);
+    max-height: calc(100dvh - var(--safe-top) - 12px - var(--keyboard-inset, 0px));
     border-radius: 28px 28px 0 0;
-    padding-bottom: var(--safe-bottom);
+    padding-bottom: max(0px, calc(var(--safe-bottom) - var(--keyboard-inset, 0px)));
     animation: ui-sheet-in var(--dur-base) var(--ease-out);
   }
 

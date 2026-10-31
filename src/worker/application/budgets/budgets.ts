@@ -1,9 +1,31 @@
 // Application: Budgets business logic
 import type { Env } from '@env';
 import type { BudgetCreate, BudgetUpdate, BudgetWithSpent } from '@contracts/budget';
+import { subtractAmounts } from '@domain/money';
+import { ValidationError } from '../../middleware/error-handler';
+
+function safeAggregate(value: unknown): number {
+  const amount = Number(value ?? 0);
+  if (!Number.isSafeInteger(amount) || amount < 0) {
+    throw new ValidationError('El total financiero excede el rango exacto admitido.');
+  }
+  return amount;
+}
+
+async function aggregateQuery<T>(query: Promise<T>): Promise<T> {
+  try {
+    return await query;
+  } catch (error) {
+    if (error instanceof Error && /integer overflow/i.test(error.message)) {
+      throw new ValidationError('El total financiero excede el rango exacto admitido.');
+    }
+    throw error;
+  }
+}
 
 function mapBudget(b: any): BudgetWithSpent {
-  const spent = b.spent_minor ?? 0;
+  const spent = safeAggregate(b.spent_minor);
+  const remaining = subtractAmounts(safeAggregate(b.limit_minor), spent);
   return {
     id: b.id,
     userId: b.user_id,
@@ -15,9 +37,17 @@ function mapBudget(b: any): BudgetWithSpent {
     createdAt: b.created_at,
     updatedAt: b.updated_at,
     spentMinor: spent,
-    remainingMinor: b.limit_minor - spent,
-    isOverBudget: b.limit_minor - spent < 0
+    remainingMinor: remaining,
+    isOverBudget: remaining < 0
   } as BudgetWithSpent;
+}
+
+async function assertBudgetCategory(env: Env, userId: string, categoryId: string): Promise<void> {
+  const category = await env.DB.prepare(`
+    SELECT id FROM categories
+    WHERE id = ? AND user_id = ? AND kind = 'expense' AND archived_at IS NULL
+  `).bind(categoryId, userId).first<{ id: string }>();
+  if (!category) throw new ValidationError('La categoría debe estar activa, pertenecer al usuario y ser de gasto.');
 }
 
 export async function listBudgets(
@@ -25,7 +55,7 @@ export async function listBudgets(
   userId: string,
   periodMonth: string
 ): Promise<BudgetWithSpent[]> {
-  const result = await env.DB.prepare(`
+  const result = await aggregateQuery(env.DB.prepare(`
     SELECT b.id, b.user_id, b.category_id, b.period_month, b.currency_code, b.limit_minor, b.version, b.created_at, b.updated_at,
            COALESCE(SUM(CASE WHEN t.kind = 'expense' THEN t.amount_minor ELSE 0 END), 0) as spent_minor
     FROM budgets b
@@ -38,7 +68,7 @@ export async function listBudgets(
     WHERE b.user_id = ? AND b.period_month = ?
     GROUP BY b.id
     ORDER BY b.created_at
-  `).bind(userId, periodMonth).all();
+  `).bind(userId, periodMonth).all());
   
   return (result.results as any[]).map(mapBudget);
 }
@@ -50,17 +80,11 @@ export async function upsertBudget(
 ): Promise<any> {
   const now = Date.now();
   
-  const category = await env.DB.prepare(`
-    SELECT id FROM categories WHERE id = ? AND user_id = ? AND kind = 'expense' AND archived_at IS NULL
-  `).bind(data.categoryId, userId).first();
-  
-  if (!category) {
-    throw new Error('Categoría no encontrada o no es de gasto');
-  }
+  await assertBudgetCategory(env, userId, data.categoryId);
   
   const existing = await env.DB.prepare(`
     SELECT id FROM budgets WHERE user_id = ? AND category_id = ? AND period_month = ? AND currency_code = ?
-  `).bind(userId, data.categoryId, data.periodMonth, data.currency).first();
+  `).bind(userId, data.categoryId, data.periodMonth, data.currency).first<{ id: string }>();
   
   if (existing) {
     await env.DB.prepare(`
@@ -68,16 +92,18 @@ export async function upsertBudget(
       WHERE id = ?
     `).bind(data.limitMinor, now, existing.id).run();
     
-    const row = await env.DB.prepare(`SELECT * FROM budgets WHERE id = ?`).bind(existing.id).first();
-    return mapBudget({ ...(row as any), spent_minor: 0 });
+    const row = await getBudgetWithSpent(env, userId, existing.id);
+    if (!row) throw new Error('BUDGET_NOT_FOUND');
+    return mapBudget(row as BudgetWithSpent);
   } else {
     await env.DB.prepare(`
       INSERT INTO budgets (id, user_id, category_id, period_month, currency_code, limit_minor, version, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
     `).bind(data.id, userId, data.categoryId, data.periodMonth, data.currency, data.limitMinor, now, now).run();
     
-    const created = await env.DB.prepare(`SELECT * FROM budgets WHERE id = ?`).bind(data.id).first();
-    return mapBudget({ ...(created as any), spent_minor: 0 });
+    const created = await getBudgetWithSpent(env, userId, data.id);
+    if (!created) throw new Error('BUDGET_NOT_FOUND');
+    return mapBudget(created as BudgetWithSpent);
   }
 }
 
@@ -87,15 +113,23 @@ export async function updateBudget(
   data: BudgetUpdate
 ): Promise<any> {
   const { id, version, ...updates } = data;
+  if (!id) throw new Error('ID de presupuesto requerido para actualizar');
   const now = Date.now();
+  const current = await env.DB.prepare(`
+    SELECT category_id FROM budgets WHERE id = ? AND user_id = ?
+  `).bind(id, userId).first<{ category_id: string }>();
+  if (!current) throw new Error('NOT_FOUND');
+  if (updates.categoryId !== undefined && updates.categoryId !== current.category_id) {
+    await assertBudgetCategory(env, userId, updates.categoryId);
+  }
   
   const setParts: string[] = ['version = version + 1', 'updated_at = ?'];
   const bindings: any[] = [now];
   
-  if (updates.limitMinor) { setParts.push('limit_minor = ?'); bindings.push(updates.limitMinor); }
-  if (updates.categoryId) { setParts.push('category_id = ?'); bindings.push(updates.categoryId); }
-  if (updates.periodMonth) { setParts.push('period_month = ?'); bindings.push(updates.periodMonth); }
-  if (updates.currency) { setParts.push('currency_code = ?'); bindings.push(updates.currency); }
+  if (updates.limitMinor !== undefined) { setParts.push('limit_minor = ?'); bindings.push(updates.limitMinor); }
+  if (updates.categoryId !== undefined) { setParts.push('category_id = ?'); bindings.push(updates.categoryId); }
+  if (updates.periodMonth !== undefined) { setParts.push('period_month = ?'); bindings.push(updates.periodMonth); }
+  if (updates.currency !== undefined) { setParts.push('currency_code = ?'); bindings.push(updates.currency); }
   
   bindings.push(id, userId, version);
   
@@ -108,22 +142,23 @@ export async function updateBudget(
   if (result.meta.changes === 0) {
     const existing = await env.DB.prepare(`
       SELECT id FROM budgets WHERE id = ? AND user_id = ?
-    `).bind(id, userId).first();
+    `).bind(id, userId).first<{ id: string }>();
     
     if (!existing) throw new Error('NOT_FOUND');
     throw new Error('CONFLICT');
   }
   
-  const updatedRow = await env.DB.prepare(`SELECT * FROM budgets WHERE id = ?`).bind(id).first();
-  return mapBudget({ ...(updatedRow as any), spent_minor: 0 });
+  const updatedRow = await getBudgetWithSpent(env, userId, id);
+  if (!updatedRow) throw new Error('BUDGET_NOT_FOUND');
+  return mapBudget(updatedRow!);
 }
 
 export async function getBudgetWithSpent(
   env: Env,
   userId: string,
   budgetId: string
-): Promise<any> {
-  return env.DB.prepare(`
+): Promise<BudgetWithSpent | null> {
+  const row = await aggregateQuery(env.DB.prepare(`
     SELECT b.*, 
            COALESCE(SUM(CASE WHEN t.kind = 'expense' THEN t.amount_minor ELSE 0 END), 0) as spent_minor
     FROM budgets b
@@ -135,7 +170,15 @@ export async function getBudgetWithSpent(
       AND t.deleted_at IS NULL
     WHERE b.id = ? AND b.user_id = ?
     GROUP BY b.id
-  `).bind(budgetId, userId).first();
+  `).bind(budgetId, userId).first<{ 
+    id: string; user_id: string; category_id: string; period_month: string; 
+    currency_code: 'ARS' | 'USD'; limit_minor: number; version: number; 
+    created_at: number; updated_at: number; spent_minor: number 
+  }>());
+  if (!row) return null;
+  safeAggregate(row.spent_minor);
+  safeAggregate(row.limit_minor);
+  return mapBudget(row);
 }
 export async function deleteBudget(env: Env, userId: string, id: string, version: number) {
   const result = await env.DB.prepare(`

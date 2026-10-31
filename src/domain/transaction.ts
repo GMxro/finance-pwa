@@ -1,6 +1,8 @@
 // Domain: Transaction invariants
 
+import { MAX_MINOR_UNITS } from './money';
 import type { CurrencyCode } from './money';
+import { isValidISODate } from './date';
 
 export type TransactionKind = 'income' | 'expense';
 
@@ -30,7 +32,7 @@ export function validateTransaction(input: TransactionInput): { valid: boolean; 
   if (input.kind !== 'income' && input.kind !== 'expense') {
     return { valid: false, error: 'Tipo inválido' };
   }
-  if (!Number.isInteger(input.amountMinor) || input.amountMinor <= 0) {
+  if (!Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0 || input.amountMinor > MAX_MINOR_UNITS) {
     return { valid: false, error: 'Importe inválido' };
   }
   if (input.currency !== 'ARS' && input.currency !== 'USD') {
@@ -39,7 +41,7 @@ export function validateTransaction(input: TransactionInput): { valid: boolean; 
   if (!input.categoryId) {
     return { valid: false, error: 'Categoría requerida' };
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.occurredOn)) {
+  if (!isValidISODate(input.occurredOn)) {
     return { valid: false, error: 'Fecha inválida' };
   }
   if (input.note && input.note.length > 500) {

@@ -2,12 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/providers';
-import { api } from '@shared/api/client';
+import { api, canUseStaleData, formatApiError } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
 import type { CurrencyCode } from '@domain/money';
 import { addMonths, todayLocalISO } from '@domain/date';
 import { computeMonthlySummary } from '@domain/summary';
-import { readCached } from '@local-data/transaction-store';
+import { mergeWithCache, readCached } from '@local-data/transaction-store';
 import { Page, PageHeader, Grid, Stack, Inline } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
 import { Text } from '@shared/ui/Text';
@@ -22,29 +22,21 @@ import { LoadingSpinner } from '@shared/ui/LoadingSpinner';
 import { getPeriodLabel } from '@shared/format/formatters';
 import '../../app/styles/statistics.css';
 
-const MAX_PAGES = 20;
+const MAX_PAGES = 1_000;
 
 async function fetchMonth(period: string): Promise<any[]> {
   const rows: any[] = [];
   for (let page = 1; page <= MAX_PAGES; page += 1) {
     const response = await api.listTransactions({ period, page, limit: 100 });
-    if (response.error) throw new Error(response.error.message);
+    if (response.error) throw response.error;
     const batch = response.data ?? [];
     rows.push(...batch);
     if (batch.length < 100) break;
   }
+  if (rows.length === MAX_PAGES * 100) {
+    throw new Error('El período supera el máximo de movimientos consultable; las estadísticas no están completas.');
+  }
   return rows;
-}
-
-function mergeMonth(serverRows: any[], cached: any[], period: string) {
-  const byId = new Map<string, any>();
-  for (const tx of cached) {
-    if (tx.occurredOn?.startsWith(period)) byId.set(tx.id, tx);
-  }
-  for (const tx of serverRows) {
-    if (!byId.has(tx.id)) byId.set(tx.id, tx);
-  }
-  return Array.from(byId.values());
 }
 
 function percentChange(current: number, previous: number): number | null {
@@ -66,15 +58,17 @@ function ComparisonRow({ label, change }: { label: string; change: number | null
 }
 
 export function StatisticsPage() {
-  const { user } = useAuth();
+  const { user, defaultCurrency } = useAuth();
   const navigate = useNavigate();
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
-  const [currency, setCurrency] = useState<CurrencyCode>('ARS');
+  const [month, setMonth] = useState(() => todayLocalISO().slice(0, 7));
+  const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [previousTransactions, setPreviousTransactions] = useState<any[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => setCurrency(defaultCurrency), [defaultCurrency]);
 
   const previousMonth = useMemo(() => addMonths(month, -1) ?? month, [month]);
 
@@ -83,24 +77,44 @@ export function StatisticsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [currentRows, previousRows, catRes, cached] = await Promise.all([
+      const [currentRows, previousRows, catRes] = await Promise.all([
         fetchMonth(month),
         fetchMonth(previousMonth),
-        api.listCategories(true),
-        readCached(user.id)
+        api.listCategories(true)
       ]);
-      if (catRes.error) throw new Error(catRes.error.message);
+      if (catRes.error) throw catRes.error;
 
-      setTransactions(mergeMonth(currentRows, cached, month));
-      setPreviousTransactions(mergeMonth(previousRows, cached, previousMonth));
+      let localCacheReadFailed = false;
+      const mergeRows = async (rows: any[]) => {
+        try {
+          return await mergeWithCache(user.id, rows);
+        } catch {
+          localCacheReadFailed = true;
+          return rows;
+        }
+      };
+      const [current, previous] = await Promise.all([mergeRows(currentRows), mergeRows(previousRows)]);
+      setTransactions(current.filter((tx) => tx.occurredOn.startsWith(month)));
+      setPreviousTransactions(previous.filter((tx) => tx.occurredOn.startsWith(previousMonth)));
       setCategories(catRes.data ?? []);
+      if (localCacheReadFailed) {
+        setError('No se pudo leer la cola local; los movimientos offline pendientes podrían no aparecer en estas estadísticas.');
+      }
     } catch (e: any) {
-      const cached = await readCached(user.id).catch(() => []);
-      const current = cached.filter(tx => tx.occurredOn?.startsWith(month));
-      setTransactions(current);
-      setPreviousTransactions(cached.filter(tx => tx.occurredOn?.startsWith(previousMonth)));
-      if (current.length === 0) {
-        setError(e?.message ?? 'No pudimos cargar las estadísticas.');
+      if (canUseStaleData(e)) {
+        const cached = await readCached(user.id).catch(() => []);
+        const current = cached.filter(tx => tx.occurredOn?.startsWith(month));
+        setTransactions(current);
+        setPreviousTransactions(cached.filter(tx => tx.occurredOn?.startsWith(previousMonth)));
+        setCategories([]);
+        setError(current.length > 0
+          ? `No se pudieron actualizar las estadísticas (${formatApiError(e, 'error de conexión')}). Se muestran datos locales que pueden estar desactualizados.`
+          : `No se pudieron cargar las estadísticas (${formatApiError(e, 'error de conexión')}). No se muestran cifras sin confirmar.`);
+      } else {
+        setTransactions([]);
+        setPreviousTransactions([]);
+        setCategories([]);
+        setError(formatApiError(e, 'No pudimos cargar las estadísticas.'));
       }
     } finally {
       setLoading(false);

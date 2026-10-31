@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@shared/ui/Button';
+import { FinancialRangeError } from '@domain/money';
 import './ErrorBoundary.css';
 
 interface State {
@@ -23,9 +24,11 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
         <div className="ui-error-screen">
           <div className="ui-error-card">
             <p className="ui-error-kicker">Error inesperado</p>
-            <h1>Algo salió mal.</h1>
+            <h1>{this.state.error instanceof FinancialRangeError ? 'El total excede el rango seguro.' : 'Algo salió mal.'}</h1>
             <p className="ui-error-text">
-              No pudimos mostrar esta pantalla. Tus datos siguen guardados. Probá recargar; si vuelve a pasar, avisanos.
+              {this.state.error instanceof FinancialRangeError
+                ? 'No podemos calcular este total con exactitud. Tus movimientos siguen guardados; revisá los importes o contactá soporte.'
+                : 'No pudimos mostrar esta pantalla. Tus datos siguen guardados. Probá recargar; si vuelve a pasar, avisanos.'}
             </p>
             <div className="ui-error-actions">
               <Button onClick={() => window.location.reload()}>Recargar</Button>

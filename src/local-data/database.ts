@@ -47,6 +47,23 @@ export class FinanceDB extends Dexie {
 
   constructor() {
     super('finance-pwa-db');
+    this.version(1).stores({
+      transactions: 'id, userId, occurredOn, kind, currency',
+      categories: 'id, userId, kind',
+      budgets: 'id, userId, periodMonth, currency'
+    });
+
+    this.version(2).stores({
+      transactions: 'id, userId, occurredOn, kind, currency, synced, pendingOp, localVersion',
+      categories: 'id, userId, kind, synced',
+      budgets: 'id, userId, periodMonth, currency, synced',
+      syncMeta: 'id',
+      outbox: 'id, userId, entityType, entityId, createdAt'
+    }).upgrade(async (transaction) => {
+      await Promise.all(['syncMeta', 'outbox']
+        .map((name) => transaction.table(name).clear()));
+    });
+
     this.version(3).stores({
       transactions: 'id, userId, occurredOn, kind, currency, synced, pendingOp, localVersion',
       categories: 'id, userId, kind, synced',
@@ -67,7 +84,7 @@ export class FinanceDB extends Dexie {
     this.transactions.hook('updating', (changes, _id, row) => {
       const updates = changes as Partial<LocalTransaction>;
       updates.localVersion = (row.localVersion || 0) + 1;
-      if (!row.synced) updates.pendingOp = 'update';
+      if (!row.synced && updates.synced !== true) updates.pendingOp = 'update';
     });
   }
 }
@@ -108,6 +125,19 @@ export async function getUserOutboxCount(userId: string): Promise<number> {
   return db.outbox.where('userId').equals(userId).count();
 }
 
+export async function getLocalUserIds(): Promise<string[]> {
+  const [transactions, categories, budgets, outbox, syncMeta] = await Promise.all([
+    db.transactions.orderBy('userId').uniqueKeys(),
+    db.categories.orderBy('userId').uniqueKeys(),
+    db.budgets.orderBy('userId').uniqueKeys(),
+    db.outbox.orderBy('userId').uniqueKeys(),
+    db.syncMeta.toArray()
+  ]);
+  return Array.from(new Set([
+    ...transactions, ...categories, ...budgets, ...outbox, ...syncMeta.map((meta) => meta.userId)
+  ].filter((userId): userId is string => typeof userId === 'string' && userId.length > 0)));
+}
+
 export async function markOutboxDone(ids: string[]): Promise<void> {
   await db.outbox.where('id').anyOf(ids).delete();
 }
@@ -128,4 +158,15 @@ export async function clearUserData(userId: string): Promise<void> {
     const meta = await db.syncMeta.get('sync-meta');
     if (meta?.userId === userId) await db.syncMeta.delete('sync-meta');
   });
+}
+
+export async function requestPersistentStorage(
+  storage: Pick<StorageManager, 'persisted' | 'persist'> | undefined = typeof navigator === 'undefined' ? undefined : navigator.storage
+): Promise<boolean> {
+  if (!storage) return false;
+  try {
+    return (await storage.persisted()) || await storage.persist();
+  } catch {
+    return false;
+  }
 }

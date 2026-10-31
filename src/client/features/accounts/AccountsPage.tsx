@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, ArrowRightLeft, Pencil, Archive, Wallet, Landmark, Smartphone, CircleDollarSign, Trash2 } from 'lucide-react';
 import { api } from '@shared/api/client';
+import { useAuth } from '../../app/providers';
 import type { AccountBalance, AccountKind, AccountWithBalances } from '@contracts/account';
 import type { TransferResponse } from '@contracts/transfer';
-import { parseAmount, formatAmount, type CurrencyCode } from '@domain/money';
+import { formatAmount, type CurrencyCode } from '@domain/money';
+import { todayLocalISO } from '@domain/date';
 import { useCurrencyInput } from '@shared/hooks/useCurrencyInput';
 import { Page, PageHeader, Section, Stack, Grid, Inline } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
@@ -32,8 +34,6 @@ const KIND_ICONS: Record<AccountKind, React.ElementType> = {
   other: CircleDollarSign
 };
 
-const today = () => new Date().toISOString().slice(0, 10);
-
 interface AccountForm {
   name: string;
   kind: AccountKind;
@@ -51,21 +51,25 @@ interface TransferForm {
   note: string;
 }
 
-const emptyTransferForm = (): TransferForm => ({
+const emptyTransferForm = (currency: CurrencyCode): TransferForm => ({
   fromAccountId: '',
   toAccountId: '',
   amountMinor: null,
-  currency: 'ARS',
+  currency,
   crossCurrency: false,
   toAmountMinor: null,
-  toCurrency: 'USD',
-  occurredOn: today(),
+  toCurrency: currency === 'ARS' ? 'USD' : 'ARS',
+  occurredOn: todayLocalISO(),
   note: ''
 });
 
 export function AccountsPage() {
+  const { defaultCurrency } = useAuth();
   const [accounts, setAccounts] = useState<AccountWithBalances[]>([]);
   const [transfers, setTransfers] = useState<TransferResponse[]>([]);
+  const [transfersPage, setTransfersPage] = useState(1);
+  const [hasMoreTransfers, setHasMoreTransfers] = useState(false);
+  const [loadingMoreTransfers, setLoadingMoreTransfers] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,7 +79,7 @@ export function AccountsPage() {
   const [saving, setSaving] = useState(false);
 
   const [transferOpen, setTransferOpen] = useState(false);
-  const [transferForm, setTransferForm] = useState<TransferForm>(emptyTransferForm);
+  const [transferForm, setTransferForm] = useState<TransferForm>(() => emptyTransferForm(defaultCurrency));
 
   // Hooks para inputs de moneda con formateo ARS en vivo
   const fromAmountInput = useCurrencyInput({
@@ -91,31 +95,35 @@ export function AccountsPage() {
     allowEmpty: true,
     onChange: (valueMinor) => setTransferForm(f => ({ ...f, toAmountMinor: valueMinor }))
   });
+  const setFromAmountMinor = fromAmountInput.setValueMinor;
+  const setToAmountMinor = toAmountInput.setValueMinor;
 
   const [archiveTarget, setArchiveTarget] = useState<AccountWithBalances | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TransferResponse | null>(null);
 
   // Actualizar hooks cuando cambia la moneda
   useEffect(() => {
-    fromAmountInput.setValueMinor(transferForm.amountMinor);
-  }, [transferForm.currency, fromAmountInput]);
+    setFromAmountMinor(transferForm.amountMinor);
+  }, [transferForm.currency, transferForm.amountMinor, setFromAmountMinor]);
 
   useEffect(() => {
-    toAmountInput.setValueMinor(transferForm.toAmountMinor);
-  }, [transferForm.toCurrency, toAmountInput]);
+    setToAmountMinor(transferForm.toAmountMinor);
+  }, [transferForm.toCurrency, transferForm.toAmountMinor, setToAmountMinor]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [accountsRes, transfersRes] = await Promise.all([
-        api.listAccounts(),
-        api.listTransfers({ limit: 25 })
+        api.listAccounts(true),
+        api.listTransfers({ page: 1, limit: 25 })
       ]);
       if (accountsRes.error) throw accountsRes.error;
       if (transfersRes.error) throw transfersRes.error;
       setAccounts(accountsRes.data ?? []);
       setTransfers(transfersRes.data ?? []);
+      setTransfersPage(1);
+      setHasMoreTransfers((transfersRes.data ?? []).length === 25);
     } catch (e: any) {
       setError(e?.message ?? 'No pudimos cargar tus cuentas.');
     } finally {
@@ -124,6 +132,28 @@ export function AccountsPage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const loadMoreTransfers = async () => {
+    if (loadingMoreTransfers || !hasMoreTransfers) return;
+    setLoadingMoreTransfers(true);
+    setError(null);
+    const nextPage = transfersPage + 1;
+    try {
+      const response = await api.listTransfers({ page: nextPage, limit: 25 });
+      if (response.error) throw new Error(response.error.message);
+      const rows = response.data ?? [];
+      setTransfers((current) => {
+        const ids = new Set(current.map((transfer) => transfer.id));
+        return [...current, ...rows.filter((transfer) => !ids.has(transfer.id))];
+      });
+      setTransfersPage(nextPage);
+      setHasMoreTransfers(rows.length === 25);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'No pudimos cargar más transferencias.');
+    } finally {
+      setLoadingMoreTransfers(false);
+    }
+  };
 
   const totals = useMemo(() => {
     const byCurrency = new Map<CurrencyCode, number>();
@@ -205,11 +235,24 @@ export function AccountsPage() {
     }
   };
 
+  const restoreAccount = async (account: AccountWithBalances) => {
+    setSaving(true);
+    try {
+      const response = await api.updateAccount(account.id, { archivedAt: null });
+      if (response.error) throw new Error(response.error.message);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? 'No pudimos restaurar la cuenta.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openTransfer = () => {
     const from = activeAccounts.find(a => a.isDefault) ?? activeAccounts[0];
     const to = activeAccounts.find(a => a.id !== from?.id);
     setTransferForm({
-      ...emptyTransferForm(),
+      ...emptyTransferForm(defaultCurrency),
       fromAccountId: from?.id ?? '',
       toAccountId: to?.id ?? '',
     });
@@ -342,11 +385,11 @@ export function AccountsPage() {
         />
       )}
 
-      {accounts.length > 0 && (
-        <Section title="Tus cuentas">
+      {activeAccounts.length > 0 && (
+        <Section title="Cuentas activas">
           <Panel tone="paper" radius="panel" padding="none">
             <div className="accounts-list">
-              {accounts.map(account => {
+              {activeAccounts.map(account => {
                 const Icon = KIND_ICONS[account.kind];
                 return (
                   <ListRow
@@ -383,7 +426,33 @@ export function AccountsPage() {
         </Section>
       )}
 
-      <Section title="Transferencias recientes">
+      {accounts.some((account) => account.archivedAt) && (
+        <Section title="Cuentas archivadas">
+          <Panel tone="paper" radius="panel" padding="none">
+            <div className="accounts-list">
+              {accounts.filter((account) => account.archivedAt).map((account) => {
+                const Icon = KIND_ICONS[account.kind];
+                return (
+                  <ListRow
+                    key={account.id}
+                    leading={<span className="accounts-icon"><Icon size={19} strokeWidth={1.6} aria-hidden="true" /></span>}
+                    title={account.name}
+                    subtitle={`${KIND_LABELS[account.kind]} · Archivada`}
+                    meta={renderBalances(account.balances)}
+                    trailing={(
+                      <Button variant="ghost" size="sm" onClick={() => void restoreAccount(account)} loading={saving}>
+                        Restaurar
+                      </Button>
+                    )}
+                  />
+                );
+              })}
+            </div>
+          </Panel>
+        </Section>
+      )}
+
+      <Section title="Transferencias">
         {transfers.length === 0 ? (
           <Panel tone="paper" radius="panel" padding="lg">
             <Text variant="small" tone="stone">
@@ -402,7 +471,7 @@ export function AccountsPage() {
                   meta={
                     <span className="accounts-balance">
                       {formatAmount(transfer.fromAmountMinor, transfer.fromCurrency)}
-                      {transfer.toCurrency !== transfer.fromCurrency && (
+                      {(transfer.toCurrency !== transfer.fromCurrency || transfer.toAmountMinor !== transfer.fromAmountMinor) && (
                         <> → {formatAmount(transfer.toAmountMinor, transfer.toCurrency)}</>
                       )}
                     </span>
@@ -416,6 +485,13 @@ export function AccountsPage() {
               ))}
             </div>
           </Panel>
+        )}
+        {hasMoreTransfers && (
+          <Inline justify="center">
+            <Button variant="secondary" loading={loadingMoreTransfers} onClick={() => void loadMoreTransfers()}>
+              Cargar más transferencias
+            </Button>
+          </Inline>
         )}
       </Section>
 

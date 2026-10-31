@@ -5,7 +5,8 @@ import { useAuth } from '../../app/providers';
 import { api } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
 import type { AccountWithBalances } from '@contracts/account';
-import { parseAmount, type CurrencyCode } from '@domain/money';
+import { type CurrencyCode } from '@domain/money';
+import { todayLocalISO } from '@domain/date';
 import { mergeWithCache, cacheServerRows, readCached, savePendingCreate } from '@local-data/transaction-store';
 import { Page, PageHeader, Grid, Stack, Inline } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
@@ -37,22 +38,20 @@ interface TxFormData {
   accountId: string;
 }
 
-const today = () => new Date().toISOString().slice(0, 7); // para MonthStepper
-const todayDate = () => new Date().toISOString().slice(0, 10);
-const emptyForm = (kind: TransactionKind = 'expense'): TxFormData => ({
+const emptyForm = (kind: TransactionKind, currency: CurrencyCode): TxFormData => ({
   amountMinor: null,
-  currency: 'ARS',
+  currency,
   categoryId: '',
-  occurredOn: todayDate(),
+  occurredOn: todayLocalISO(),
   note: '',
   kind,
   accountId: ''
 });
 
 export function TransactionsPage() {
-  const { user, syncNow } = useAuth();
+  const { user, syncNow, defaultCurrency } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(() => todayLocalISO().slice(0, 7));
   const [transactions, setTransactions] = useState<any[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [accounts, setAccounts] = useState<AccountWithBalances[]>([]);
@@ -66,7 +65,7 @@ export function TransactionsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [editingTx, setEditingTx] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
-  const [formData, setFormData] = useState<TxFormData>(emptyForm());
+  const [formData, setFormData] = useState<TxFormData>(() => emptyForm('expense', defaultCurrency));
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [newCategoryOpen, setNewCategoryOpen] = useState(false);
@@ -84,6 +83,7 @@ export function TransactionsPage() {
       setFormData(f => ({ ...f, amountMinor: valueMinor }));
     }
   });
+  const setAmountMinor = amountInput.setValueMinor;
 
   const loadData = useCallback(async (append = false, nextPage = page) => {
     if (!user) return;
@@ -111,12 +111,25 @@ export function TransactionsPage() {
       setOffline(false);
     } catch (e: any) {
       const cached = user ? await readCached(user.id) : [];
-      const cachedForMonth = cached.filter((tx: any) => tx.occurredOn?.startsWith(month));
-      if (cachedForMonth.length > 0 || e?.code === 'NETWORK_ERROR' || !navigator.onLine) {
-        setTransactions(prev => (append ? prev : cachedForMonth));
+      const cachedForMonth = cached.filter((tx: any) =>
+        tx.occurredOn?.startsWith(month) &&
+        (!filters.currency || tx.currency === filters.currency) &&
+        (!filters.kind || tx.kind === filters.kind) &&
+        (!filters.categoryId || tx.categoryId === filters.categoryId)
+      );
+      const offlineFailure = e?.code === 'NETWORK_ERROR' || e?.code === 'OFFLINE' || (!e?.code && !navigator.onLine);
+      if (offlineFailure) {
+        setTransactions(cachedForMonth);
+        setPage(1);
+        setHasMore(false);
         setOffline(true);
-        setError(null);
+        setError(cachedForMonth.length > 0
+          ? 'Sin conexión. Se muestran movimientos guardados en este dispositivo; pueden estar desactualizados.'
+          : 'Sin conexión y no hay movimientos guardados para estos filtros.');
       } else {
+        setOffline(false);
+        setHasMore(false);
+        if (!append) setTransactions([]);
         setError(e?.message ?? 'No pudimos cargar los movimientos.');
       }
     } finally {
@@ -150,7 +163,12 @@ export function TransactionsPage() {
   useEffect(() => {
     const handleOnline = async () => {
       setOffline(false);
-      await syncNow();
+      try {
+        await syncNow();
+      } catch {
+        setError('No se pudo sincronizar. Los cambios pendientes siguen guardados en este dispositivo.');
+        return;
+      }
       await loadData(false, 1);
     };
     const handleOffline = () => setOffline(true);
@@ -178,11 +196,11 @@ export function TransactionsPage() {
   };
 
   const openCreate = (kind: TransactionKind = 'expense') => {
-    const firstCategory = categories.find(c => c.kind === kind);
+    const firstCategory = categories.find(c => c.kind === kind && !c.archivedAt);
     const defaultAccount = accounts.find(a => a.isDefault) ?? accounts[0];
-    const newForm = { ...emptyForm(kind), categoryId: firstCategory?.id ?? '', accountId: defaultAccount?.id ?? '' };
+    const newForm = { ...emptyForm(kind, defaultCurrency), categoryId: firstCategory?.id ?? '', accountId: defaultAccount?.id ?? '' };
     setFormData(newForm);
-    amountInput.setValueMinor(null);
+    setAmountMinor(null);
     setFormError(null);
     resetNewCategory();
     setEditingTx({ kind });
@@ -200,7 +218,7 @@ export function TransactionsPage() {
       kind: tx.kind,
       accountId: tx.accountId ?? ''
     });
-    amountInput.setValueMinor(tx.amountMinor);
+    setAmountMinor(tx.amountMinor);
     setFormError(null);
     resetNewCategory();
     setEditingTx(tx);
@@ -251,26 +269,29 @@ export function TransactionsPage() {
 
   useEffect(() => {
     if (editingTx && !editingTx.id && !formData.categoryId && categories.length > 0) {
-      const first = categories.find(c => c.kind === formData.kind);
+      const first = categories.find(c => c.kind === formData.kind && !c.archivedAt);
       if (first) setFormData(f => ({ ...f, categoryId: first.id }));
     }
   }, [categories, editingTx, formData.categoryId, formData.kind]);
 
   // Actualizar hook cuando cambia la moneda
   useEffect(() => {
-    amountInput.setValueMinor(formData.amountMinor);
-  }, [formData.currency, amountInput]);
+    setAmountMinor(formData.amountMinor);
+  }, [formData.currency, formData.amountMinor, setAmountMinor]);
 
   useEffect(() => {
     const mode = searchParams.get('new');
     if (mode === 'expense' || mode === 'income') {
-      const newForm = { ...emptyForm(mode), categoryId: categories.find(c => c.kind === mode)?.id ?? '' };
+      const newForm = {
+        ...emptyForm(mode, defaultCurrency),
+        categoryId: categories.find(c => c.kind === mode && !c.archivedAt)?.id ?? ''
+      };
       setFormData(newForm);
-      amountInput.setValueMinor(null);
+      setAmountMinor(null);
       setEditingTx({ kind: mode });
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, setSearchParams, categories, amountInput]);
+  }, [searchParams, setSearchParams, categories, setAmountMinor, defaultCurrency]);
 
   const validate = () => {
     if (formData.amountMinor === null || formData.amountMinor === undefined || formData.amountMinor <= 0) {
@@ -323,7 +344,7 @@ export function TransactionsPage() {
           setLocalNotice('Guardado en este dispositivo. Se sincroniza al recuperar conexión.');
           setOffline(true);
           closeModal();
-          setFormData(emptyForm());
+          setFormData(emptyForm('expense', defaultCurrency));
           await loadData(false, 1);
           return;
         }
@@ -331,7 +352,7 @@ export function TransactionsPage() {
       }
 
       closeModal();
-      setFormData(emptyForm());
+      setFormData(emptyForm('expense', defaultCurrency));
       await loadData(false, 1);
     } catch (e: any) {
       setFormError(e?.message ?? 'No pudimos guardar el movimiento.');
@@ -365,8 +386,8 @@ export function TransactionsPage() {
   }));
 
   const categoryOptions = categories
-    .filter(c => c.kind === formData.kind)
-    .map(c => ({ value: c.id, label: c.name }));
+    .filter(c => c.kind === formData.kind && (!c.archivedAt || c.id === formData.categoryId))
+    .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name }));
 
   return (
     <Page>
@@ -436,7 +457,7 @@ export function TransactionsPage() {
       {!loading && items.length === 0 && !error && (
         <EmptyState
           title="Sin movimientos"
-          message={month === new Date().toISOString().slice(0, 7)
+          message={month === todayLocalISO().slice(0, 7)
             ? 'Todavía no registraste movimientos este mes.'
             : 'No hay movimientos en este período con los filtros elegidos.'}
           action={{ label: 'Agregar el primero', onClick: () => openCreate('expense') }}

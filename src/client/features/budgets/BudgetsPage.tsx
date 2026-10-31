@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { api } from '@shared/api/client';
+import { useAuth } from '../../app/providers';
 import type { BudgetWithSpent } from '@contracts/budget';
 import type { CategoryResponse } from '@contracts/category';
-import { parseAmount, type CurrencyCode } from '@domain/money';
+import { type CurrencyCode } from '@domain/money';
+import { todayLocalISO } from '@domain/date';
 import { useCurrencyInput } from '@shared/hooks/useCurrencyInput';
 import { Page, PageHeader, Stack, Inline, Grid } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
@@ -25,17 +27,18 @@ interface BudgetForm {
   limitMinor: number | null;
 }
 
-const emptyForm = (categoryId = ''): BudgetForm => ({ categoryId, currency: 'ARS', limitMinor: null });
+const emptyForm = (categoryId: string, currency: CurrencyCode): BudgetForm => ({ categoryId, currency, limitMinor: null });
 
 export function BudgetsPage() {
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const { defaultCurrency } = useAuth();
+  const [month, setMonth] = useState(() => todayLocalISO().slice(0, 7));
   const [budgets, setBudgets] = useState<BudgetWithSpent[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<BudgetWithSpent | null>(null);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState<BudgetForm>(emptyForm());
+  const [form, setForm] = useState<BudgetForm>(() => emptyForm('', defaultCurrency));
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<BudgetWithSpent | null>(null);
@@ -47,11 +50,12 @@ export function BudgetsPage() {
     allowEmpty: true,
     onChange: (valueMinor) => setForm(f => ({ ...f, limitMinor: valueMinor }))
   });
+  const setLimitMinor = limitInput.setValueMinor;
 
   // Actualizar hook cuando cambia la moneda
   useEffect(() => {
-    limitInput.setValueMinor(form.limitMinor);
-  }, [form.currency, limitInput]);
+    setLimitMinor(form.limitMinor);
+  }, [form.currency, form.limitMinor, setLimitMinor]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,6 +83,13 @@ export function BudgetsPage() {
     [categories]
   );
   const categoryById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
+  const budgetCategoryOptions = useMemo(() => {
+    const selected = categoryById.get(form.categoryId);
+    if (editing && selected && (selected.archivedAt || selected.kind !== 'expense')) {
+      return [...expenseCategories, selected];
+    }
+    return expenseCategories;
+  }, [categoryById, editing, expenseCategories, form.categoryId]);
   const categoryName = (id: string) => categoryById.get(id)?.name ?? 'Sin categoría';
   const categoryIcon = (id: string) => categoryById.get(id)?.iconKey ?? 'tag';
 
@@ -93,8 +104,8 @@ export function BudgetsPage() {
   }));
 
   const openCreate = () => {
-    setForm({ ...emptyForm(expenseCategories[0]?.id ?? ''), currency: 'ARS' });
-    limitInput.setValueMinor(null);
+    setForm(emptyForm(expenseCategories[0]?.id ?? '', defaultCurrency));
+    setLimitMinor(null);
     setFormError(null);
     setCreating(true);
   };
@@ -107,7 +118,7 @@ export function BudgetsPage() {
       currency: budget.currency,
       limitMinor: budget.limitMinor
     });
-    limitInput.setValueMinor(budget.limitMinor);
+    setLimitMinor(budget.limitMinor);
     setFormError(null);
     setEditing(budget);
   };
@@ -236,7 +247,10 @@ export function BudgetsPage() {
               label="Categoría"
               value={form.categoryId}
               onChange={v => setForm(f => ({ ...f, categoryId: v }))}
-              options={expenseCategories.map(c => ({ value: c.id, label: c.name }))}
+              options={budgetCategoryOptions.map(c => ({
+                value: c.id,
+                label: c.archivedAt ? `${c.name} (archivada)` : c.kind !== 'expense' ? `${c.name} (tipo anterior)` : c.name
+              }))}
               placeholder="Elegí una categoría"
               required
             />

@@ -1,0 +1,6 @@
+- [Audit Methodology](audit-methodology.md) — How to conduct thorough static audits for this finance PWA
+- [Project Conventions](project-conventions.md) — Coding patterns, validation rules, and architectural decisions established during audit fixes
+- [Sync Protocol](sync-protocol.md) — Offline sync engine behavior, idempotency, tombstones, and cursor management
+- [Financial Calculations](financial-calculations.md) — Precision rules, overflow guards, and aggregation patterns for monetary values
+- [Security Boundaries](security-boundaries.md) — Origin validation, rate limits, body limits, and authentication patterns
+- [User Preferences](user-preferences.md) — User's expectations for audit depth, evidence-based reporting, and fix verification

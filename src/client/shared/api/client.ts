@@ -6,6 +6,7 @@ import type { AccountCreate, AccountUpdate, AccountResponse, AccountWithBalances
 import type { TransferCreate, TransferResponse } from '@contracts/transfer';
 import type { SyncPullResponse } from '@contracts/sync';
 import type { UserPublic } from '@contracts/auth';
+import type { CurrencyCode } from '@domain/money';
 import { REQUIRED_APP_VERSION_KEY } from '@client/app/version-policy';
 
 declare const __APP_VERSION__: string;
@@ -43,6 +44,38 @@ export interface ApiError {
 export interface ApiResponse<T> {
   data: T | null;
   error: ApiError | null;
+}
+
+export function canUseStaleData(error: unknown): boolean {
+  const code = (error as ApiError | null)?.code;
+  if (code === 'UNAUTHORIZED' || code === 'FORBIDDEN_ORIGIN' || code === 'UPDATE_REQUIRED' || code === 'VERSION_POLICY_INVALID') {
+    return false;
+  }
+  if (code === 'NETWORK_ERROR' || code === 'OFFLINE' || code === 'RATE_LIMITED') return true;
+  if (code && /^HTTP_5\d\d$/.test(code)) return true;
+  return !code && typeof navigator !== 'undefined' && !navigator.onLine;
+}
+
+export function formatApiError(error: unknown, fallback: string): string {
+  const apiError = error as ApiError | null;
+  switch (apiError?.code) {
+    case 'UNAUTHORIZED':
+    case 'HTTP_401':
+      return 'La sesión venció. Iniciá sesión nuevamente para actualizar tus datos.';
+    case 'UPDATE_REQUIRED':
+      return 'Actualizá la aplicación para volver a consultar tus datos.';
+    case 'VERSION_POLICY_INVALID':
+      return 'La política de versión de la aplicación no está configurada correctamente.';
+    case 'RATE_LIMITED':
+      return apiError.message || 'El servidor limitó temporalmente las solicitudes. Esperá y volvé a intentar.';
+    case 'NETWORK_ERROR':
+    case 'OFFLINE':
+      return 'No hay conexión con el servidor.';
+  }
+  if (apiError?.code && /^HTTP_5\d\d$/.test(apiError.code)) {
+    return 'El servidor no pudo completar la solicitud.';
+  }
+  return apiError?.message || (error instanceof Error ? error.message : fallback);
 }
 
 const API_BASE = '/api';
@@ -98,10 +131,20 @@ export async function getSession(): Promise<ApiResponse<UserPublic>> {
 export interface BootstrapData {
   userId: string;
   syncEpoch: string;
+  defaultCurrency: CurrencyCode;
+  timeZone: string;
+  onboardingComplete: boolean;
 }
 
 export async function getBootstrap(): Promise<ApiResponse<BootstrapData>> {
   return request<BootstrapData>('/bootstrap');
+}
+
+export async function updatePreferences(defaultCurrency: CurrencyCode): Promise<ApiResponse<{ defaultCurrency: CurrencyCode }>> {
+  return request<{ defaultCurrency: CurrencyCode }>('/account/preferences', {
+    method: 'PATCH',
+    body: JSON.stringify({ default_currency: defaultCurrency })
+  });
 }
 
 // Transactions
@@ -152,6 +195,7 @@ export interface SyncPushItem {
 
 export interface SyncPushResult {
   applied: number;
+  appliedOperationIds: string[];
   conflicts: Array<{ id: string; error: string }>;
   newCursor: number;
 }
@@ -228,7 +272,7 @@ export async function updateAccount(id: string, data: AccountUpdate): Promise<Ap
 }
 
 // Transferencias entre cuentas propias
-export async function listTransfers(params: { period?: string; accountId?: string; limit?: number } = {}): Promise<ApiResponse<TransferResponse[]>> {
+export async function listTransfers(params: { period?: string; accountId?: string; page?: number; limit?: number } = {}): Promise<ApiResponse<TransferResponse[]>> {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
@@ -258,11 +302,37 @@ export async function exportCSV(): Promise<ApiResponse<Blob>> {
   return { data: await res.blob(), error: null };
 }
 
-export async function deleteAccount(confirmation: string): Promise<ApiResponse<null>> {
-  return request<null>('/account/delete', {
+export interface AccountDeletionStatus {
+  found: boolean;
+  completed: boolean;
+}
+
+export type AccountDeletionLookup = { requestId: string } | { userId: string };
+
+export async function deleteAccount(confirmation: string, requestId: string): Promise<ApiResponse<{ completed: boolean }>> {
+  return request<{ completed: boolean }>('/account/delete', {
     method: 'POST',
-    body: JSON.stringify({ confirmation })
+    body: JSON.stringify({ confirmation, requestId })
   });
+}
+
+export async function getAccountDeletionStatus(lookup: AccountDeletionLookup): Promise<ApiResponse<AccountDeletionStatus>> {
+  return request<AccountDeletionStatus>('/account/deletion-status', {
+    method: 'POST',
+    body: JSON.stringify(lookup)
+  });
+}
+
+export async function waitForAccountDeletion(lookup: AccountDeletionLookup): Promise<ApiResponse<AccountDeletionStatus>> {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const status = await getAccountDeletionStatus(lookup);
+    if (status.error || !status.data || status.data.completed || !status.data.found) return status;
+    if (attempt < 29) await new Promise((resolve) => setTimeout(resolve, 2100));
+  }
+  return {
+    data: null,
+    error: { code: 'ACCOUNT_DELETION_PENDING', message: 'La eliminación quedó registrada y se está completando. Volvé a intentar en un momento.' }
+  };
 }
 
 // Export api object for convenience
@@ -289,5 +359,8 @@ export const api = {
   createTransfer,
   deleteTransfer,
   exportCSV,
-  deleteAccount
+  deleteAccount,
+  getAccountDeletionStatus,
+  waitForAccountDeletion,
+  updatePreferences
 };

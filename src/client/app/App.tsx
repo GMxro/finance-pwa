@@ -32,8 +32,10 @@ function AppLayout() {
       <Route path="/presupuestos" element={<BudgetsPage />} />
       <Route path="/estadisticas" element={<StatisticsPage />} />
       <Route path="/ajustes/categorias" element={<CategoriesPage />} />
-      <Route path="/categorias" element={<Navigate to="/ajustes/categorias" replace />} />
-      <Route path="/ajustes" element={<SettingsPage />} />
+     <Route path="/categorias" element={<Navigate to="/ajustes/categorias" replace />} />
+     <Route path="/ajustes" element={<SettingsPage />} />
+      <Route path="/terminos" element={<TermsPage />} />
+      <Route path="/privacidad" element={<PrivacyPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -65,3 +67,5 @@ function AppRoutes() {
 export function App() {
   return <AppRoutes />;
 }
+import { TermsPage } from '@client/features/legal/TermsPage';
+import { PrivacyPage } from '@client/features/legal/PrivacyPage';

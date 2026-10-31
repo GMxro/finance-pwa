@@ -13,7 +13,7 @@
 | Fugas en logs | No se registran cuerpos, importes, notas, emails ni cookies; solo mensajes de error técnicos y request id. |
 | Duplicados por reintento | UUID de cliente + `UNIQUE(user_id, id)` + comparación de contenido en sync. |
 | Resurrección tras restore | Journal R2 con markers de cuenta y movimiento, retención 90 días. |
-| Borrado incompleto | Estado `deletion_pending_at`, markers primero, cascada explícita y prueba de integración. |
+| Borrado incompleto | Lote D1 atómico, recibo durable, journal R2 paginado e idempotente; los reintentos continúan el journal y las mutaciones quedan bloqueadas mientras el borrado está pendiente. |
 
 ## Cabeceras
 
@@ -35,10 +35,31 @@ leerlo y el navegador puede desalojarlo. El cierre de sesión limpia la caché c
 movimientos pendientes; si los hay, se conservan bajo la identidad anterior y nunca se
 envían con otra cuenta.
 
+Cuando una sesión se inicia, la aplicación solicita al navegador almacenamiento persistente.
+El navegador puede rechazarlo o eliminar los datos igualmente; los movimientos offline no
+se pueden recuperar hasta que hayan llegado al servidor. La clave de recuperación de borrado
+solo contiene un identificador aleatorio y se elimina después de confirmar el borrado remoto.
+El servidor conserva una constancia mínima y sin el ID del usuario para resolver respuestas
+perdidas de solicitudes de borrado.
+
+Las solicitudes autenticadas tienen límites distribuidos en D1: 180 lecturas y 60 mutaciones
+por usuario/minuto, y 20 solicitudes de push de sincronización/minuto. Las consultas del estado de borrado se limitan
+a 30/minuto por IP, almacenando su hash. El endpoint público de autenticación conserva el
+límite configurado por Better Auth; las reglas de borde siguen siendo una defensa adicional.
+
+## Importes y agregados
+
+Los importes se guardan en unidades menores como enteros seguros. El servidor limita el flujo
+total absoluto por usuario y moneda, incluyendo movimientos y transferencias, para que saldos,
+presupuestos y estadísticas no excedan el rango exacto de JavaScript. Los datos históricos que
+ya excedan ese rango se conservan, pero los endpoints de agregación devuelven un error controlado
+en lugar de redondearlos.
+
 ## Pendiente antes de producción
 
 1. Credenciales OAuth reales y consent screen configurada.
-2. Bucket Lock de 90 días configurado en R2 (se configura en el bucket, no en código).
+ 2. Bucket Lock de 90 días y lifecycle rule de expiración en R2 (se configura en el bucket, no en código).
 3. Revisión legal de privacidad, retención y borrado.
-4. Rate limiting de borde (Cloudflare WAF/Rate Limiting) para `/api/auth/*`.
-5. Revisión de CSP en el dominio final (sin `unsafe-inline` en scripts).
+ 4. Rate limiting de borde (Cloudflare WAF/Rate Limiting) para `/api/auth/*` y endpoints de escritura.
+ 5. Revisión de CSP en el dominio final (sin `unsafe-inline` en scripts).
+ 6. Configuración de `MIN_APP_VERSION` en `wrangler.jsonc` para producción.

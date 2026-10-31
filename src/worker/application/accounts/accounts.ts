@@ -8,6 +8,25 @@ import type {
 } from '@contracts/account';
 import { NotFoundError, ValidationError } from '../../middleware/error-handler';
 
+function safeBalance(value: unknown): number {
+  const amount = Number(value);
+  if (!Number.isSafeInteger(amount)) {
+    throw new ValidationError('El saldo excede el rango exacto admitido.');
+  }
+  return amount;
+}
+
+async function balanceQuery<T>(query: Promise<T>): Promise<T> {
+  try {
+    return await query;
+  } catch (error) {
+    if (error instanceof Error && /integer overflow/i.test(error.message)) {
+      throw new ValidationError('El saldo excede el rango exacto admitido.');
+    }
+    throw error;
+  }
+}
+
 function mapAccount(row: any): AccountResponse {
   return {
     id: row.id,
@@ -30,7 +49,7 @@ const ACCOUNT_COLUMNS = `id, user_id, name, kind, is_default, sort_order, archiv
  * cuenta de origen y suma en la de destino. Nunca toca ingresos ni gastos.
  */
 async function balancesByAccount(env: Env, userId: string): Promise<Map<string, Array<{ currency: 'ARS' | 'USD'; amountMinor: number }>>> {
-  const result = await env.DB.prepare(`
+  const result = await balanceQuery(env.DB.prepare(`
     SELECT account_id, currency_code, SUM(delta_minor) AS net_minor
     FROM (
       SELECT account_id, currency_code,
@@ -47,12 +66,12 @@ async function balancesByAccount(env: Env, userId: string): Promise<Map<string, 
       WHERE user_id = ? AND deleted_at IS NULL
     )
     GROUP BY account_id, currency_code
-  `).bind(userId, userId, userId).all();
+  `).bind(userId, userId, userId).all());
 
   const map = new Map<string, Array<{ currency: 'ARS' | 'USD'; amountMinor: number }>>();
   for (const row of result.results as any[]) {
     const list = map.get(row.account_id) ?? [];
-    list.push({ currency: row.currency_code, amountMinor: Number(row.net_minor) });
+    list.push({ currency: row.currency_code, amountMinor: safeBalance(row.net_minor) });
     map.set(row.account_id, list);
   }
   return map;

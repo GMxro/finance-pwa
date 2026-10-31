@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Download, LogOut, ChevronRight, Layers, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../app/providers';
-import { api } from '@shared/api/client';
+import { APP_VERSION, api } from '@shared/api/client';
+import { ARGENTINA_TZ } from '@domain/date';
 import { Page, PageHeader, Stack, Inline, Divider } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
 import { Text } from '@shared/ui/Text';
@@ -13,7 +14,7 @@ import { ListRow } from '@shared/ui/ListRow';
 import './SettingsPage.css';
 
 export function SettingsPage() {
-  const { user, logout, syncState, syncNow } = useAuth();
+  const { user, logout, syncState, syncNow, defaultCurrency } = useAuth();
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logoutPrompt, setLogoutPrompt] = useState<{
@@ -22,6 +23,7 @@ export function SettingsPage() {
     step: 'choice' | 'discard-confirmation';
   } | null>(null);
   const [logoutBusy, setLogoutBusy] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const logoutDialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function SettingsPage() {
     if (!logoutPrompt && dialog?.open) dialog.close();
   }, [logoutPrompt]);
 
-  const exportCSV = async () => {
+const exportCSV = async () => {
     setExporting(true);
     setError(null);
     try {
@@ -51,7 +53,7 @@ export function SettingsPage() {
   };
 
   const syncLabel = syncState.error
-    ? 'Error de sincronización'
+    ? `${syncState.pendingCount} pendiente${syncState.pendingCount === 1 ? '' : 's'} · Error de sincronización`
     : syncState.status === 'syncing'
       ? 'Sincronizando…'
       : syncState.pendingCount > 0
@@ -62,10 +64,63 @@ export function SettingsPage() {
     ? new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(syncState.lastSync))
     : 'Todavía no sincronizaste';
 
+  const handleSync = async () => {
+    setError(null);
+    try {
+      await syncNow();
+    } catch {
+      setError(syncState.pendingCount > 0
+        ? `No se pudo sincronizar. Tus ${syncState.pendingCount} cambios siguen pendientes en este dispositivo.`
+        : 'No se pudo completar la sincronización. Volvé a intentar.');
+    }
+  };
+
+  const performAccountDeletion = async () => {
+    if (!user) throw new Error('No pudimos identificar la cuenta activa.');
+    const key = `finance-pwa:account-deletion:${user.id}`;
+    let savedId: string | null;
+    let requestId: string;
+    try {
+      savedId = localStorage.getItem(key);
+      requestId = savedId && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(savedId)
+        ? savedId
+        : crypto.randomUUID();
+      localStorage.setItem(key, requestId);
+    } catch {
+      throw new Error('No se inició el borrado: el navegador no permitió guardar la clave de recuperación. Habilitá el almacenamiento del sitio e intentá de nuevo.');
+    }
+
+    const finish = async () => {
+      await logout({ accountDeleted: true });
+      localStorage.removeItem(key);
+    };
+
+    if (savedId === requestId) {
+      const previous = await api.waitForAccountDeletion({ requestId });
+      if (previous.data?.completed) return finish();
+      if (previous.error) throw new Error(previous.error.message);
+    }
+
+    const response = await api.deleteAccount('ELIMINAR MI CUENTA', requestId);
+    if (response.error) {
+      const status = await api.waitForAccountDeletion({ requestId });
+      if (status.data?.completed) return finish();
+      throw new Error(status.error?.message ?? response.error.message);
+    }
+    if (!response.data?.completed) {
+      const status = await api.waitForAccountDeletion({ requestId });
+      if (!status.data?.completed) throw new Error(status.error?.message ?? 'El borrado sigue en proceso. Volvé a intentar.');
+    }
+    await finish();
+  };
+
   const deleteAccount = async () => {
-    const response = await api.deleteAccount('ELIMINAR MI CUENTA');
-    if (response.error) throw new Error(response.error.message);
-    await logout({ accountDeleted: true });
+    setDeletingAccount(true);
+    try {
+      await performAccountDeletion();
+    } finally {
+      setDeletingAccount(false);
+    }
   };
 
   const requestLogout = async () => {
@@ -152,13 +207,18 @@ export function SettingsPage() {
                   variant="secondary"
                   size="sm"
                   leftIcon={<RefreshCw size={15} />}
-                  onClick={() => void syncNow()}
+                  onClick={() => void handleSync()}
                   disabled={syncState.status === 'syncing'}
                 >
                   Sincronizar
                 </Button>
               </Inline>
             </Inline>
+            {syncState.pendingCount > 0 && (
+              <Text variant="caption" tone="stone">
+                Los cambios pendientes están guardados en este navegador. Si borrás los datos del sitio antes de sincronizarlos, no se podrán recuperar.
+              </Text>
+            )}
           </Stack>
         </Panel>
 
@@ -182,15 +242,15 @@ export function SettingsPage() {
             <div className="settings-grid">
               <div className="settings-field">
                 <span className="settings-field__label">Versión</span>
-                <span className="settings-field__value">0.1.0</span>
+                <span className="settings-field__value">{APP_VERSION}</span>
               </div>
               <div className="settings-field">
                 <span className="settings-field__label">Moneda base</span>
-                <span className="settings-field__value">ARS</span>
+                <span className="settings-field__value">{defaultCurrency}</span>
               </div>
               <div className="settings-field">
                 <span className="settings-field__label">Zona horaria</span>
-                <span className="settings-field__value">America/Argentina/Buenos_Aires</span>
+                <span className="settings-field__value">{ARGENTINA_TZ}</span>
               </div>
             </div>
             <Inline gap="md">
@@ -207,6 +267,7 @@ export function SettingsPage() {
             actionLabel="Eliminar mi cuenta"
             confirmText="ELIMINAR MI CUENTA"
             onAction={deleteAccount}
+            loading={deletingAccount}
           />
         </Panel>
       </Stack>

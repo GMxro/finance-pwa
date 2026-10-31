@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../app/providers';
-import { api } from '@shared/api/client';
+import { api, canUseStaleData, formatApiError } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
 import type { BudgetWithSpent } from '@contracts/budget';
 import type { CurrencyCode } from '@domain/money';
-import { addMonths } from '@domain/date';
+import { addMonths, todayLocalISO } from '@domain/date';
 import { computeAllCurrenciesSummary } from '@domain/summary';
-import { readCached } from '@local-data/transaction-store';
+import { cacheServerRows, mergeWithCache, readCached } from '@local-data/transaction-store';
 import { Page, PageHeader, Section, Grid, Stack, Inline } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
 import { Text } from '@shared/ui/Text';
@@ -22,6 +22,19 @@ import { BudgetList, type BudgetItem } from '@shared/ui/BudgetList';
 import '../../app/styles/overview.css';
 
 const STORAGE_KEY = 'finanzas.showAmounts';
+const TRANSACTION_PAGE_SIZE = 100;
+
+async function fetchPeriodTransactions(userId: string, period: string): Promise<any[]> {
+  const rows: any[] = [];
+  for (let page = 1; ; page++) {
+    const response = await api.listTransactions({ period, page, limit: TRANSACTION_PAGE_SIZE });
+    if (response.error) throw response.error;
+    const pageRows = response.data ?? [];
+    await cacheServerRows(userId, pageRows).catch(() => undefined);
+    rows.push(...pageRows);
+    if (pageRows.length < TRANSACTION_PAGE_SIZE) return rows;
+  }
+}
 
 function getInitialShowAmounts(): boolean {
   try {
@@ -33,21 +46,10 @@ function getInitialShowAmounts(): boolean {
   return true; // default: show amounts
 }
 
-function mergeMonthRows(rows: any[], cached: any[], month: string) {
-  const byId = new Map<string, any>();
-  for (const tx of cached) {
-    if (tx.occurredOn?.startsWith(month)) byId.set(tx.id, tx);
-  }
-  for (const tx of rows) {
-    if (!byId.has(tx.id)) byId.set(tx.id, tx);
-  }
-  return Array.from(byId.values()).sort((a, b) => (a.occurredOn < b.occurredOn ? 1 : -1));
-}
-
 export function OverviewPage() {
-  const { user } = useAuth();
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
-  const [currency, setCurrency] = useState<CurrencyCode>('ARS');
+  const { user, defaultCurrency } = useAuth();
+  const [month, setMonth] = useState(() => todayLocalISO().slice(0, 7));
+  const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
   const [showAmounts, setShowAmounts] = useState<boolean>(getInitialShowAmounts);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [previousTransactions, setPreviousTransactions] = useState<any[]>([]);
@@ -55,6 +57,10 @@ export function OverviewPage() {
   const [budgets, setBudgets] = useState<BudgetWithSpent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataStatus, setDataStatus] = useState<'current' | 'cached' | 'partial' | 'unavailable'>('unavailable');
+  const [budgetLoadError, setBudgetLoadError] = useState(false);
+
+  useEffect(() => setCurrency(defaultCurrency), [defaultCurrency]);
 
   // Persist showAmounts preference
   useEffect(() => {
@@ -69,22 +75,90 @@ export function OverviewPage() {
     if (!user) return;
     setLoading(true);
     setError(null);
+    setDataStatus('unavailable');
+    setBudgetLoadError(false);
     const previousMonth = addMonths(month, -1) ?? month;
     try {
-      const [txRes, prevRes, catRes, budgetRes, cached] = await Promise.all([
-        api.listTransactions({ period: month, limit: 100 }),
-        api.listTransactions({ period: previousMonth, limit: 100 }),
+      const loadPeriod = async (period: string) => {
+        try {
+          return { rows: await fetchPeriodTransactions(user.id, period), error: null as unknown };
+        } catch (periodError) {
+          return { rows: null, error: periodError };
+        }
+      };
+      const [currentResult, previousResult, catRes, budgetRes] = await Promise.all([
+        loadPeriod(month),
+        loadPeriod(previousMonth),
         api.listCategories(),
-        api.listBudgets(month),
-        readCached(user.id)
+        api.listBudgets(month)
       ]);
+      let localCacheReadFailed = false;
+      const mergeRows = async (rows: any[]) => {
+        try {
+          return await mergeWithCache(user.id, rows);
+        } catch {
+          localCacheReadFailed = true;
+          return rows;
+        }
+      };
 
-      setTransactions(mergeMonthRows(txRes.data ?? [], cached, month));
-      setPreviousTransactions(mergeMonthRows(prevRes.data ?? [], cached, previousMonth));
-      setCategories(catRes.data ?? []);
-      setBudgets(budgetRes.data ?? []);
-    } catch {
-      setError('No pudimos cargar tu resumen. Probá de nuevo.');
+      const transactionErrors = [currentResult.error, previousResult.error].filter(Boolean);
+      const mayUseCache = transactionErrors.some((item) => canUseStaleData(item));
+      const cached = mayUseCache ? await readCached(user.id) : [];
+      const cachedCurrent = cached.filter((tx) => !tx.deletedAt && tx.occurredOn.startsWith(month));
+      const cachedPrevious = cached.filter((tx) => !tx.deletedAt && tx.occurredOn.startsWith(previousMonth));
+      const currentRows = currentResult.rows !== null
+        ? (await mergeRows(currentResult.rows)).filter((tx) => tx.occurredOn.startsWith(month))
+        : currentResult.error && canUseStaleData(currentResult.error) ? cachedCurrent : [];
+      const previousRows = previousResult.rows !== null
+        ? (await mergeRows(previousResult.rows)).filter((tx) => tx.occurredOn.startsWith(previousMonth))
+        : previousResult.error && canUseStaleData(previousResult.error) ? cachedPrevious : [];
+
+      setTransactions(currentRows);
+      setPreviousTransactions(previousRows);
+      const currentAvailable = currentResult.rows !== null ||
+        Boolean(currentResult.error && canUseStaleData(currentResult.error) && cachedCurrent.length > 0);
+      setDataStatus(!currentAvailable
+        ? 'unavailable'
+        : currentResult.rows === null
+          ? 'cached'
+          : previousResult.rows === null
+            ? 'partial'
+            : 'current');
+      const transactionErrorMessages = [
+        currentResult.error && (currentAvailable
+          ? `Mes actual: ${formatApiError(currentResult.error, 'error de conexión')}. Se muestran datos locales y pueden estar desactualizados.`
+          : `Mes actual: ${formatApiError(currentResult.error, 'no se pudo cargar')}. No se muestran importes sin confirmar.`),
+        previousResult.error && `Comparación mensual: ${formatApiError(previousResult.error, 'no se pudo actualizar')}.`
+      ].filter(Boolean);
+      if (localCacheReadFailed) {
+        setDataStatus((status) => status === 'current' ? 'partial' : status);
+        transactionErrorMessages.push('No se pudo leer la cola local; los movimientos offline pendientes podrían no aparecer en estos totales.');
+      }
+      if (transactionErrorMessages.length > 0) setError(transactionErrorMessages.join(' '));
+
+      const auxiliaryErrors = [
+        catRes.error && formatApiError(catRes.error, 'categorías no disponibles'),
+        budgetRes.error && formatApiError(budgetRes.error, 'presupuestos no disponibles')
+      ].filter(Boolean);
+      if (catRes.error) setCategories([]);
+      else setCategories(catRes.data ?? []);
+      if (budgetRes.error) {
+        setBudgets([]);
+        setBudgetLoadError(true);
+      } else {
+        setBudgets(budgetRes.data ?? []);
+      }
+      if (auxiliaryErrors.length > 0) {
+        setDataStatus((status) => status === 'current' ? 'partial' : status);
+        setError((currentError) => [currentError, `No se pudieron actualizar categorías o presupuestos: ${auxiliaryErrors.join('; ')}`]
+          .filter(Boolean).join(' '));
+      }
+    } catch (loadError) {
+      setTransactions([]);
+      setPreviousTransactions([]);
+      setDataStatus('unavailable');
+      setError(loadError instanceof Error ? loadError.message : 'No pudimos cargar tu resumen.');
     } finally {
       setLoading(false);
     }
@@ -106,6 +180,7 @@ export function OverviewPage() {
   const categoriesById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
 
   const expenseComparison = useMemo(() => {
+    if (dataStatus === 'unavailable') return null;
     if (summary.transactionCount === 0 || previousSummary.transactionCount === 0) return null;
     if (summary.expenseMinor <= 0 || previousSummary.expenseMinor <= 0) return null;
     const change = Math.round(
@@ -115,7 +190,7 @@ export function OverviewPage() {
     return change > 0
       ? `Gastos ${Math.abs(change)}% por encima del mes anterior`
       : `Gastos ${Math.abs(change)}% por debajo del mes anterior`;
-  }, [summary, previousSummary]);
+  }, [summary, previousSummary, dataStatus]);
 
   const recent: LedgerItem[] = transactions.slice(0, 6).map(tx => ({
     id: tx.id,
@@ -188,6 +263,8 @@ export function OverviewPage() {
               <div className="overview-hero__amount">
                 {loading ? (
                   <span className="overview-skeleton overview-skeleton--onInk overview-skeleton--hero-amount" aria-hidden="true" />
+                ) : dataStatus === 'unavailable' ? (
+                  <Text variant="title" tone="on-ink-muted">—</Text>
                 ) : (
                   <Money amountMinor={summary.netMinor} currency={currency} sign="auto" tone="onInk" size="xl" censored={!showAmounts} />
                 )}
@@ -204,6 +281,8 @@ export function OverviewPage() {
                 <Text variant="small" tone="on-ink-muted">Ingresos</Text>
                 {loading ? (
                   <span className="overview-skeleton overview-skeleton--onInk overview-skeleton--value" aria-hidden="true" />
+                ) : dataStatus === 'unavailable' ? (
+                  <Text variant="small" tone="on-ink-muted">—</Text>
                 ) : (
                   <Money amountMinor={summary.incomeMinor} currency={currency} sign="plus" tone="onInk" size="md" censored={!showAmounts} />
                 )}
@@ -212,16 +291,10 @@ export function OverviewPage() {
                 <Text variant="small" tone="on-ink-muted">Gastos</Text>
                 {loading ? (
                   <span className="overview-skeleton overview-skeleton--onInk overview-skeleton--value" aria-hidden="true" />
+                ) : dataStatus === 'unavailable' ? (
+                  <Text variant="small" tone="on-ink-muted">—</Text>
                 ) : (
                   <Money amountMinor={summary.expenseMinor} currency={currency} sign="minus" tone="onInk" size="md" censored={!showAmounts} />
-                )}
-              </div>
-              <div className="overview-hero__row">
-                <Text variant="caption" tone="on-ink-muted">Movimientos</Text>
-                {loading ? (
-                  <span className="overview-skeleton overview-skeleton--onInk overview-skeleton--count" aria-hidden="true" />
-                ) : (
-                  <Text variant="caption" tone="on-ink-muted">{summary.transactionCount}</Text>
                 )}
               </div>
             </div>
@@ -251,12 +324,12 @@ export function OverviewPage() {
                 categoryIcon={categoryIcon}
                 compact
                 censored={!showAmounts}
-                emptyLabel="Todavía no definiste presupuestos para este mes."
-                emptyAction={
+                emptyLabel={budgetLoadError ? 'No se pudieron cargar los presupuestos.' : 'Todavía no definiste presupuestos para este mes.'}
+                emptyAction={!budgetLoadError && (
                   <ButtonLink to="/presupuestos" variant="primary" size="sm">
                     Definir mi primer presupuesto
                   </ButtonLink>
-                }
+                )}
               />
             )}
           </Stack>
@@ -281,12 +354,12 @@ export function OverviewPage() {
               categoryName={categoryName}
               categoryIcon={categoryIcon}
               censored={!showAmounts}
-              emptyLabel="Todavía no hay movimientos en este mes."
-              emptyAction={
+              emptyLabel={dataStatus === 'unavailable' ? 'No se pudieron cargar los movimientos.' : 'Todavía no hay movimientos en este mes.'}
+              emptyAction={dataStatus !== 'unavailable' && (
                 <ButtonLink to="/movimientos?new=expense" variant="primary" size="sm">
                   Registrar un movimiento
                 </ButtonLink>
-              }
+              )}
             />
           )}
         </Panel>

@@ -1,12 +1,14 @@
 // Contracts: Budget DTOs
 import { z } from 'zod';
+import { calendarMonthSchema } from './date';
+import { MAX_MINOR_UNITS } from '@domain/money';
 
 export const budgetCreateSchema = z.object({
   id: z.string().uuid(),
   categoryId: z.string().min(1),
-  periodMonth: z.string().regex(/^\d{4}-\d{2}$/),
+  periodMonth: calendarMonthSchema,
   currency: z.enum(['ARS', 'USD']),
-  limitMinor: z.number().int().positive()
+  limitMinor: z.number().int().positive().max(MAX_MINOR_UNITS)
 });
 
 export const budgetUpdateSchema = budgetCreateSchema.partial().extend({
@@ -21,7 +23,7 @@ export const budgetResponseSchema = budgetCreateSchema.extend({
 });
 
 export const budgetWithSpentSchema = budgetResponseSchema.extend({
-  spentMinor: z.number().int().nonnegative(),
+  spentMinor: z.number().int().nonnegative().max(MAX_MINOR_UNITS),
   remainingMinor: z.number().int(),
   isOverBudget: z.boolean()
 });

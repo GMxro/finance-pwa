@@ -57,8 +57,10 @@ npm run db:migrate:remote
 
 Antes de una migración en producción: verificar un bookmark de Time Travel disponible
 (`wrangler d1 time-travel info finance-pwa`) y ensayar la migración en staging.
-El esquema de la primera publicación está consolidado en `migrations/0001_initial.sql`;
-aplicarlo antes de publicar el Worker (`npm run db:migrate:remote`).
+El esquema base está en `migrations/0001_initial.sql`; las migraciones posteriores añaden
+cuentas/transferencias (0002), índices de sync (0003), receipts de borrado (0004),
+rate limits (0005) y onboarding (0006). Aplicar todas en orden antes de publicar
+el Worker (`npm run db:migrate:remote`).
 
 ## Despliegue
 
@@ -72,23 +74,18 @@ npx wrangler deploy
 - Incrementar `version` en `package.json` en cada release. El cliente envía esa versión
   en `X-App-Version` y el Service Worker recibe un identificador de caché aislado para
   el contenido de cada build.
-- `MIN_APP_VERSION` está vacío por defecto en `wrangler.jsonc`: el bloqueo general de API
-  por versión queda apagado. El endpoint de sincronización sí exige `userId` e
-  `operationId` por operación; builds anteriores que no los envían no sincronizan hasta
-  actualizar, para evitar atribuir pendientes a la cuenta equivocada.
-- Para exigir una versión crítica, primero publicar y verificar el release con el mínimo
-  anterior. Confirmar que el build nuevo se sirve correctamente y que login y APIs
-  funcionan; recién después configurar `MIN_APP_VERSION` con esa versión en
-  `wrangler.jsonc` y desplegar de nuevo. Así la política no se adelanta a los assets.
-- No activar el mínimo obligatorio en producción hasta completar el manejo de la cola
-  offline: una respuesta 426 debe conservar las operaciones locales para sincronizarlas
-  después de actualizar.
-- La API responde `426 UPDATE_REQUIRED` a builds por debajo del mínimo o sin versión.
-  Ante un error de configuración en `MIN_APP_VERSION`, responde `503` en vez de abrir
-  accidentalmente el acceso.
-- Para volver a permitir una versión anterior durante una incidencia, bajar o vaciar
-  `MIN_APP_VERSION` en `wrangler.jsonc` y desplegar. Wrangler mantiene ese archivo como
-  fuente de verdad de las variables del Worker.
+ - `MIN_APP_VERSION` se configura en `wrangler.jsonc`. El endpoint de sincronización
+   exige `userId` y `operationId` por operación. Builds anteriores sin estos campos
+   no sincronizan hasta actualizar.
+ - Para exigir una versión crítica: (1) publicar y verificar el release con el mínimo
+   anterior, (2) confirmar login y APIs, (3) configurar `MIN_APP_VERSION` en
+   `wrangler.jsonc` y desplegar. Así la política no se adelanta a los assets.
+ - El cliente PWA debe manejar la respuesta 426 conservando las operaciones locales para
+   sincronizarlas tras actualizar.
+ - La API responde `426 UPDATE_REQUIRED` a builds por debajo del mínimo o sin versión.
+   Ante error de configuración en `MIN_APP_VERSION`, responde `503` (no abre acceso).
+ - Para permitir una versión anterior durante una incidencia, bajar o vaciar
+   `MIN_APP_VERSION` en `wrangler.jsonc` y desplegar.
 
 Verificación mínima después del despliegue:
 

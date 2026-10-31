@@ -5,7 +5,7 @@ import { Select } from '@shared/ui/Select';
 import { AuthLayout } from '@shared/ui/AuthLayout';
 import { Stack, Divider } from '@shared/ui/Layout';
 import { Notice } from '@shared/ui/Notice';
-import { appFetch } from '@shared/api/client';
+import type { CurrencyCode } from '@domain/money';
 import './OnboardingPage.css';
 
 const CURRENCY_OPTIONS = [
@@ -14,9 +14,9 @@ const CURRENCY_OPTIONS = [
 ];
 
 export function OnboardingPage() {
-  const { completeOnboarding } = useAuth();
+  const { completeOnboarding, defaultCurrency } = useAuth();
   const [step, setStep] = useState(1);
-  const [currency, setCurrency] = useState('ARS');
+  const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,14 +24,7 @@ export function OnboardingPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await appFetch('/api/account/preferences', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ default_currency: currency })
-      });
-      if (!response.ok) throw new Error('No pudimos guardar tus preferencias.');
-      await completeOnboarding();
+      await completeOnboarding(currency);
     } catch (e: any) {
       setError(e?.message ?? 'No pudimos guardar tus preferencias.');
     } finally {
@@ -82,7 +75,7 @@ export function OnboardingPage() {
             <Select
               label="Moneda principal"
               value={currency}
-              onChange={setCurrency}
+              onChange={(value) => setCurrency(value as CurrencyCode)}
               options={CURRENCY_OPTIONS}
               helperText="Los totales se muestran por moneda; podés usar ambas en cada movimiento."
             />

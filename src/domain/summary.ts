@@ -1,7 +1,9 @@
 // Domain: Summary calculations (shared between client and worker)
 
+import { addAmounts, subtractAmounts } from './money';
 import type { CurrencyCode } from './money';
 import type { TransactionStored } from './transaction';
+import { isValidISODate } from './date';
 
 export interface MonthlySummary {
   periodMonth: string; // YYYY-MM
@@ -19,7 +21,7 @@ export function computeMonthlySummary(
   currency: CurrencyCode
 ): MonthlySummary {
   const filtered = transactions.filter(
-    (tx) => tx.currency === currency && tx.occurredOn.startsWith(periodMonth) && !tx.deletedAt
+    (tx) => tx.currency === currency && isValidISODate(tx.occurredOn) && tx.occurredOn.startsWith(periodMonth) && !tx.deletedAt
   );
 
   let incomeMinor = 0;
@@ -28,14 +30,14 @@ export function computeMonthlySummary(
 
   for (const tx of filtered) {
     if (tx.kind === 'income') {
-      incomeMinor += tx.amountMinor;
+      incomeMinor = addAmounts(incomeMinor, tx.amountMinor);
     } else {
-      expenseMinor += tx.amountMinor;
+      expenseMinor = addAmounts(expenseMinor, tx.amountMinor);
     }
     const key = `${tx.kind}:${tx.categoryId}`;
     const existing = byCategoryMap.get(key);
     if (existing) {
-      existing.amountMinor += tx.amountMinor;
+      existing.amountMinor = addAmounts(existing.amountMinor, tx.amountMinor);
     } else {
       byCategoryMap.set(key, { kind: tx.kind, amountMinor: tx.amountMinor });
     }
@@ -52,7 +54,7 @@ export function computeMonthlySummary(
     currency,
     incomeMinor,
     expenseMinor,
-    netMinor: incomeMinor - expenseMinor,
+    netMinor: subtractAmounts(incomeMinor, expenseMinor),
     byCategory,
     transactionCount: filtered.length
   };

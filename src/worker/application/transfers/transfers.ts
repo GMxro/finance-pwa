@@ -1,7 +1,9 @@
 // Application: Transfers (movimientos entre cuentas propias)
 import type { Env } from '@env';
 import type { TransferCreate, TransferResponse } from '@contracts/transfer';
-import { NotFoundError, ValidationError } from '../../middleware/error-handler';
+import { ConflictError, NotFoundError, ValidationError } from '../../middleware/error-handler';
+import { currencyFlowBindings, currencyFlowTotalSql } from '../financial-limit';
+import { MAX_MINOR_UNITS } from '@domain/money';
 
 const TRANSFER_SELECT = `
   SELECT t.id, t.user_id, t.from_account_id, t.to_account_id,
@@ -15,14 +17,20 @@ const TRANSFER_SELECT = `
 `;
 
 function mapTransfer(row: any): TransferResponse {
+  const fromAmountMinor = Number(row.from_amount_minor);
+  const toAmountMinor = Number(row.to_amount_minor);
+  if (!Number.isSafeInteger(fromAmountMinor) || fromAmountMinor <= 0 ||
+      !Number.isSafeInteger(toAmountMinor) || toAmountMinor <= 0) {
+    throw new ValidationError('El importe excede el rango exacto admitido.');
+  }
   return {
     id: row.id,
     userId: row.user_id,
     fromAccountId: row.from_account_id,
     toAccountId: row.to_account_id,
-    fromAmountMinor: row.from_amount_minor,
+    fromAmountMinor,
     fromCurrency: row.from_currency_code,
-    toAmountMinor: row.to_amount_minor,
+    toAmountMinor,
     toCurrency: row.to_currency_code,
     fromAccountName: row.from_account_name,
     toAccountName: row.to_account_name,
@@ -37,7 +45,7 @@ function mapTransfer(row: any): TransferResponse {
 export async function listTransfers(
   env: Env,
   userId: string,
-  params: { period?: string; accountId?: string; limit?: number }
+  params: { period?: string; accountId?: string; page?: number; limit?: number }
 ): Promise<TransferResponse[]> {
   const conditions = ['t.user_id = ?', 't.deleted_at IS NULL'];
   const bindings: any[] = [userId];
@@ -55,8 +63,8 @@ export async function listTransfers(
     ${TRANSFER_SELECT}
     WHERE ${conditions.join(' AND ')}
     ORDER BY t.occurred_on DESC, t.created_at DESC
-    LIMIT ?
-  `).bind(...bindings, params.limit ?? 100).all();
+    LIMIT ? OFFSET ?
+  `).bind(...bindings, params.limit ?? 100, ((params.page ?? 1) - 1) * (params.limit ?? 100)).all();
 
   return (result.results as any[]).map(mapTransfer);
 }
@@ -70,11 +78,30 @@ export async function createTransfer(
     throw new ValidationError('Elegí dos cuentas distintas.');
   }
 
+  const toCurrency = data.toCurrency ?? data.fromCurrency;
+  const sameCurrency = toCurrency === data.fromCurrency;
+  const toAmount = data.toAmountMinor ?? (sameCurrency ? data.fromAmountMinor : undefined);
+
+  if (!toAmount) {
+    throw new ValidationError('Indicá cuánto entra en la cuenta de destino.');
+  }
+
   const existing = await env.DB.prepare(`
     ${TRANSFER_SELECT} WHERE t.id = ? AND t.user_id = ?
-  `).bind(data.id, userId).first();
-
-  if (existing) return mapTransfer(existing);
+  `).bind(data.id, userId).first<any>();
+  if (existing) {
+    const sameRequest = existing.deleted_at == null &&
+      existing.from_account_id === data.fromAccountId &&
+      existing.to_account_id === data.toAccountId &&
+      existing.from_amount_minor === data.fromAmountMinor &&
+      existing.from_currency_code === data.fromCurrency &&
+      existing.to_amount_minor === toAmount &&
+      existing.to_currency_code === toCurrency &&
+      existing.occurred_on === data.occurredOn &&
+      existing.note === (data.note || null);
+    if (!sameRequest) throw new ConflictError('El identificador de transferencia ya se usó con otros datos.');
+    return mapTransfer(existing);
+  }
 
   const accounts = await env.DB.prepare(`
     SELECT id, name, archived_at FROM accounts
@@ -88,27 +115,35 @@ export async function createTransfer(
   if (!from || !to) throw new ValidationError('Alguna de las cuentas no existe.');
   if (from.archived_at || to.archived_at) throw new ValidationError('Elegí cuentas activas.');
 
-  const toCurrency = data.toCurrency ?? data.fromCurrency;
-  const sameCurrency = toCurrency === data.fromCurrency;
-  const toAmount = sameCurrency ? data.fromAmountMinor : data.toAmountMinor;
-
-  if (!toAmount) {
-    throw new ValidationError('Indicá cuánto entra en la cuenta de destino.');
-  }
-
   const now = Date.now();
 
-  await env.DB.prepare(`
+  let result: D1Result;
+  try {
+    result = await env.DB.prepare(`
     INSERT INTO transfers (
       id, user_id, from_account_id, to_account_id,
       from_amount_minor, from_currency_code, to_amount_minor, to_currency_code,
       occurred_on, note, created_at, updated_at, deleted_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+    ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL
+    WHERE ${currencyFlowTotalSql()} + ?${sameCurrency ? ' + ?' : ''} <= ?
+      AND ${currencyFlowTotalSql()} + ? <= ?
   `).bind(
     data.id, userId, data.fromAccountId, data.toAccountId,
     data.fromAmountMinor, data.fromCurrency, toAmount, toCurrency,
-    data.occurredOn, data.note || null, now, now
-  ).run();
+    data.occurredOn, data.note || null, now, now,
+    ...currencyFlowBindings(userId, data.fromCurrency), data.fromAmountMinor,
+    ...(sameCurrency ? [toAmount] : []), MAX_MINOR_UNITS,
+    ...currencyFlowBindings(userId, toCurrency), toAmount, MAX_MINOR_UNITS
+    ).run();
+  } catch (error) {
+    if (error instanceof Error && /integer overflow/i.test(error.message)) {
+      throw new ValidationError('El total financiero excede el rango exacto admitido.');
+    }
+    throw error;
+  }
+  if (result.meta.changes === 0) {
+    throw new ValidationError('El total financiero excede el rango exacto admitido.');
+  }
 
   const created = await env.DB.prepare(`
     ${TRANSFER_SELECT} WHERE t.id = ? AND t.user_id = ?

@@ -1,5 +1,6 @@
 // Domain: Budget logic
 
+import { MAX_MINOR_UNITS, assertSafeMinorUnits, subtractAmounts } from './money';
 import type { CurrencyCode } from './money';
 import { isValidMonth } from './date';
 
@@ -28,7 +29,10 @@ export function calculateBudgetStatus(
   budget: BudgetStored,
   spentMinor: number
 ): BudgetWithSpent {
-  const remainingMinor = budget.limitMinor - spentMinor;
+  assertSafeMinorUnits(budget.limitMinor);
+  assertSafeMinorUnits(spentMinor);
+  if (budget.limitMinor <= 0 || spentMinor < 0) throw new RangeError('Importe de presupuesto inválido.');
+  const remainingMinor = subtractAmounts(budget.limitMinor, spentMinor);
   return {
     ...budget,
     spentMinor,
@@ -53,7 +57,7 @@ export function validateBudget(input: BudgetInput): { valid: boolean; error?: st
   if (input.currencyCode !== 'ARS' && input.currencyCode !== 'USD') {
     return { valid: false, error: 'Moneda inválida' };
   }
-  if (!Number.isInteger(input.limitMinor) || input.limitMinor <= 0) {
+  if (!Number.isSafeInteger(input.limitMinor) || input.limitMinor <= 0 || input.limitMinor > MAX_MINOR_UNITS) {
     return { valid: false, error: 'Límite inválido' };
   }
   return { valid: true };

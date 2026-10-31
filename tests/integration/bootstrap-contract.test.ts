@@ -40,6 +40,12 @@ describe('bootstrap API contract', () => {
     );
     expect(response.status).toBe(200);
     const body = await response.json() as any;
-    expect(body).toEqual({ userId: USER_ID, syncEpoch: EPOCH });
+    expect(body).toEqual({
+      userId: USER_ID,
+      syncEpoch: EPOCH,
+      defaultCurrency: 'ARS',
+      timeZone: 'America/Argentina/Buenos_Aires',
+      onboardingComplete: false
+    });
   });
 });

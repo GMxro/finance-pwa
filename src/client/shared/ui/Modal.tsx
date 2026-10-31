@@ -3,6 +3,21 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import './Modal.css';
 
+function blurActiveField() {
+  const active = document.activeElement;
+  if (active instanceof HTMLElement) active.blur();
+}
+
+function isEditableField(element: Element | null) {
+  return (
+    element instanceof HTMLElement &&
+    (element.tagName === 'INPUT' ||
+      element.tagName === 'TEXTAREA' ||
+      element.tagName === 'SELECT' ||
+      element.isContentEditable)
+  );
+}
+
 export interface ModalProps {
   open: boolean;
   onClose: () => void;
@@ -82,6 +97,32 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     };
   }, [open, onClose, autoFocusFirstEmpty]);
 
+  // iOS no redimensiona el layout cuando aparece el teclado: la hoja queda
+  // tapada y el botón de guardar no se puede tocar. Publicamos la altura del
+  // teclado como variable CSS para que el modal se acomode por encima.
+  useEffect(() => {
+    if (!open) return;
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const root = document.documentElement;
+    const sync = () => {
+      const rawInset = Math.round(window.innerHeight - viewport.height);
+      // Menos de 100px es la barra del navegador, no un teclado.
+      const inset = rawInset >= 100 ? rawInset : 0;
+      root.style.setProperty('--keyboard-inset', `${inset}px`);
+    };
+
+    sync();
+    viewport.addEventListener('resize', sync);
+    viewport.addEventListener('scroll', sync);
+    return () => {
+      viewport.removeEventListener('resize', sync);
+      viewport.removeEventListener('scroll', sync);
+      root.style.removeProperty('--keyboard-inset');
+    };
+  }, [open]);
+
   // Resetear el flag cuando se cierra el modal
   useEffect(() => {
     if (!open) {
@@ -91,8 +132,17 @@ export function Modal({ open, onClose, title, description, children, footer, siz
 
   if (!open) return null;
 
+  // Tocar fuera del modal en mobile: baja el teclado pero no cierra
+  const handleOverlayPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch' && isEditableField(document.activeElement)) {
+      blurActiveField();
+      return;
+    }
+    onClose();
+  };
+
   return createPortal(
-    <div className="ui-modal-overlay" onMouseDown={onClose} role="presentation">
+    <div className="ui-modal-overlay" onPointerDown={handleOverlayPointerDown} role="presentation">
       <div
         ref={contentRef}
         className={`ui-modal ui-modal--${size}`}
@@ -101,7 +151,6 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        onMouseDown={event => event.stopPropagation()}
       >
         <header className="ui-modal__header">
           <div>

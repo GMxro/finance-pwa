@@ -1,15 +1,16 @@
 // Worker entry point
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { requestId } from 'hono/request-id';
 
 import { sessionMiddleware } from './middleware/session';
+import { apiMutationRateLimit } from './middleware/rate-limit';
 import { sameOriginGuard } from './middleware/same-origin';
+import { apiBodyLimit } from './middleware/body-limit';
 import { minimumAppVersion } from './middleware/minimum-app-version';
 import { securityHeaders } from './middleware/security-headers';
 import { errorHandler } from './middleware/error-handler';
 import { authRoutes } from './routes/auth';
-import { accountRoutes } from './routes/account';
+import { accountRoutes, deletionStatusRoutes } from './routes/account';
 import { bootstrapRoutes } from './routes/bootstrap';
 import { transactionsRoutes } from './routes/transactions';
 import { accountsRoutes } from './routes/accounts';
@@ -28,16 +29,8 @@ app.use('*', requestId());
 app.use('/api/*', securityHeaders());
 app.use('*', errorHandler);
 
-// Same origin only; no permissive CORS is needed for a same-origin PWA.
-app.use('/api/*', cors({
-  origin: (origin) => origin,
-  credentials: true,
-  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'X-App-Version'],
-  maxAge: 86400
-}));
-
 app.use('/api/*', sameOriginGuard);
+app.use('/api/*', apiBodyLimit);
 app.use('/api/*', minimumAppVersion);
 
 // Health check (no auth)
@@ -45,10 +38,12 @@ app.route('/api', healthRoutes);
 
 // Better Auth routes (public; Better Auth validates origin/CSRF itself)
 app.route('/api/auth', authRoutes);
+app.route('/api/account/deletion-status', deletionStatusRoutes);
 
 // Protected routes - require a server-side session
 const protectedApi = new Hono<{ Bindings: Env }>();
 protectedApi.use('*', sessionMiddleware);
+protectedApi.use('*', apiMutationRateLimit);
 
 protectedApi.route('/account', accountRoutes);
 protectedApi.route('/bootstrap', bootstrapRoutes);

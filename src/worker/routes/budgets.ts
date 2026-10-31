@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { getUserId } from '../middleware/session';
 import { ValidationError } from '../middleware/error-handler';
 import type { Env } from '@env';
+import { calendarMonthSchema } from '@contracts/date';
+import { MAX_MINOR_UNITS } from '@domain/money';
 import { upsertBudget, updateBudget, listBudgets, deleteBudget } from '../application/budgets/budgets';
 
 const budgetsRoutes = new Hono<{ Bindings: Env }>();
@@ -12,7 +14,7 @@ budgetsRoutes.get('/', async (c) => {
   const userId = getUserId(c);
   const period = c.req.query('period');
   
-  if (!period || !/^\d{4}-\d{2}$/.test(period)) {
+  if (!period || !calendarMonthSchema.safeParse(period).success) {
     throw new ValidationError('Período requerido (YYYY-MM)');
   }
   
@@ -23,9 +25,9 @@ budgetsRoutes.get('/', async (c) => {
 const budgetSchema = z.object({
   id: z.string().uuid(),
   categoryId: z.string().min(1),
-  periodMonth: z.string().regex(/^\d{4}-\d{2}$/),
+  periodMonth: calendarMonthSchema,
   currency: z.enum(['ARS', 'USD']),
-  limitMinor: z.number().int().positive()
+  limitMinor: z.number().int().positive().max(MAX_MINOR_UNITS)
 });
 
 budgetsRoutes.post('/', async (c) => {

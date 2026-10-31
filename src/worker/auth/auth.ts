@@ -22,9 +22,7 @@ export function createAuth(env: Env) {
       }
     },
 
-    user: {
-      deleteUser: { enabled: true }
-    },
+    user: { deleteUser: { enabled: false } },
 
     session: {
       expiresIn: 60 * 60 * 24 * 7,

@@ -1,6 +1,5 @@
-// Same-origin guard for state-changing requests.
-// Authentication cookies are SameSite=Lax; this adds an explicit Origin
-// check for all mutating API calls so cross-site form/fetch requests fail.
+// Mutations must come from the one configured public origin. The request Host
+// is not an authority for approving a caller-supplied Origin header.
 import type { Context, Next } from 'hono';
 import type { Env } from '@env';
 
@@ -16,16 +15,7 @@ export async function sameOriginGuard(c: Context<{ Bindings: Env }>, next: Next)
 
   const origin = c.req.header('origin');
   const expected = new URL(c.env.BETTER_AUTH_URL).origin;
-  const requestOrigin = new URL(c.req.url).origin;
-
-  // Origin header is present on browser fetch/XHR. Requests without Origin
-  // (same-origin navigations, server tools) are only accepted when the Host
-  // matches the configured app URL.
-  if (origin) {
-    if (origin !== expected && origin !== requestOrigin) {
-      return c.json({ code: 'FORBIDDEN_ORIGIN', message: 'Origen no permitido' }, 403);
-    }
-  } else if (requestOrigin !== expected) {
+  if (!origin || origin !== expected) {
     return c.json({ code: 'FORBIDDEN_ORIGIN', message: 'Origen no permitido' }, 403);
   }
 

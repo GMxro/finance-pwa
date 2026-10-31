@@ -77,21 +77,10 @@ export async function updateCategory(env: Env, userId: string, data: CategoryUpd
 
 export async function archiveCategory(env: Env, userId: string, id: string) {
   const now = Date.now();
-  
-  const hasTransactions = await env.DB.prepare(`
-    SELECT 1 FROM transactions WHERE category_id = ? AND user_id = ? LIMIT 1
-  `).bind(id, userId).first();
-  
-  if (hasTransactions) {
-    await env.DB.prepare(`
-      UPDATE categories SET archived_at = ?, updated_at = ? WHERE id = ? AND user_id = ?
-    `).bind(now, now, id, userId).run();
-  } else {
-    await env.DB.prepare(`
-      DELETE FROM categories WHERE id = ? AND user_id = ?
-    `).bind(id, userId).run();
-  }
-  
+  const result = await env.DB.prepare(`
+    UPDATE categories SET archived_at = ?, updated_at = ? WHERE id = ? AND user_id = ?
+  `).bind(now, now, id, userId).run();
+  if (result.meta.changes === 0) throw new Error('NOT_FOUND');
   return { success: true };
 }
 export async function unarchiveCategory(env: Env, userId: string, id: string) {

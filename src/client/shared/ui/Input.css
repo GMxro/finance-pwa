@@ -68,6 +68,16 @@
   color: var(--color-stone);
 }
 
+/* El anillo de foco vive en el contenedor redondeado. El <input> de adentro es
+   un rectángulo: si hereda el outline global, iOS lo dibuja como un recuadro
+   negro que no coincide con la caja. Se anula con más especificidad porque el
+   orden de las hojas compiladas no es estable. */
+.ui-field__control .ui-field__input:focus,
+.ui-field__control .ui-field__input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .ui-field__prefix {
   font-size: 16px;
   color: var(--color-stone);

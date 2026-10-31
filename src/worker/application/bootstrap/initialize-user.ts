@@ -16,16 +16,22 @@ const DEFAULT_CATEGORIES = [
   { kind: 'expense', name: 'Otros gastos', slug: 'otros-gastos', icon_key: 'more-horizontal', color_token: 'expense-other', sort_order: 9 }
 ];
 
+const DEFAULT_ACCOUNTS = [
+  { name: 'Efectivo', kind: 'cash', is_default: 1, sort_order: 1 },
+  { name: 'Sueldo', kind: 'bank', is_default: 0, sort_order: 2 },
+  { name: 'Otros ingresos', kind: 'bank', is_default: 0, sort_order: 3 },
+];
+
 export async function initializeUserData(env: Env, userId: string): Promise<void> {
   const now = Date.now();
   await env.DB.batch([
-    // Cuenta por defecto: todo movimiento necesita una cuenta y los datos
-    // anteriores a las cuentas se asignan acá.
-    env.DB.prepare(`
+    // Cuentas por defecto
+    ...DEFAULT_ACCOUNTS.map((account, _index) => env.DB.prepare(`
       INSERT INTO accounts (id, user_id, name, kind, is_default, sort_order, archived_at, created_at, updated_at)
-      SELECT ?, ?, 'Efectivo', 'cash', 1, 0, NULL, ?, ?
-      WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE user_id = ?)
-    `).bind(crypto.randomUUID(), userId, now, now, userId),
+      SELECT ?, ?, ?, ?, ?, ?, NULL, ?, ?
+      WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE user_id = ? AND name = ?)
+    `).bind(crypto.randomUUID(), userId, account.name, account.kind, account.is_default, account.sort_order, now, now, userId, account.name)),
+    // Asignar cuenta a transacciones huérfanas
     env.DB.prepare(`
       UPDATE transactions
       SET account_id = (
@@ -36,11 +42,17 @@ export async function initializeUserData(env: Env, userId: string): Promise<void
       )
       WHERE user_id = ? AND account_id IS NULL
     `).bind(userId, userId),
+    // Preferencias de usuario
     env.DB.prepare(`
       INSERT INTO user_preferences (user_id, locale, time_zone, default_currency, created_at, updated_at)
       VALUES (?, 'es-AR', 'America/Argentina/Buenos_Aires', 'ARS', ?, ?)
       ON CONFLICT(user_id) DO NOTHING
     `).bind(userId, now, now),
+    env.DB.prepare(`
+      INSERT INTO user_onboarding (user_id, completed_at) VALUES (?, NULL)
+      ON CONFLICT(user_id) DO NOTHING
+    `).bind(userId),
+    // Categorías por defecto
     ...DEFAULT_CATEGORIES.map((category) => env.DB.prepare(`
       INSERT INTO categories (id, user_id, kind, name, slug, icon_key, color_token, sort_order, is_default, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
@@ -49,6 +61,7 @@ export async function initializeUserData(env: Env, userId: string): Promise<void
       crypto.randomUUID(), userId, category.kind, category.name, category.slug,
       category.icon_key, category.color_token, category.sort_order, now, now
     )),
+    // Estado de sincronización
     env.DB.prepare(`
       INSERT INTO user_sync_state (user_id, sequence) VALUES (?, 0)
       ON CONFLICT(user_id) DO NOTHING

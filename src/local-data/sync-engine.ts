@@ -4,7 +4,8 @@ import { api } from '@client/shared/api/client';
 import type { SyncPushItem } from '@client/shared/api/client';
 
 export class SyncEngine {
-  private syncInFlight: Promise<void> | null = null;
+  private operationQueue: Promise<void> = Promise.resolve();
+  private syncInFlight = new Map<string, Promise<void>>();
   private listeners: Array<(state: SyncState) => void> = [];
   
   private state: SyncState = {
@@ -32,6 +33,10 @@ export class SyncEngine {
   }
   
   async initialize(userId: string, epoch: string): Promise<void> {
+    return this.serialize(() => this.performInitialize(userId, epoch));
+  }
+
+  private async performInitialize(userId: string, epoch: string): Promise<void> {
     this.setState({ status: 'syncing', error: null });
     try {
       const meta = await getSyncMeta();
@@ -45,20 +50,30 @@ export class SyncEngine {
       this.setState({ status: 'idle', lastSync: Date.now(), error: null });
     } catch (error) {
       this.setState({ status: 'error', error: error instanceof Error ? error.message : 'Sync failed' });
+      throw error;
     } finally {
       await this.updatePendingCount(userId);
     }
   }
   
   async syncNow(userId: string, epoch: string): Promise<void> {
-    if (this.syncInFlight) return this.syncInFlight;
-    const run = this.performSyncNow(userId, epoch);
-    this.syncInFlight = run;
+    const key = `${userId}:${epoch}`;
+    const current = this.syncInFlight.get(key);
+    if (current) return current;
+
+    const run = this.serialize(() => this.performSyncNow(userId, epoch));
+    this.syncInFlight.set(key, run);
     try {
       await run;
     } finally {
-      if (this.syncInFlight === run) this.syncInFlight = null;
+      if (this.syncInFlight.get(key) === run) this.syncInFlight.delete(key);
     }
+  }
+
+  private serialize(operation: () => Promise<void>): Promise<void> {
+    const run = this.operationQueue.then(operation, operation);
+    this.operationQueue = run.then(() => undefined, () => undefined);
+    return run;
   }
 
   private async performSyncNow(userId: string, epoch: string): Promise<void> {
@@ -68,31 +83,51 @@ export class SyncEngine {
       await this.pushOutbox(userId, epoch);
       await this.pullChanges(userId, epoch);
       this.setState({ status: 'idle', lastSync: Date.now(), error: null });
-    } catch (e: any) {
-      this.setState({ status: 'error', error: e.message });
+    } catch (error) {
+      this.setState({ status: 'error', error: error instanceof Error ? error.message : 'Sync failed' });
+      throw error;
     } finally {
       await this.updatePendingCount(userId);
     }
   }
   
   private async fullSync(userId: string, epoch: string): Promise<void> {
-    const response = await api.syncTransactions({ epoch, after: 0, limit: 1000 });
-    if (response.error) throw new Error(response.error.message);
-    
-    const transactions = (response.data?.transactions ?? []) as any[];
-    const sequence = response.data?.sequence ?? 0;
     const pendingLocal = await db.transactions.filter((transaction) => !transaction.synced).toArray();
-    
-    await db.transaction('rw', [db.transactions, db.syncMeta], async () => {
-      await db.transactions.clear();
-      for (const tx of transactions) {
-        await db.transactions.put({ ...tx, userId, synced: true, localVersion: tx.version });
+    let cursor = 0;
+    let firstPage = true;
+    let hasMore = true;
+
+    while (hasMore) {
+      const response = await api.syncTransactions({ epoch, after: cursor, limit: 500 });
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.userId !== userId) throw new Error('SYNC_USER_MISMATCH');
+      const transactions = (response.data?.transactions ?? []) as any[];
+      const nextCursor = response.data?.sequence ?? cursor;
+      hasMore = response.data?.hasMore ?? false;
+      if (hasMore && nextCursor <= cursor) throw new Error('La sincronización no avanzó el cursor.');
+
+      await db.transaction('rw', [db.transactions], async () => {
+        if (firstPage) await db.transactions.clear();
+        for (const tx of transactions) {
+          if (tx.deletedAt) {
+            const local = await db.transactions.get(tx.id);
+            if (local?.userId === userId) {
+              await db.transactions.update(tx.id, { deletedAt: tx.deletedAt, synced: true, pendingOp: undefined });
+            }
+          } else {
+            await db.transactions.put({ ...tx, userId, synced: true, pendingOp: undefined, localVersion: tx.version });
+          }
+        }
+        for (const transaction of pendingLocal) {
+          if (!(await db.transactions.get(transaction.id))) await db.transactions.put(transaction);
+        }
+      });
+      firstPage = false;
+      cursor = nextCursor;
+      if (!hasMore) {
+        await setSyncMeta({ userId, epoch, cursor, lastPull: Date.now(), lastPush: Date.now() });
       }
-      for (const transaction of pendingLocal) {
-        if (!(await db.transactions.get(transaction.id))) await db.transactions.put(transaction);
-      }
-      await setSyncMeta({ userId, epoch, cursor: sequence, lastPull: Date.now(), lastPush: Date.now() });
-    });
+    }
   }
   
   private async incrementalSync(userId: string, epoch: string): Promise<void> {
@@ -119,12 +154,27 @@ export class SyncEngine {
     
     if (response.error) throw new Error(response.error.message);
     if (!response.data) throw new Error('Respuesta de sincronización vacía.');
+    const appliedOperationIds = response.data.appliedOperationIds ?? [];
+    const pendingIds = new Set(pending.map((item) => item.id));
+    if (response.data.applied + response.data.conflicts.length !== pending.length ||
+        appliedOperationIds.length !== response.data.applied ||
+        new Set(appliedOperationIds).size !== appliedOperationIds.length ||
+        appliedOperationIds.some((id) => !pendingIds.has(id))) {
+      throw new Error('La confirmación del servidor no coincide con las operaciones enviadas.');
+    }
 
-    const conflictIds = new Set(response.data.conflicts.map((conflict) => conflict.id));
-    const completedIds = pending
-      .filter((item) => !conflictIds.has(item.entityId))
-      .map((item) => item.id);
-    if (completedIds.length > 0) await markOutboxDone(completedIds);
+    if (appliedOperationIds.length > 0) {
+      await db.transaction('rw', [db.transactions, db.outbox], async () => {
+        for (const item of pending) {
+          if (!appliedOperationIds.includes(item.id) || item.type !== 'create') continue;
+          const transaction = await db.transactions.get(item.entityId);
+          if (transaction?.userId === userId) {
+            await db.transactions.update(item.entityId, { synced: true, pendingOp: undefined });
+          }
+        }
+        await markOutboxDone(appliedOperationIds);
+      });
+    }
     if (response.data.conflicts.length > 0) throw new Error('Algunos cambios requieren revisión antes de sincronizarse.');
 
     await this.updatePendingCount(userId);
@@ -132,38 +182,45 @@ export class SyncEngine {
   
   private async pullChanges(userId: string, epoch: string): Promise<void> {
     const meta = await getSyncMeta();
-    const cursor = meta?.cursor ?? 0;
-    
-    const response = await api.syncTransactions({ epoch, after: cursor, limit: 500 });
-    if (response.error) throw new Error(response.error.message);
-    
-    const transactions = (response.data?.transactions ?? []) as any[];
-    const tombstones = response.data?.tombstones ?? [];
-    const sequence = response.data?.sequence ?? cursor;
-    
-    await db.transaction('rw', [db.transactions, db.syncMeta], async () => {
-      for (const tx of transactions) {
-        if (tx.deletedAt) {
-          await db.transactions.where('id').equals(tx.id).modify({ synced: true });
-        } else {
-          await db.transactions.put({ ...tx, userId, synced: true, localVersion: tx.version });
+    let cursor = meta?.userId === userId && meta.epoch === epoch ? meta.cursor : 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const response = await api.syncTransactions({ epoch, after: cursor, limit: 500 });
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.userId !== userId) throw new Error('SYNC_USER_MISMATCH');
+      const transactions = (response.data?.transactions ?? []) as any[];
+      const tombstones = response.data?.tombstones ?? [];
+      const sequence = response.data?.sequence ?? cursor;
+      hasMore = response.data?.hasMore ?? false;
+      if (hasMore && sequence <= cursor) throw new Error('La sincronización no avanzó el cursor.');
+
+      await db.transaction('rw', [db.transactions, db.syncMeta], async () => {
+        for (const tx of transactions) {
+          if (tx.deletedAt) {
+            const local = await db.transactions.get(tx.id);
+            if (local?.userId === userId) {
+              await db.transactions.update(tx.id, { deletedAt: tx.deletedAt, synced: true, pendingOp: undefined });
+            }
+          } else {
+            const local = await db.transactions.get(tx.id);
+            if (!local || local.userId !== userId || local.synced) {
+              await db.transactions.put({ ...tx, userId, synced: true, pendingOp: undefined, localVersion: tx.version });
+            }
+          }
         }
-      }
-      
-      for (const tomb of tombstones) {
-        await db.transactions.where('id').equals(tomb.id).modify({ synced: true });
-      }
-      
-      if (meta) {
-        await setSyncMeta({
-          userId,
-          epoch,
-          cursor: sequence,
-          lastPull: Date.now(),
-          lastPush: meta.lastPush
-        });
-      }
-    });
+
+        for (const tomb of tombstones) {
+          const local = await db.transactions.get(tomb.id);
+          if (local?.userId === userId) {
+            await db.transactions.update(tomb.id, { deletedAt: tomb.deletedAt, synced: true, pendingOp: undefined });
+          }
+        }
+
+        await setSyncMeta({ userId, epoch, cursor: sequence, lastPull: Date.now(), lastPush: meta?.lastPush ?? 0 });
+      });
+      cursor = sequence;
+    }
   }
   
   private async updatePendingCount(userId: string): Promise<void> {
