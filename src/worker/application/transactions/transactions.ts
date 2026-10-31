@@ -355,16 +355,17 @@ export async function getMonthlySummary(
       amountMinor: Number(row.total)
     }));
     
-    results.push({
+results.push({
       periodMonth,
-      currency: curr,
-      incomeMinor: Number(incomeResult?.total ?? 0),
-      expenseMinor: Number(expenseResult?.total ?? 0),
+      currency: curr as 'ARS' | 'USD',
+     incomeMinor: Number(incomeResult?.total ?? 0),
+     expenseMinor: Number(expenseResult?.total ?? 0),
       netMinor: Number(incomeResult?.total ?? 0) - Number(expenseResult?.total ?? 0),
       byCategory,
       transactionCount: Number(countResult?.count ?? 0)
     });
   }
   
-  return results[0];
+  return results[0]!;
+  // currencies always has at least one element (ARS or USD), so results is non-empty
 }

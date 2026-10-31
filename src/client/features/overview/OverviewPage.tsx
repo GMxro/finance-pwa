@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Eye, EyeOff } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useAuth } from '../../app/providers';
-import { api, canUseStaleData, formatApiError } from '@shared/api/client';
+import { api, canUseStaleData } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
 import type { BudgetWithSpent } from '@contracts/budget';
 import type { CurrencyCode } from '@domain/money';
 import { addMonths, todayLocalISO } from '@domain/date';
 import { computeAllCurrenciesSummary } from '@domain/summary';
-import { cacheServerRows, mergeWithCache, readCached } from '@local-data/transaction-store';
+import { mergeWithCache, readCached } from '@local-data/transaction-store';
 import { Page, PageHeader, Section, Grid, Stack, Inline } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
 import { Text } from '@shared/ui/Text';
@@ -15,10 +15,9 @@ import { Money } from '@shared/ui/Money';
 import { MonthStepper } from '@shared/ui/MonthStepper';
 import { SegmentedControl } from '@shared/ui/SegmentedControl';
 import { ButtonLink } from '@shared/ui/Button';
-import { TextLink } from '@shared/ui/TextLink';
 import { Notice } from '@shared/ui/Notice';
-import { LedgerList, type LedgerItem } from '@shared/ui/LedgerList';
-import { BudgetList, type BudgetItem } from '@shared/ui/BudgetList';
+import { LedgerList } from '@shared/ui/LedgerList';
+import { BudgetList } from '@shared/ui/BudgetList';
 import '../../app/styles/overview.css';
 
 const STORAGE_KEY = 'finanzas.showAmounts';
@@ -38,15 +37,15 @@ export function OverviewPage() {
   const { user, defaultCurrency } = useAuth();
   const [month, setMonth] = useState(() => todayLocalISO().slice(0, 7));
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
-  const [showAmounts, setShowAmounts] = useState<boolean>(getInitialShowAmounts);
+  const [showAmounts] = useState<boolean>(getInitialShowAmounts);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [previousTransactions, setPreviousTransactions] = useState<any[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [budgets, setBudgets] = useState<BudgetWithSpent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dataStatus, setDataStatus] = useState<'current' | 'cached' | 'partial' | 'unavailable'>('unavailable');
   const [budgetLoadError, setBudgetLoadError] = useState(false);
+  const [previousTransactions, setPreviousTransactions] = useState<any[]>([]);
 
   useEffect(() => setCurrency(defaultCurrency), [defaultCurrency]);
 
@@ -75,59 +74,48 @@ export function OverviewPage() {
         api.listTransactions({ period: month, page: 1, limit: TRANSACTION_PAGE_SIZE }),
         api.listTransactions({ period: previousMonth, page: 1, limit: TRANSACTION_PAGE_SIZE })
       ]);
-      let localCacheReadFailed = false;
       const mergeRows = async (rows: any[]) => {
         try {
           return await mergeWithCache(user.id, rows);
         } catch {
-          localCacheReadFailed = true;
           return rows;
         }
       };
 
-      const currentSummaryOk = currentSummary.data !== null;
-      const previousSummaryOk = previousSummary.data !== null;
-
-      const currentTxError = currentTxRes.error;
-      const previousTxError = previousTxRes.error;
-      const mayUseCache = [currentTxError, previousTxError].some((item) => item && canUseStaleData(item));
+      const transactionErrors = [currentTxRes.error, previousTxRes.error].filter(Boolean);
+      const mayUseCache = transactionErrors.some((item) => canUseStaleData(item));
       const cached = mayUseCache ? await readCached(user.id) : [];
       const cachedCurrent = cached.filter((tx) => !tx.deletedAt && tx.occurredOn?.startsWith(month));
       const cachedPrevious = cached.filter((tx) => !tx.deletedAt && tx.occurredOn?.startsWith(previousMonth));
-
       const currentRows = currentTxRes.data !== null
         ? (await mergeRows(currentTxRes.data ?? [])).filter((tx) => tx.occurredOn?.startsWith(month))
-        : currentTxError && canUseStaleData(currentTxError) ? cachedCurrent : [];
+        : currentTxRes.error && canUseStaleData(currentTxRes.error) ? cachedCurrent : [];
       const previousRows = previousTxRes.data !== null
         ? (await mergeRows(previousTxRes.data ?? [])).filter((tx) => tx.occurredOn?.startsWith(previousMonth))
-        : previousTxError && canUseStaleData(previousTxError) ? cachedPrevious : [];
-
+        : previousTxRes.error && canUseStaleData(previousTxRes.error) ? cachedPrevious : [];
+      
       setTransactions(currentRows);
       setPreviousTransactions(previousRows);
-      const currentAvailable = currentTxRes.data !== null || (currentTxError && canUseStaleData(currentTxError) && cachedCurrent.length > 0);
-      setDataStatus(!currentAvailable
-        ? 'unavailable'
-        : !currentSummary.data
-          ? 'cached'
-          : !previousSummary.data
-            ? 'partial'
-            : 'current');
-      const transactionErrorMessages = [
-        currentTxError && (currentAvailable
-          ? `Mes actual: ${formatApiError(currentTxError, 'error de conexión')}. Se muestran datos locales y pueden estar desactualizados.`
-          : `Mes actual: ${formatApiError(currentTxError, 'no se pudo cargar')}. No se muestran importes sin confirmar.`),
-        previousTxError && `Comparación mensual: ${formatApiError(previousTxError, 'no se pudo actualizar')}.`
-      ].filter(Boolean);
-      if (localCacheReadFailed) {
-        setDataStatus((status) => status === 'current' ? 'partial' : status);
-        transactionErrorMessages.push('No se pudo leer la cola local; los movimientos offline pendientes podrían no aparecer en estos totales.');
-      }
-      if (transactionErrorMessages.length > 0) setError(transactionErrorMessages.join(' '));
+      
+     const currentAvailable = currentSummary.data !== null || (currentSummary.error && canUseStaleData(currentSummary.error) && cachedCurrent.length > 0);
+     setDataStatus(!currentAvailable
+       ? 'unavailable'
+       : currentSummary.data === null
+         ? 'cached'
+         : previousSummary.data === null
+           ? 'partial'
+           : 'current');
+     if (currentSummary.error || previousSummary.error) {
+       const failure = currentSummary.error ?? previousSummary.error;
+       const message = (failure as any)?.message ?? 'error de conexión';
+       setError(currentSummary.data === null && currentAvailable
+         ? `No se pudo actualizar el período actual (${message}). Se muestran datos guardados en este dispositivo y pueden estar desactualizados.`
+         : !currentAvailable
+           ? `No se pudo cargar el período actual (${message}). No se muestran importes sin confirmar.`
+           : `No se pudo cargar la comparación mensual (${message}). Los importes del período actual sí fueron actualizados.`);
+     }
 
-      const auxiliaryErrors = [
-        catRes.error && formatApiError(catRes.error, 'categorías no disponibles'),
-        budgetRes.error && formatApiError(budgetRes.error, 'presupuestos no disponibles')
-      ].filter(Boolean);
+      const auxiliaryErrors = [catRes.error?.message, budgetRes.error?.message].filter(Boolean);
       if (catRes.error) setCategories([]);
       else setCategories(catRes.data ?? []);
       if (budgetRes.error) {
@@ -138,8 +126,7 @@ export function OverviewPage() {
       }
       if (auxiliaryErrors.length > 0) {
         setDataStatus((status) => status === 'current' ? 'partial' : status);
-        const messages = [catRes.error && formatApiError(catRes.error, 'categorías no disponibles'), budgetRes.error && formatApiError(budgetRes.error, 'presupuestos no disponibles')].filter(Boolean);
-        setError((currentError) => [currentError, `No se pudieron actualizar algunos datos: ${messages.join('; ')}`]
+        setError((currentError) => [currentError, `No se pudieron actualizar categorías o presupuestos: ${auxiliaryErrors.join('; ')}`]
           .filter(Boolean).join(' '));
       }
     } catch (loadError) {
@@ -150,49 +137,41 @@ export function OverviewPage() {
     } finally {
       setLoading(false);
     }
-  }, [month, user, currency, defaultCurrency]);
+  }, [month, user, currency]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const previousMonth = useMemo(() => addMonths(month, -1) ?? month, [month]);
+  const previousMonth = addMonths(month, -1) ?? month;
   const summaries = useMemo(
     () => computeAllCurrenciesSummary(transactions as any, month),
     [transactions, month]
   );
-  const summary = summaries.find(s => s.currency === currency) ?? summaries[0]!;
+  const summary = summaries.find((s: { currency: CurrencyCode }) => s.currency === currency) ?? summaries[0]!;
   const previousSummaries = useMemo(
     () => computeAllCurrenciesSummary(previousTransactions as any, previousMonth),
     [previousTransactions, previousMonth]
   );
-  const previousSummary = previousSummaries.find(s => s.currency === currency) ?? previousSummaries[0]!;
+  const previousSummary = previousSummaries.find((s: { currency: CurrencyCode }) => s.currency === currency) ?? previousSummaries[0]!;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _previousSummary = previousSummary;
   const categoriesById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
 
-  const KIND_LABELS: Record<'income' | 'expense', string> = { income: 'Ingresos', expense: 'Gastos' };
-  const KIND_ICONS: Record<'income' | 'expense', React.ComponentType<{ size?: number; strokeWidth?: number; ariaHidden?: boolean }>> = { income: Plus, expense: EyeOff };
-
-  const renderBalances = (balances: Array<{ currency: CurrencyCode; amountMinor: number }>) => {
-    if (!balances.length) return <Text variant="small" tone="stone">—</Text>;
-    return balances.map((b) => (
-      <Text key={b.currency} variant="small" tone="stone">
-        <Money amountMinor={b.amountMinor} currency={b.currency} sign="auto" censored={!showAmounts} />
-      </Text>
-    ));
-  };
+ const KIND_LABELS: Record<'income' | 'expense', string> = { income: 'Ingresos', expense: 'Gastos' };
 
   return (
     <Page className="overview-page">
       <PageHeader
         title="Resumen"
-        action={
+        actions={
           <Inline justify="end" gap="sm">
             <SegmentedControl
               value={currency}
-              onChange={setCurrency}
+              onChange={(v) => setCurrency(v as CurrencyCode)}
+              label="Moneda"
               options={[
                 { value: 'ARS', label: 'ARS' },
                 { value: 'USD', label: 'USD' }
               ]}
-              size="sm"
             />
             <ButtonLink to="/movimientos?new=expense" variant="primary" size="sm">
               <Plus size={16} strokeWidth={2} aria-hidden="true" />
@@ -201,9 +180,9 @@ export function OverviewPage() {
           </Inline>
         }
       />
-      <MonthStepper value={month} onChange={setMonth} />
+      <MonthStepper month={month} onChange={setMonth} />
 
-      <Grid columns="repeat(auto-fit, minmax(200px, 1fr))" gap="md">
+      <Grid gap="md">
         <Panel tone="paper" radius="panel" padding="lg">
           <Stack gap="xs">
             <Text variant="small" tone="stone">Saldo neto</Text>
@@ -227,8 +206,17 @@ export function OverviewPage() {
 
       <Section title="Presupuestos">
         <BudgetList
-          budgets={budgets}
-          categoriesById={categoriesById}
+          items={budgets.map(b => ({
+            id: b.id,
+            categoryId: b.categoryId,
+            currency: b.currency,
+            limitMinor: b.limitMinor,
+            spentMinor: b.spentMinor,
+            remainingMinor: b.remainingMinor,
+            isOverBudget: b.isOverBudget
+          }))}
+          categoryName={id => categoriesById.get(id)?.name ?? '—'}
+          categoryIcon={id => categoriesById.get(id)?.iconKey ?? '📁'}
           censored={!showAmounts}
           emptyLabel={budgetLoadError ? 'No se pudieron cargar los presupuestos.' : 'Todavía no definiste presupuestos para este mes.'}
           emptyAction={!budgetLoadError && (
@@ -241,8 +229,18 @@ export function OverviewPage() {
 
       <Section title="Movimientos recientes">
         <LedgerList
-          items={transactions}
-          categoriesById={categoriesById}
+          items={transactions.map(t => ({
+            id: t.id,
+            kind: t.kind,
+            amountMinor: t.amountMinor,
+            currency: t.currency,
+            occurredOn: t.occurredOn,
+            note: t.note,
+            categoryId: t.categoryId,
+            pending: !t.synced
+          }))}
+          categoryName={id => categoriesById.get(id)?.name ?? '—'}
+          categoryIcon={id => categoriesById.get(id)?.iconKey ?? '📁'}
           censored={!showAmounts}
           emptyLabel={dataStatus === 'unavailable' ? 'No se pudieron cargar los movimientos.' : 'Todavía no hay movimientos en este mes.'}
           emptyAction={dataStatus !== 'unavailable' && (
@@ -253,7 +251,7 @@ export function OverviewPage() {
         />
       </Section>
 
-      {error && <Notice tone="critical">{error}</Notice>}
+      {error && <Notice tone="strong">{error}</Notice>}
     </Page>
   );
 }
