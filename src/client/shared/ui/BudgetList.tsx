@@ -24,6 +24,7 @@ interface BudgetListProps {
   categoryIcon: (id: string) => string;
   onEdit?: (item: BudgetItem) => void;
   onDelete?: (item: BudgetItem) => void;
+  onSelect?: (item: BudgetItem) => void;
   compact?: boolean;
   emptyLabel?: string;
   emptyAction?: React.ReactNode;
@@ -36,6 +37,7 @@ export function BudgetList({
   categoryIcon,
   onEdit,
   onDelete,
+  onSelect,
   compact = false,
   emptyLabel = 'Sin presupuestos para este mes',
   emptyAction,
@@ -58,8 +60,14 @@ export function BudgetList({
           <div className={`ui-budget ${item.isOverBudget ? 'is-over' : ''}`} key={item.id}>
             <div className="ui-budget__top">
               <div className="ui-budget__identity">
-                <CategoryIcon iconKey={categoryIcon(item.categoryId)} size="sm" />
-                <div className="ui-budget__name">
+                {onSelect ? (
+                  <button type="button" className="ui-budget__select" onClick={() => onSelect(item)}>
+                    <CategoryIcon iconKey={categoryIcon(item.categoryId)} size="sm" />
+                    <span className="ui-budget__name">{categoryName(item.categoryId)}</span>
+                    {item.isOverBudget && <Status label="Excedido" tone="danger" />}
+                  </button>
+                ) : <CategoryIcon iconKey={categoryIcon(item.categoryId)} size="sm" />}
+                {!onSelect && <div className="ui-budget__name">
                   <span>{categoryName(item.categoryId)}</span>
                   {!compact && (
                     <Status
@@ -67,7 +75,7 @@ export function BudgetList({
                       tone={item.isOverBudget ? 'danger' : 'neutral'}
                     />
                   )}
-                </div>
+                </div>}
               </div>
               <div className="ui-budget__amounts">
                 <Money amountMinor={item.spentMinor} currency={item.currency} size="sm" censored={censored} />

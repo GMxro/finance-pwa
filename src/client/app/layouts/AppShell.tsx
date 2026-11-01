@@ -1,14 +1,18 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { MoreHorizontal, Plus } from 'lucide-react';
 import { useAuth } from '../providers';
-import { NAV_ITEMS } from '../navigation';
+import { MORE_NAV_ITEMS, MOBILE_NAV_ITEMS, NAV_ITEMS } from '../navigation';
 import { ButtonLink } from '@shared/ui/Button';
 import { Status } from '@shared/ui/Status';
 import './AppShell.css';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, syncState, syncNow } = useAuth();
+  const { pathname } = useLocation();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const showQuickAdd = pathname === '/' || pathname === '/estadisticas';
+  const moreActive = MORE_NAV_ITEMS.some(item => pathname.startsWith(item.to));
 
   const syncLabel = syncState.error
     ? `${syncState.pendingCount} pendiente${syncState.pendingCount === 1 ? '' : 's'} · Error de sincronización`
@@ -80,8 +84,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="ui-shell__main">
         <div className="ui-shell__content">{children}</div>
 
+        {showQuickAdd && (
+          <ButtonLink
+            to="/movimientos?new=expense"
+            className="ui-quick-add"
+            variant="primary"
+            aria-label="Nuevo movimiento"
+          >
+            <Plus size={24} strokeWidth={2} aria-hidden="true" />
+          </ButtonLink>
+        )}
+
         <nav className="ui-bottom-nav" aria-label="Navegación principal">
-          {NAV_ITEMS.map(item => {
+          {MOBILE_NAV_ITEMS.map(item => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -89,13 +104,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) => `ui-bottom-nav__item ${isActive ? 'is-active' : ''}`}
+                onClick={() => setMoreOpen(false)}
               >
                 <Icon size={21} strokeWidth={1.7} aria-hidden="true" />
                 <span>{item.label}</span>
               </NavLink>
             );
           })}
+          <button
+            type="button"
+            className={`ui-bottom-nav__item ${moreActive || moreOpen ? 'is-active' : ''}`}
+            aria-expanded={moreOpen}
+            aria-controls={moreOpen ? 'ui-more-menu' : undefined}
+            onClick={() => setMoreOpen(open => !open)}
+          >
+            <MoreHorizontal size={21} strokeWidth={1.7} aria-hidden="true" />
+            <span>Más</span>
+          </button>
         </nav>
+        {moreOpen && (
+          <nav id="ui-more-menu" className="ui-more-menu" aria-label="Más secciones">
+            {MORE_NAV_ITEMS.map(item => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) => `ui-more-menu__item ${isActive ? 'is-active' : ''}`}
+                  onClick={() => setMoreOpen(false)}
+                >
+                  <Icon size={18} aria-hidden="true" />
+                  <span>{item.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+        )}
       </div>
     </div>
   );

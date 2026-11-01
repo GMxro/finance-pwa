@@ -3,6 +3,64 @@
   font-weight: var(--weight-label);
 }
 
+.overview-page .ui-page-header {
+  margin-bottom: var(--space-4);
+}
+
+.overview-period {
+  margin-bottom: var(--space-4);
+}
+
+.overview-period .ui-month {
+  padding: 2px;
+}
+
+.overview-period .ui-month__button {
+  width: 44px;
+  height: 44px;
+}
+
+.overview-period .ui-month__label {
+  min-width: 130px;
+}
+
+.overview-summary {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.overview-net {
+  min-height: 132px;
+}
+
+.overview-income-expense {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.overview-summary-link {
+  display: block;
+  min-width: 0;
+  border-radius: var(--radius-card);
+}
+
+.overview-summary-link:hover {
+  text-decoration: none;
+}
+
+.overview-summary-link:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.overview-amount-card {
+  min-height: 92px;
+  height: 100%;
+}
+
+.overview-summary-link:active .overview-amount-card {
+  background: var(--color-inset);
+}
+
 .overview-hero__head {
   display: flex;
   flex-direction: column;
@@ -80,7 +138,17 @@
 }
 
 .ui-page .ui-section.overview-recent {
-  margin-top: clamp(24px, 3vw, 32px);
+  margin-top: var(--space-6);
+}
+
+@media (max-width: 380px) {
+  .overview-income-expense {
+    gap: var(--space-2);
+  }
+
+  .overview-amount-card {
+    padding: var(--space-3);
+  }
 }
 
 .overview-skeleton {

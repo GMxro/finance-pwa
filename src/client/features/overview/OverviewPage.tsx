@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/providers';
 import { api, canUseStaleData } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
 import type { BudgetWithSpent } from '@contracts/budget';
+import type { AccountWithBalances } from '@contracts/account';
 import type { CurrencyCode } from '@domain/money';
 import { addMonths, todayLocalISO } from '@domain/date';
 import { computeAllCurrenciesSummary } from '@domain/summary';
@@ -35,12 +36,14 @@ function getInitialShowAmounts(): boolean {
 
 export function OverviewPage() {
   const { user, defaultCurrency } = useAuth();
+  const navigate = useNavigate();
   const [month, setMonth] = useState(() => todayLocalISO().slice(0, 7));
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
   const [showAmounts] = useState<boolean>(getInitialShowAmounts);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [budgets, setBudgets] = useState<BudgetWithSpent[]>([]);
+  const [accounts, setAccounts] = useState<AccountWithBalances[]>([]);
   const [, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dataStatus, setDataStatus] = useState<'current' | 'cached' | 'partial' | 'unavailable'>('unavailable');
@@ -66,13 +69,14 @@ export function OverviewPage() {
     setBudgetLoadError(false);
     const previousMonth = addMonths(month, -1) ?? month;
     try {
-      const [currentSummary, previousSummary, catRes, budgetRes, currentTxRes, previousTxRes] = await Promise.all([
+      const [currentSummary, previousSummary, catRes, budgetRes, currentTxRes, previousTxRes, accountRes] = await Promise.all([
         api.getMonthlySummary(month, currency),
         api.getMonthlySummary(previousMonth, currency),
         api.listCategories(),
         api.listBudgets(month),
         api.listTransactions({ period: month, page: 1, limit: TRANSACTION_PAGE_SIZE }),
-        api.listTransactions({ period: previousMonth, page: 1, limit: TRANSACTION_PAGE_SIZE })
+        api.listTransactions({ period: previousMonth, page: 1, limit: TRANSACTION_PAGE_SIZE }),
+        api.listAccounts()
       ]);
       const mergeRows = async (rows: any[]) => {
         try {
@@ -124,6 +128,7 @@ export function OverviewPage() {
       } else {
         setBudgets(budgetRes.data ?? []);
       }
+      setAccounts(accountRes.error ? [] : accountRes.data ?? []);
       if (auxiliaryErrors.length > 0) {
         setDataStatus((status) => status === 'current' ? 'partial' : status);
         setError((currentError) => [currentError, `No se pudieron actualizar categorías o presupuestos: ${auxiliaryErrors.join('; ')}`]
@@ -155,6 +160,7 @@ export function OverviewPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _previousSummary = previousSummary;
   const categoriesById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
+  const accountsById = useMemo(() => new Map(accounts.map(account => [account.id, account.name])), [accounts]);
 
  const KIND_LABELS: Record<'income' | 'expense', string> = { income: 'Ingresos', expense: 'Gastos' };
 
@@ -173,38 +179,40 @@ export function OverviewPage() {
                 { value: 'USD', label: 'USD' }
               ]}
             />
-            <ButtonLink to="/movimientos?new=expense" variant="primary" size="sm">
-              <Plus size={16} strokeWidth={2} aria-hidden="true" />
-              Nuevo
-            </ButtonLink>
           </Inline>
         }
       />
-      <MonthStepper month={month} onChange={setMonth} />
+      <div className="overview-period"><MonthStepper month={month} onChange={setMonth} /></div>
 
-      <Grid gap="md">
-        <Panel tone="ink" radius="panel" padding="lg">
+      <div className="overview-summary">
+        <Panel tone="ink" radius="panel" padding="md" className="overview-net">
           <Stack gap="xs">
             <Text variant="small" tone="on-ink-muted">Saldo neto</Text>
             <Money amountMinor={summary.netMinor} currency={currency} sign="auto" tone="onInk" size="xl" censored={!showAmounts} />
             <Text variant="small" tone="on-ink-muted">{dataStatus === 'unavailable' ? '—' : dataStatus === 'cached' ? 'Datos locales (pueden estar desactualizados)' : dataStatus === 'partial' ? 'Comparación sin actualizar' : 'Actualizado'}</Text>
           </Stack>
         </Panel>
-        <Panel tone="paper" radius="panel" padding="lg">
-          <Stack gap="xs">
-            <Text variant="small" tone="stone">{KIND_LABELS.income}</Text>
-            <Money amountMinor={summary.incomeMinor} currency={currency} sign="plus" tone="ink" size="xl" censored={!showAmounts} />
-          </Stack>
-        </Panel>
-        <Panel tone="paper" radius="panel" padding="lg">
-          <Stack gap="xs">
-            <Text variant="small" tone="stone">{KIND_LABELS.expense}</Text>
-            <Money amountMinor={summary.expenseMinor} currency={currency} sign="minus" tone="ink" size="xl" censored={!showAmounts} />
-          </Stack>
-        </Panel>
-      </Grid>
+        <Grid columns={2} gap="sm" className="overview-income-expense">
+          <Link className="overview-summary-link" to={`/movimientos?period=${month}&kind=income`} aria-label={`Ver ingresos de ${month}`}>
+            <Panel tone="paper" radius="card" padding="md" className="overview-amount-card">
+              <Stack gap="xs">
+                <Text variant="small" tone="stone">{KIND_LABELS.income}</Text>
+                <Money amountMinor={summary.incomeMinor} currency={currency} sign="plus" tone="ink" size="md" censored={!showAmounts} />
+              </Stack>
+            </Panel>
+          </Link>
+          <Link className="overview-summary-link" to={`/movimientos?period=${month}&kind=expense`} aria-label={`Ver gastos de ${month}`}>
+            <Panel tone="paper" radius="card" padding="md" className="overview-amount-card">
+              <Stack gap="xs">
+                <Text variant="small" tone="stone">{KIND_LABELS.expense}</Text>
+                <Money amountMinor={summary.expenseMinor} currency={currency} sign="minus" tone="ink" size="md" censored={!showAmounts} />
+              </Stack>
+            </Panel>
+          </Link>
+        </Grid>
+      </div>
 
-      <Section title="Presupuestos">
+      <Section title="Presupuestos" action={<ButtonLink to="/presupuestos" variant="ghost" size="sm">Ver todos</ButtonLink>}>
         <BudgetList
           items={budgets.map(b => ({
             id: b.id,
@@ -218,6 +226,7 @@ export function OverviewPage() {
           categoryName={id => categoriesById.get(id)?.name ?? '—'}
           categoryIcon={id => categoriesById.get(id)?.iconKey ?? '📁'}
           censored={!showAmounts}
+          onSelect={item => navigate(`/movimientos?period=${month}&kind=expense&categoryId=${item.categoryId}`)}
           emptyLabel={budgetLoadError ? 'No se pudieron cargar los presupuestos.' : 'Todavía no definiste presupuestos para este mes.'}
           emptyAction={!budgetLoadError && (
             <ButtonLink to="/presupuestos" variant="primary" size="sm">
@@ -227,9 +236,9 @@ export function OverviewPage() {
         />
       </Section>
 
-      <Section title="Movimientos recientes">
+      <Section title="Movimientos recientes" className="overview-recent" action={<ButtonLink to={`/movimientos?period=${month}`} variant="ghost" size="sm">Ver historial</ButtonLink>}>
         <LedgerList
-          items={transactions.map(t => ({
+          items={transactions.slice(0, 8).map(t => ({
             id: t.id,
             kind: t.kind,
             amountMinor: t.amountMinor,
@@ -237,17 +246,14 @@ export function OverviewPage() {
             occurredOn: t.occurredOn,
             note: t.note,
             categoryId: t.categoryId,
+            accountName: t.accountId ? accountsById.get(t.accountId) : undefined,
             pending: !t.synced
           }))}
           categoryName={id => categoriesById.get(id)?.name ?? '—'}
           categoryIcon={id => categoriesById.get(id)?.iconKey ?? '📁'}
+          onEdit={item => navigate(`/movimientos?period=${month}&edit=${encodeURIComponent(item.id)}`)}
           censored={!showAmounts}
           emptyLabel={dataStatus === 'unavailable' ? 'No se pudieron cargar los movimientos.' : 'Todavía no hay movimientos en este mes.'}
-          emptyAction={dataStatus !== 'unavailable' && (
-            <ButtonLink to="/movimientos?new=expense" variant="primary" size="sm">
-              Registrar un movimiento
-            </ButtonLink>
-          )}
         />
       </Section>
 

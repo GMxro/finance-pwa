@@ -2,6 +2,10 @@
   margin-bottom: var(--space-4);
 }
 
+.tx-search {
+  margin-bottom: var(--space-4);
+}
+
 .tx-notices {
   margin-bottom: var(--space-4);
 }

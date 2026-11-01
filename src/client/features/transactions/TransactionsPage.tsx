@@ -6,7 +6,7 @@ import { api } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
 import type { AccountWithBalances } from '@contracts/account';
 import { type CurrencyCode } from '@domain/money';
-import { todayLocalISO } from '@domain/date';
+import { isValidMonth, todayLocalISO } from '@domain/date';
 import { mergeWithCache, cacheServerRows, readCached, savePendingCreate } from '@local-data/transaction-store';
 import { Page, PageHeader, Grid, Stack, Inline } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
@@ -51,7 +51,10 @@ const emptyForm = (kind: TransactionKind, currency: CurrencyCode): TxFormData =>
 export function TransactionsPage() {
   const { user, syncNow, defaultCurrency } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [month, setMonth] = useState(() => todayLocalISO().slice(0, 7));
+  const [month, setMonth] = useState(() => {
+    const period = searchParams.get('period');
+    return period && isValidMonth(period) ? period : todayLocalISO().slice(0, 7);
+  });
   const [transactions, setTransactions] = useState<any[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [accounts, setAccounts] = useState<AccountWithBalances[]>([]);
@@ -61,8 +64,13 @@ export function TransactionsPage() {
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const [filters, setFilters] = useState({ currency: '', kind: '', categoryId: '' });
-  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState(() => ({
+    currency: '',
+    kind: ['income', 'expense'].includes(searchParams.get('kind') ?? '') ? searchParams.get('kind')! : '',
+    categoryId: searchParams.get('categoryId') ?? ''
+  }));
+  const [search, setSearch] = useState('');
+  const [showFilters, setShowFilters] = useState(() => Boolean(searchParams.get('kind') || searchParams.get('categoryId')));
   const [editingTx, setEditingTx] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [formData, setFormData] = useState<TxFormData>(() => emptyForm('expense', defaultCurrency));
@@ -106,7 +114,16 @@ export function TransactionsPage() {
       const merged = await mergeWithCache(user.id, serverRows);
       const forMonth = merged.filter((tx: any) => tx.occurredOn?.startsWith(month));
 
-      setTransactions(prev => (append ? [...prev, ...forMonth] : forMonth));
+      setTransactions(prev => {
+        if (!append) return forMonth;
+        const seen = new Set(prev.map(tx => tx.id));
+        const added = forMonth.filter(tx => {
+          if (seen.has(tx.id)) return false;
+          seen.add(tx.id);
+          return true;
+        });
+        return [...prev, ...added];
+      });
       setHasMore(serverRows.length === 50);
       setOffline(false);
     } catch (e: any) {
@@ -181,6 +198,7 @@ export function TransactionsPage() {
   }, [syncNow, loadData]);
 
   const categoriesById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
+  const accountsById = useMemo(() => new Map(accounts.map(account => [account.id, account.name])), [accounts]);
   const categoryName = (id: string) => categoriesById.get(id)?.name ?? 'Sin categoría';
   const categoryIcon = (id: string) => categoriesById.get(id)?.iconKey ?? 'tag';
 
@@ -289,9 +307,31 @@ export function TransactionsPage() {
       setFormData(newForm);
       setAmountMinor(null);
       setEditingTx({ kind: mode });
-      setSearchParams({}, { replace: true });
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('new');
+      setSearchParams(nextParams, { replace: true });
     }
   }, [searchParams, setSearchParams, categories, setAmountMinor, defaultCurrency]);
+
+  useEffect(() => {
+    const transactionId = searchParams.get('edit');
+    if (!transactionId || loading || editingTx?.id === transactionId) return;
+    const transaction = transactions.find(tx => tx.id === transactionId);
+    if (!transaction) return;
+    startEdit({
+      id: transaction.id,
+      kind: transaction.kind,
+      amountMinor: transaction.amountMinor,
+      currency: transaction.currency,
+      occurredOn: transaction.occurredOn,
+      note: transaction.note,
+      categoryId: transaction.categoryId,
+      accountName: transaction.accountId ? accountsById.get(transaction.accountId) : undefined
+    });
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('edit');
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, transactions, loading, accountsById, setSearchParams, startEdit, editingTx]);
 
   const validate = () => {
     if (formData.amountMinor === null || formData.amountMinor === undefined || formData.amountMinor <= 0) {
@@ -382,12 +422,21 @@ export function TransactionsPage() {
     occurredOn: tx.occurredOn,
     note: tx.note,
     categoryId: tx.categoryId,
+    accountName: tx.accountId ? accountsById.get(tx.accountId) : undefined,
     pending: tx.synced === false
   }));
+  const visibleItems = search.trim()
+    ? items.filter(item => `${item.note ?? ''} ${categoryName(item.categoryId)} ${item.accountName ?? ''}`.toLocaleLowerCase('es-AR').includes(search.trim().toLocaleLowerCase('es-AR')))
+    : items;
 
   const categoryOptions = categories
     .filter(c => c.kind === formData.kind && (!c.archivedAt || c.id === formData.categoryId))
     .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name }));
+  const emptyMessage = search
+    ? hasMore ? 'No hay coincidencias entre los movimientos cargados. Cargá más para ampliar la búsqueda.' : 'Probá con otra descripción, categoría o cuenta.'
+    : month === todayLocalISO().slice(0, 7)
+      ? 'Todavía no registraste movimientos este mes.'
+      : 'No hay movimientos en este período con los filtros elegidos.';
 
   return (
     <Page>
@@ -408,6 +457,15 @@ export function TransactionsPage() {
           Filtros
         </Button>
       </Inline>
+
+      <Input
+        className="tx-search"
+        label="Buscar movimientos"
+        type="search"
+        value={search}
+        onChange={setSearch}
+        placeholder="Descripción, categoría o cuenta"
+      />
 
       <Stack gap="md" className="tx-notices">
         {offline && (
@@ -454,20 +512,17 @@ export function TransactionsPage() {
 
       {loading && transactions.length === 0 && <LoadingSpinner />}
 
-      {!loading && items.length === 0 && !error && (
+      {!loading && visibleItems.length === 0 && !error && (
         <EmptyState
-          title="Sin movimientos"
-          message={month === todayLocalISO().slice(0, 7)
-            ? 'Todavía no registraste movimientos este mes.'
-            : 'No hay movimientos en este período con los filtros elegidos.'}
-          action={{ label: 'Agregar el primero', onClick: () => openCreate('expense') }}
+          title={search ? 'Sin coincidencias' : 'Sin movimientos'}
+          message={emptyMessage}
         />
       )}
 
-      {items.length > 0 && (
+      {visibleItems.length > 0 && (
         <Panel tone="paper" radius="panel" padding="none">
           <LedgerList
-            items={items}
+            items={visibleItems}
             categoryName={categoryName}
             categoryIcon={categoryIcon}
             onEdit={startEdit}
