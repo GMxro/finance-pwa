@@ -289,8 +289,13 @@
 }
 
 
-.overview-section-spaced {
+.ui-page .ui-section.overview-section-spaced,
+.ui-page .ui-section.overview-recent.overview-section-spaced {
   margin-top: calc(var(--space-12) + 28px);
+}
+
+.ui-page .ui-section.overview-section-spaced .ui-section__header {
+  margin-bottom: var(--space-2);
 }
 
 .overview-section-action {
