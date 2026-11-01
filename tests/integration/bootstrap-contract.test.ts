@@ -3,6 +3,7 @@ import { env } from 'cloudflare:test';
 import { Hono } from 'hono';
 import type { Env } from '@env';
 import { bootstrapRoutes } from '../../src/worker/routes/bootstrap';
+import { CURRENT_LEGAL_VERSIONS } from '../../src/contracts/legal';
 
 const USER_ID = '99999999-9999-4999-8999-999999999998';
 const EPOCH = '12345678-1234-4234-8234-123456789abc';
@@ -45,7 +46,38 @@ describe('bootstrap API contract', () => {
       syncEpoch: EPOCH,
       defaultCurrency: 'ARS',
       timeZone: 'America/Argentina/Buenos_Aires',
-      onboardingComplete: false
+      onboardingComplete: false,
+      legalAcceptance: {
+        accepted: false,
+        termsVersion: CURRENT_LEGAL_VERSIONS.terms,
+        privacyVersion: CURRENT_LEGAL_VERSIONS.privacy,
+        acceptedAt: null
+      }
     });
+    const initialData = await db.prepare(`SELECT COUNT(*) AS count FROM categories WHERE user_id = ?`)
+      .bind(USER_ID).first<{ count: number }>();
+    expect(initialData?.count).toBe(0);
+  });
+
+  it('initializes account data only after current legal acceptance', async () => {
+    await db.prepare(`INSERT INTO legal_acceptances (user_id, terms_version, privacy_version, accepted_at)
+      VALUES (?, ?, ?, 1710000000000)`)
+      .bind(USER_ID, CURRENT_LEGAL_VERSIONS.terms, CURRENT_LEGAL_VERSIONS.privacy).run();
+
+    const response = await app.fetch(
+      new Request('https://finance-pwa.test/api/bootstrap'),
+      { ...env, SYNC_EPOCH: EPOCH } as never,
+      undefined
+    );
+    const body = await response.json() as any;
+    expect(body.legalAcceptance).toEqual({
+      accepted: true,
+      termsVersion: CURRENT_LEGAL_VERSIONS.terms,
+      privacyVersion: CURRENT_LEGAL_VERSIONS.privacy,
+      acceptedAt: 1710000000000
+    });
+    const initialData = await db.prepare(`SELECT COUNT(*) AS count FROM categories WHERE user_id = ?`)
+      .bind(USER_ID).first<{ count: number }>();
+    expect(initialData?.count).toBe(13);
   });
 });

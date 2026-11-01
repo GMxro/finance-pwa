@@ -6,6 +6,7 @@ import type { AccountCreate, AccountUpdate, AccountResponse, AccountWithBalances
 import type { TransferCreate, TransferResponse } from '@contracts/transfer';
 import type { SyncPullResponse } from '@contracts/sync';
 import type { UserPublic } from '@contracts/auth';
+import type { LegalAcceptance, LegalAcceptanceInput } from '@contracts/legal';
 import type { CurrencyCode } from '@domain/money';
 import { REQUIRED_APP_VERSION_KEY } from '@client/app/version-policy';
 
@@ -98,6 +99,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
     const body = (await res.json().catch(() => ({}))) as any;
 
     if (!res.ok) {
+      if (body.code === 'LEGAL_ACCEPTANCE_REQUIRED' && typeof window !== 'undefined' && window.location.pathname !== '/aceptar-legal') {
+        window.location.replace('/aceptar-legal');
+      }
       return {
         data: null,
         error: {
@@ -134,10 +138,18 @@ export interface BootstrapData {
   defaultCurrency: CurrencyCode;
   timeZone: string;
   onboardingComplete: boolean;
+  legalAcceptance: LegalAcceptance;
 }
 
 export async function getBootstrap(): Promise<ApiResponse<BootstrapData>> {
   return request<BootstrapData>('/bootstrap');
+}
+
+export async function acceptLegalDocuments(input: LegalAcceptanceInput): Promise<ApiResponse<LegalAcceptance>> {
+  return request<LegalAcceptance>('/legal/acceptance', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  });
 }
 
 export async function updatePreferences(defaultCurrency: CurrencyCode): Promise<ApiResponse<{ defaultCurrency: CurrencyCode }>> {
@@ -355,6 +367,7 @@ export async function waitForAccountDeletion(lookup: AccountDeletionLookup): Pro
 export const api = {
   getSession,
   getBootstrap,
+  acceptLegalDocuments,
   listTransactions,
   createTransaction,
   updateTransaction,

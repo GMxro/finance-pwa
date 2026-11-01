@@ -4,6 +4,7 @@ import { requestId } from 'hono/request-id';
 
 import { sessionMiddleware } from './middleware/session';
 import { apiMutationRateLimit } from './middleware/rate-limit';
+import { legalAcceptanceRequired } from './middleware/legal-acceptance';
 import { sameOriginGuard } from './middleware/same-origin';
 import { apiBodyLimit } from './middleware/body-limit';
 import { minimumAppVersion } from './middleware/minimum-app-version';
@@ -19,6 +20,7 @@ import { budgetsRoutes } from './routes/budgets';
 import { categoriesRoutes } from './routes/categories';
 import { syncRoutes } from './routes/sync';
 import { healthRoutes } from './routes/health';
+import { legalRoutes } from './routes/legal';
 
 import type { Env } from '@env';
 
@@ -44,9 +46,11 @@ app.route('/api/account/deletion-status', deletionStatusRoutes);
 const protectedApi = new Hono<{ Bindings: Env }>();
 protectedApi.use('*', sessionMiddleware);
 protectedApi.use('*', apiMutationRateLimit);
+protectedApi.use('*', legalAcceptanceRequired);
 
-protectedApi.route('/account', accountRoutes);
 protectedApi.route('/bootstrap', bootstrapRoutes);
+protectedApi.route('/legal', legalRoutes);
+protectedApi.route('/account', accountRoutes);
 protectedApi.route('/transactions', transactionsRoutes);
 protectedApi.route('/accounts', accountsRoutes);
 protectedApi.route('/transfers', transfersRoutes);

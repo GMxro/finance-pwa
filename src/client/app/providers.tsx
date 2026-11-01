@@ -4,6 +4,7 @@ import { clearUserData, discardUserOutbox, getLocalUserIds, getUserOutboxCount, 
 import { syncEngine, SyncState } from '@local-data/sync-engine';
 import { api, appFetch } from '@shared/api/client';
 import type { UserPublic } from '@contracts/auth';
+import type { LegalAcceptance, LegalAcceptanceInput } from '@contracts/legal';
 import type { CurrencyCode } from '@domain/money';
 import { LOGIN_ATTEMPT_KEY, OFFLINE_LOGOUT_KEY, runLogoutFlow, shouldRestoreStoredSession } from './logout-flow';
 import type { LogoutFlowResult, PendingLogoutAction } from './logout-flow';
@@ -98,10 +99,12 @@ interface AuthContextType {
   session: any | null;
   loading: boolean;
   onboardingComplete: boolean;
+  legalAcceptance: LegalAcceptance | null;
   defaultCurrency: CurrencyCode;
   login: () => Promise<void>;
   logout: (options?: LogoutOptions) => Promise<LogoutFlowResult>;
   completeOnboarding: (currency: CurrencyCode) => Promise<void>;
+  acceptLegalDocuments: (input: LegalAcceptanceInput) => Promise<void>;
   syncState: SyncState;
   syncNow: () => Promise<void>;
 }
@@ -113,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [legalAcceptance, setLegalAcceptance] = useState<LegalAcceptance | null>(null);
   const [defaultCurrency, setDefaultCurrency] = useState<CurrencyCode>('ARS');
   const [syncEpoch, setSyncEpoch] = useState<string | null>(null);
   const [syncState, setSyncState] = useState<SyncState>({ status: 'idle', lastSync: null, pendingCount: 0, error: null });
@@ -130,26 +134,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (response.data) {
           clearClientFlag(OFFLINE_LOGOUT_KEY);
           clearClientFlag(LOGIN_ATTEMPT_KEY);
-          const pendingCount = await getUserOutboxCount(response.data.id).catch(() => 0);
-          setSyncState({ status: 'syncing', lastSync: null, pendingCount, error: null });
           setDefaultCurrency('ARS');
           setUser(response.data);
           setSession(response.data);
-          setOnboardingComplete(true);
-          void requestPersistentStorage();
+          setOnboardingComplete(false);
           const bootstrap = await api.getBootstrap();
           if (bootstrap.error || !bootstrap.data) throw new Error(bootstrap.error?.message ?? 'No pudimos cargar tu cuenta.');
           if (bootstrap.data.userId !== response.data.id) throw new Error('La sesión cambió durante el inicio.');
+          setLegalAcceptance(bootstrap.data.legalAcceptance);
           setSyncEpoch(bootstrap.data.syncEpoch);
           setDefaultCurrency(bootstrap.data.defaultCurrency);
           setOnboardingComplete(bootstrap.data.onboardingComplete);
-          await syncEngine.initialize(response.data.id, bootstrap.data.syncEpoch);
+          if (bootstrap.data.legalAcceptance.accepted) {
+            const pendingCount = await getUserOutboxCount(response.data.id).catch(() => 0);
+            setSyncState({ status: 'syncing', lastSync: null, pendingCount, error: null });
+            void requestPersistentStorage();
+            await syncEngine.initialize(response.data.id, bootstrap.data.syncEpoch);
+          } else {
+            setSyncState({ status: 'idle', lastSync: null, pendingCount: 0, error: null });
+          }
         } else {
           clearClientFlag(LOGIN_ATTEMPT_KEY);
           if (localLogoutPending) return;
           setUser(null);
           setSession(null);
           setOnboardingComplete(false);
+          setLegalAcceptance(null);
           setDefaultCurrency('ARS');
           setSyncEpoch(null);
         }
@@ -186,6 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const syncForUser = useCallback((ownerId: string): Promise<void> => {
+    if (!legalAcceptance?.accepted) throw new Error('Aceptá los documentos vigentes antes de sincronizar.');
     const pending = syncRequests.current.get(ownerId);
     if (pending) return pending;
 
@@ -206,10 +217,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     syncRequests.current.set(ownerId, request);
     return request;
-  }, [syncEpoch]);
+  }, [legalAcceptance?.accepted, syncEpoch]);
 
   useEffect(() => {
-    if (loading || !user) return;
+    if (loading || !user || !legalAcceptance?.accepted) return;
     const handleOnline = () => {
       void syncForUser(user.id)
         .catch((error) => {
@@ -222,11 +233,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
-  }, [loading, syncForUser, user]);
+  }, [loading, legalAcceptance?.accepted, syncForUser, user]);
   
   const logout = useCallback(async (options: LogoutOptions = {}): Promise<LogoutFlowResult> => {
     const userId = user?.id;
     if (!userId) {
+      window.location.href = '/login';
+      return { status: 'done' };
+    }
+
+    if (options.accountDeleted) {
+      await clearUserData(userId);
+      clearClientFlag(OFFLINE_LOGOUT_KEY);
+      clearClientFlag(LOGIN_ATTEMPT_KEY);
+      setUser(null);
+      setSession(null);
+      setOnboardingComplete(false);
+      setLegalAcceptance(null);
+      setDefaultCurrency('ARS');
+      setSyncState({ status: 'idle', lastSync: null, pendingCount: 0, error: null });
+      window.location.href = '/login';
+      return { status: 'done' };
+    }
+
+    if (!legalAcceptance?.accepted) {
+      const online = navigator.onLine;
+      if (online) {
+        const response = await appFetch('/api/auth/signout', { method: 'POST', credentials: 'same-origin' });
+        if (!response.ok && response.status !== 401) throw new Error('No pudimos cerrar la sesión. Probá de nuevo.');
+        clearClientFlag(OFFLINE_LOGOUT_KEY);
+      } else {
+        writeClientFlag(OFFLINE_LOGOUT_KEY, '1');
+      }
+      clearClientFlag(LOGIN_ATTEMPT_KEY);
+      setUser(null);
+      setSession(null);
+      setOnboardingComplete(false);
+      setLegalAcceptance(null);
+      setDefaultCurrency('ARS');
+      setSyncState({ status: 'idle', lastSync: null, pendingCount: 0, error: null });
       window.location.href = '/login';
       return { status: 'done' };
     }
@@ -257,29 +302,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setSession(null);
         setOnboardingComplete(false);
+        setLegalAcceptance(null);
         setDefaultCurrency('ARS');
         setSyncState({ status: 'idle', lastSync: null, pendingCount: 0, error: null });
         window.location.href = '/login';
       }
     });
-  }, [syncForUser, user?.id]);
+  }, [legalAcceptance?.accepted, syncForUser, user?.id]);
   
   const completeOnboarding = useCallback(async (currency: CurrencyCode) => {
     if (!user) throw new Error('No pudimos identificar la cuenta activa.');
+    if (!legalAcceptance?.accepted) throw new Error('Aceptá los documentos vigentes antes de continuar.');
     const response = await api.updatePreferences(currency);
     if (response.error) throw new Error(response.error.message);
     setDefaultCurrency(response.data?.defaultCurrency ?? currency);
     setOnboardingComplete(true);
-  }, [user]);
+  }, [legalAcceptance?.accepted, user]);
+
+  const acceptLegalDocuments = useCallback(async (input: LegalAcceptanceInput) => {
+    const response = await api.acceptLegalDocuments(input);
+    if (response.error || !response.data?.accepted) {
+      throw new Error(response.error?.message ?? 'No pudimos guardar tu aceptación.');
+    }
+  }, []);
 
   const syncNow = useCallback(async () => {
+    if (!legalAcceptance?.accepted) throw new Error('Aceptá los documentos vigentes antes de sincronizar.');
     if (user) await syncForUser(user.id);
-  }, [syncForUser, user]);
+  }, [legalAcceptance?.accepted, syncForUser, user]);
   
   return (
     <AuthContext.Provider value={{
-      user, session, loading, onboardingComplete, defaultCurrency,
-      login, logout, completeOnboarding, syncState, syncNow
+      user, session, loading, onboardingComplete, legalAcceptance, defaultCurrency,
+      login, logout, completeOnboarding, acceptLegalDocuments, syncState, syncNow
     }}>
       {children}
     </AuthContext.Provider>

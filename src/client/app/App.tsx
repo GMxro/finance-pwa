@@ -12,12 +12,16 @@ import { CategoriesPage } from '@client/features/categories/CategoriesPage';
 import { AccountsPage } from '@client/features/accounts/AccountsPage';
 import { SettingsPage } from '@client/features/settings/SettingsPage';
 import { LoadingScreen } from '@shared/ui/LoadingScreen';
+import { TermsPage } from '@client/features/legal/TermsPage';
+import { PrivacyPage } from '@client/features/legal/PrivacyPage';
+import { LegalAcceptancePage } from '@client/features/legal/LegalAcceptancePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, onboardingComplete } = useAuth();
+  const { user, loading, legalAcceptance, onboardingComplete } = useAuth();
 
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
+  if (!legalAcceptance?.accepted) return <Navigate to="/aceptar-legal" replace />;
   if (!onboardingComplete) return <Navigate to="/onboarding" replace />;
 
   return <>{children}</>;
@@ -34,8 +38,6 @@ function AppLayout() {
       <Route path="/ajustes/categorias" element={<CategoriesPage />} />
      <Route path="/categorias" element={<Navigate to="/ajustes/categorias" replace />} />
      <Route path="/ajustes" element={<SettingsPage />} />
-      <Route path="/terminos" element={<TermsPage />} />
-      <Route path="/privacidad" element={<PrivacyPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -51,6 +53,9 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/terminos" element={<TermsPage />} />
+      <Route path="/privacidad" element={<PrivacyPage />} />
+      <Route path="/aceptar-legal" element={<LegalAcceptancePage />} />
       <Route
         path="/onboarding"
         element={
@@ -67,5 +72,3 @@ function AppRoutes() {
 export function App() {
   return <AppRoutes />;
 }
-import { TermsPage } from '@client/features/legal/TermsPage';
-import { PrivacyPage } from '@client/features/legal/PrivacyPage';

@@ -1,13 +1,13 @@
 {
   "name": "finance-pwa",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "prebuild": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "vite build && node scripts/stamp-service-worker.mjs && tsc --noEmit",
-    "postbuild": "node scripts/check-pwa-icons.mjs",
+    "postbuild": "node -e \"require('node:fs').rmSync('dist/finance_pwa/.dev.vars',{force:true})\" && node scripts/check-pwa-icons.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --max-warnings 0",
     "test": "vitest run",

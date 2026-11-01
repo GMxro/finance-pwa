@@ -17,113 +17,114 @@ export function TermsPage() {
       />
       <Stack gap="lg" className="ui-legal-content">
         <section>
-          <h2>1. Aceptación de los términos</h2>
+          <h2>1. Aceptación y alcance</h2>
           <p>
-            Al acceder y utilizar esta aplicación de finanzas personales ("la Aplicación"), aceptás estar
-            vinculado por estos Términos y Condiciones ("los Términos"), nuestra Política de Privacidad
-            y cualquier otra guía o regla publicada en la Aplicación. Si no estás de acuerdo con alguna
-            parte de estos Términos, no deberías utilizar la Aplicación.
+            Estos Términos regulan el uso de la aplicación de finanzas personales (la “Aplicación”).
+            Iniciar sesión con Google no implica aceptarlos. Después de iniciar sesión, antes de usar
+            las funciones de la Aplicación, vas a poder leer estos Términos y la Política de Privacidad
+            y confirmar tu decisión mediante casillas separadas. Si no aceptás, podés salir sin usar
+            el servicio. La Aplicación registra tu identificador, la versión de ambos documentos y la
+            fecha y hora UTC de esa acción. La constancia de lectura de la Política no es un
+            consentimiento general para tratar datos personales.
           </p>
         </section>
 
         <section>
-          <h2>2. Descripción del servicio</h2>
+          <h2>2. Personas usuarias</h2>
           <p>
-            La Aplicación es una herramienta de gestión de finanzas personales que te permite registrar
-            ingresos y gastos, crear presupuestos, gestionar cuentas y transferencias, y visualizar
-            estadísticas de tus finanzas. El servicio se proporciona "tal cual" y "según disponibilidad".
+            El servicio está destinado exclusivamente a personas de 18 años o más. Al continuar,
+            confirmás que cumplís esa condición. La Aplicación no verifica automáticamente la edad.
+            Si no tenés 18 años, no podés usar el servicio.
           </p>
         </section>
 
         <section>
-          <h2>3. Cuenta de usuario y autenticación</h2>
+          <h2>3. Servicio</h2>
           <p>
-            Para utilizar la Aplicación, debés iniciar sesión con tu cuenta de Google a través de
-            Better Auth. Sos responsable de mantener la confidencialidad de tu cuenta y de todas las
-            actividades que ocurran en ella. La Aplicación no almacena tu contraseña de Google; la
-            autenticación se delega completamente a Google.
+            La Aplicación permite registrar y consultar movimientos, cuentas, transferencias y
+            presupuestos, y ver estadísticas personales. No accede a tus cuentas bancarias ni ejecuta
+            pagos o transferencias bancarias. Sus resultados dependen de la información que ingreses;
+            no constituyen asesoramiento financiero, contable ni impositivo.
           </p>
         </section>
 
         <section>
-          <h2>4. Datos financieros</h2>
+          <h2>4. Cuenta e inicio de sesión</h2>
           <p>
-            Los datos que ingreses en la Aplicación (movimientos, presupuestos, categorías, cuentas,
-            transferencias) son de tu propiedad. La Aplicación no comparte tus datos financieros con
-            terceros, salvo que sea necesario para cumplir con obligaciones legales o por orden judicial.
-          </p>
-          <p>
-            Los datos se almacenan en una base de datos gestionada por Cloudflare (D1 y R2) y, cuando
-            trabajás sin conexión, temporalmente en el almacenamiento local de tu navegador (IndexedDB).
-            La sincronización entre dispositivos ocurre automáticamente cuando hay conexión a internet.
-          </p>
-        </section>
-
-        <section>
-          <h2>5. Eliminación de cuenta y datos</h2>
-          <p>
-            Podés solicitar la eliminación completa de tu cuenta y todos tus datos asociados desde la
-            sección de Ajustes. Este proceso es irreversible: se elimina tu usuario, todos tus
-            movimientos, presupuestos, categorías, cuentas, transferencias, preferencias y sesiones.
-            Una vez completado, no es posible recuperar la información.
+            El acceso se realiza con Google mediante Better Auth. No se habilita el acceso con
+            contraseña propia de la Aplicación. Recibimos identificadores y datos de perfil que Google
+            provee para autenticarte; no usamos la Aplicación para consultar otros servicios de Google.
+            Iniciar sesión puede crear un registro de autenticación antes de que aceptes estos Términos,
+            pero no habilita las funciones financieras. Si salís sin aceptar, podés descargar el CSV
+            disponible o borrar la cuenta desde esa pantalla. Cerrar sesión, por sí solo, no borra el
+            perfil de Google asociado ni la cuenta guardada. Sos responsable de usar tu cuenta y de
+            avisarnos si detectás un uso no autorizado.
           </p>
         </section>
 
         <section>
-          <h2>6. Funcionamiento offline y sincronización</h2>
+          <h2>5. Tus datos y uso fuera de línea</h2>
           <p>
-            La Aplicación permite registrar movimientos sin conexión a internet. Esos cambios se guardan
-            localmente y se sincronizan automáticamente cuando se restablece la conexión. Durante la
-            sincronización, los datos del servidor tienen prioridad; los cambios locales pendientes se
-            envían y se resuelven los conflictos según la versión más reciente de cada registro.
+            Conservás tus derechos sobre la información que cargás. La Aplicación la trata para ofrecer
+            sus funciones y sincronizarla entre dispositivos. Para operar, ciertos datos se procesan en
+            Google y Cloudflare, conforme a la Política de Privacidad. No se venden ni se usan para
+            publicidad según la implementación actual.
           </p>
           <p>
-            Si borrás los datos del sitio en tu navegador antes de sincronizar, los cambios offline
-            pendientes se perderán irreversiblemente.
-          </p>
-        </section>
-
-        <section>
-          <h2>6. Limitación de responsabilidad</h2>
-          <p>
-            La Aplicación se proporciona "tal cual" y "según disponibilidad", sin garantías de ningún
-            tipo, ya sean expresas o implícitas. No garantizamos que la Aplicación sea ininterrumpida,
-            oportuna, segura o libre de errores. En la máxima medida permitida por la ley, no seremos
-            responsables por daños directos, indirectos, incidentales, especiales, consecuentes o
-            punitivos que resulten del uso o la imposibilidad de usar la Aplicación.
+            Cuando no hay conexión, los movimientos y metadatos necesarios pueden quedar en IndexedDB
+            del navegador y se sincronizan al recuperar la conexión. Los cambios todavía no sincronizados
+            pueden perderse si borrás los datos del sitio o el almacenamiento del navegador los elimina.
+            Revisá el estado de sincronización antes de cerrar sesión o borrar esos datos.
           </p>
         </section>
 
         <section>
-          <h2>7. Cambios en los Términos</h2>
+          <h2>6. Exportación, solicitudes y eliminación</h2>
           <p>
-            Podemos actualizar estos Términos ocasionalmente. Te notificaremos sobre cambios
-            significativos publicando los nuevos Términos en la Aplicación y actualizando la fecha de
-            "Última actualización". Tu uso continuado de la Aplicación después de la publicación
-            constituye aceptación de los Términos modificados.
+            Desde Ajustes podés descargar en CSV movimientos, categorías y presupuestos. La exportación
+            no incluye todos los datos de cuenta ni reemplaza una solicitud de acceso prevista por la ley.
+            También podés iniciar la eliminación de la cuenta desde Ajustes. El proceso borra de D1 la
+            cuenta y los datos asociados de la Aplicación y, al confirmar el borrado, elimina los datos
+            locales conocidos en ese dispositivo. Se conservan registros técnicos mínimos de la
+            eliminación descritos en la Política. Para solicitar acceso, rectificación o actualización
+            de información de perfil, contactá al responsable por el canal indicado en la Política.
           </p>
         </section>
 
         <section>
-          <h2>8. Ley aplicable y jurisdicción</h2>
+          <h2>7. Disponibilidad y responsabilidad</h2>
           <p>
-            Estos Términos se rigen por las leyes de la República Argentina. Cualquier disputa
-            relacionada con estos Términos se someterá a la jurisdicción exclusiva de los tribunales
-            ordinarios de la Ciudad Autónoma de Buenos Aires, República Argentina.
+            Procuramos que la Aplicación esté disponible, pero puede interrumpirse o presentar errores.
+            No garantizamos disponibilidad continua ni que el almacenamiento local sea permanente.
+            Nada de estos Términos limita derechos irrenunciables que te correspondan, incluida la
+            protección aplicable a las relaciones de consumo. En particular, no se excluyen las
+            responsabilidades que la ley no permita excluir.
           </p>
         </section>
 
         <section>
-          <h2>9. Contacto</h2>
+          <h2>8. Cambios y nueva aceptación</h2>
           <p>
-            Si tenés preguntas sobre estos Términos, podés contactarnos a través de los canales
-            disponibles en la Aplicación.
+            Publicaremos aquí las versiones actualizadas con su fecha y número de versión. Cuando el
+            servicio detecte una versión cuya aceptación sea obligatoria, no podrás usar las funciones
+            conectadas hasta leerla y aceptar expresamente la nueva versión. Para comprobar cambios y
+            registrar una aceptación se necesita conexión; los datos pendientes del dispositivo no se
+            sincronizan hasta que el servidor confirme la versión vigente. El uso posterior o el inicio
+            de sesión, por sí solos, no constituyen esa aceptación.
           </p>
         </section>
 
-        <p className="ui-legal-updated">
-          Última actualización: 31 de octubre de 2026
-        </p>
+        <section>
+          <h2>9. Ley y consultas</h2>
+          <p>
+            Se aplican las leyes de la República Argentina, sin perjuicio de las normas imperativas que
+            protejan a usuarios y consumidores. No se establece una renuncia a la jurisdicción que la
+            legislación aplicable reconozca. Para consultas, usá los canales de contacto indicados en
+            la Política de Privacidad.
+          </p>
+        </section>
+
+        <p className="ui-legal-updated">Versión 2026-10-31 · Última actualización: 31 de octubre de 2026</p>
       </Stack>
     </Page>
   );

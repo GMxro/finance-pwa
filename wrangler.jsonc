@@ -29,10 +29,13 @@
   "vars": {
     "SYNC_EPOCH": "4486eb6b-23fd-433e-b3a8-22b5e2a8e922",
     "BETTER_AUTH_URL": "https://finance-pwa.audioideas.workers.dev",
-    "MIN_APP_VERSION": "0.1.0"
+    "MIN_APP_VERSION": "0.1.1"
   },
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 0.1
+    "head_sampling_rate": 0.1,
+    "logs": {
+      "invocation_logs": false
+    }
   }
 }

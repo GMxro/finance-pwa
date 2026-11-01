@@ -68,7 +68,7 @@ export function LoginPage() {
         </div>
 
         <p className="ui-auth-legal">
-          Solo usamos tu cuenta de Google para identificarte. Al continuar aceptás los{' '}
+          Solo usamos tu cuenta de Google para identificarte. Iniciar sesión no implica aceptar los documentos; para usar la aplicación vas a tener que confirmarlo por separado. Podés leer los{' '}
           <a href="/terminos">Términos</a> y la{' '}
           <a href="/privacidad">Política de privacidad</a>.
         </p>
