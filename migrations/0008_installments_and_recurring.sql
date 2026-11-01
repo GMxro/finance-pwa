@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS installment_plans (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   cancelled_at INTEGER,
-  FOREIGN KEY (user_id, category_id) REFERENCES categories(user_id, id) ON DELETE RESTRICT,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
   FOREIGN KEY (user_id, account_id) REFERENCES accounts(user_id, id) ON DELETE RESTRICT
 );
 CREATE INDEX IF NOT EXISTS idx_installment_plans_user ON installment_plans(user_id, cancelled_at);
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS installment_items (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   UNIQUE (plan_id, installment_number),
-  FOREIGN KEY (user_id, transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+  FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_installment_items_user_due ON installment_items(user_id, due_on);
 CREATE INDEX IF NOT EXISTS idx_installment_items_plan ON installment_items(plan_id);
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS recurring_rules (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   cancelled_at INTEGER,
-  FOREIGN KEY (user_id, category_id) REFERENCES categories(user_id, id) ON DELETE RESTRICT,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
   FOREIGN KEY (user_id, account_id) REFERENCES accounts(user_id, id) ON DELETE RESTRICT
 );
 CREATE INDEX IF NOT EXISTS idx_recurring_rules_user_active ON recurring_rules(user_id, active, next_due_on);
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS recurring_occurrences (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   UNIQUE (rule_id, due_on),
-  FOREIGN KEY (user_id, transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+  FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_recurring_occurrences_user_due ON recurring_occurrences(user_id, due_on);
 
