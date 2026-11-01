@@ -3,6 +3,10 @@ import { APP_UPDATE_REQUIRED_EVENT, APP_VERSION } from '@shared/api/client';
 import { isVersionAtLeast, REQUIRED_APP_VERSION_KEY } from './version-policy';
 import './AppUpdateNotice.css';
 
+// Timeout para la activación del Service Worker (ms)
+// Si el SW no activa en este tiempo, forzamos recarga
+const ACTIVATION_TIMEOUT_MS = 15000;
+
 function hasRequiredUpdate(): boolean {
   try {
     const minimum = localStorage.getItem(REQUIRED_APP_VERSION_KEY);
@@ -27,6 +31,7 @@ export function AppUpdateNotice() {
   const mandatoryRef = useRef(upgradeRequired);
   const activationRequested = useRef(false);
   const gateRef = useRef<HTMLDialogElement>(null);
+  const activationTimeoutRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
     const onUpdateRequired = () => {
@@ -54,6 +59,10 @@ export function AppUpdateNotice() {
     const onControllerChange = () => {
       if (!hadController || reloaded) return;
       reloaded = true;
+      if (activationTimeoutRef.current) {
+        window.clearTimeout(activationTimeoutRef.current);
+        activationTimeoutRef.current = null;
+      }
       window.location.reload();
     };
 
@@ -61,6 +70,16 @@ export function AppUpdateNotice() {
       setActivating(true);
       setUpdateError(false);
       worker.postMessage({ type: 'SKIP_WAITING' });
+      // Timeout de seguridad: si el SW no activa en ACTIVATION_TIMEOUT_MS,
+      // forzamos recarga para no dejar al usuario colgado en "Actualizando..."
+      // Usamos activationRequested.current (ref) en lugar del estado activating
+      // porque el closure captura el valor inicial.
+      activationTimeoutRef.current = window.setTimeout(() => {
+        activationTimeoutRef.current = null;
+        if (activationRequested.current) {
+          window.location.reload();
+        }
+      }, ACTIVATION_TIMEOUT_MS);
     };
 
     const watchRegistration = (currentRegistration: ServiceWorkerRegistration) => {
@@ -87,6 +106,10 @@ export function AppUpdateNotice() {
             activationRequested.current = false;
             setActivating(false);
             setUpdateError(true);
+            if (activationTimeoutRef.current) {
+              window.clearTimeout(activationTimeoutRef.current);
+              activationTimeoutRef.current = null;
+            }
           }
         });
       });
@@ -113,6 +136,10 @@ export function AppUpdateNotice() {
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', checkForUpdate);
       navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+      if (activationTimeoutRef.current) {
+        window.clearTimeout(activationTimeoutRef.current);
+        activationTimeoutRef.current = null;
+      }
       registrationRef.current = null;
       registrationPromiseRef.current = null;
     };
@@ -136,6 +163,12 @@ export function AppUpdateNotice() {
       setActivating(true);
       setUpdateError(false);
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+      activationTimeoutRef.current = window.setTimeout(() => {
+        activationTimeoutRef.current = null;
+        if (activationRequested.current) {
+          window.location.reload();
+        }
+      }, ACTIVATION_TIMEOUT_MS);
       return;
     }
 
@@ -153,6 +186,12 @@ export function AppUpdateNotice() {
       if (registration.waiting) {
         setWaitingWorker(registration.waiting);
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        activationTimeoutRef.current = window.setTimeout(() => {
+          activationTimeoutRef.current = null;
+          if (activationRequested.current) {
+            window.location.reload();
+          }
+        }, ACTIVATION_TIMEOUT_MS);
       } else if (!registration.installing) {
         activationRequested.current = false;
         setActivating(false);

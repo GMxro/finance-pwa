@@ -1,6 +1,7 @@
 .ui-panel {
   min-width: 0;
   overflow-wrap: anywhere;
+  container-type: inline-size;
 }
 
 .ui-panel > * {
