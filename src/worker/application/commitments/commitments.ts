@@ -6,8 +6,8 @@ import { projectOccurrences } from '@domain/recurring';
 export async function listCommitments(env: Env, userId: string, from: string, to: string) {
   const today = todayLocalISO();
   // future installment transactions
-  const inst = await env.DB.prepare(`SELECT id, kind, amount_minor, currency_code, occurred_on, note, source_id FROM transactions WHERE user_id = ? AND deleted_at IS NULL AND source_type = 'installment' AND occurred_on >= ? AND occurred_on <= ? ORDER BY occurred_on`)
-    .bind(userId, from, to)
+  const inst = await env.DB.prepare(`SELECT id, kind, amount_minor, currency_code, occurred_on, note, source_id FROM transactions WHERE user_id = ? AND deleted_at IS NULL AND source_type = 'installment' AND occurred_on > ? AND occurred_on <= ? ORDER BY occurred_on`)
+    .bind(userId, today, to)
     .all<any>();
   const commitments: any[] = [];
   for (const r of inst.results as any[]) {

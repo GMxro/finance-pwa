@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Filter, WifiOff, CloudOff } from 'lucide-react';
+import { Plus, Filter, WifiOff, CloudOff, Repeat } from 'lucide-react';
 import { useAuth } from '../../app/providers';
 import { api } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
@@ -85,6 +85,10 @@ export function TransactionsPage() {
   const [newCategoryError, setNewCategoryError] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
   const [entryMode, setEntryMode] = useState<'manual' | 'installment' | 'recurring'>('manual');
+  const [description, setDescription] = useState('');
+  const [notes, setNotes] = useState('');
+  const [repeatModalOpen, setRepeatModalOpen] = useState(false);
+  const [repeatStep, setRepeatStep] = useState<'choose' | 'installment'>('choose');
   const [installmentsCount, setInstallmentsCount] = useState(2);
   const [firstDueOn, setFirstDueOn] = useState(todayLocalISO());
   const [recurringFrequency, setRecurringFrequency] = useState('monthly');
@@ -230,6 +234,10 @@ export function TransactionsPage() {
     setAmountMinor(null);
     setFormError(null);
     setEntryMode('manual');
+    setDescription('');
+    setNotes('');
+    setRepeatModalOpen(false);
+    setRepeatStep('choose');
     setInstallmentsCount(2);
     setFirstDueOn(todayLocalISO());
     setRecurringFrequency('monthly');
@@ -252,6 +260,9 @@ export function TransactionsPage() {
       accountId: tx.accountId ?? ''
     });
     setAmountMinor(tx.amountMinor);
+    setDescription(tx.note ?? '');
+    setNotes('');
+    setEntryMode('manual');
     setFormError(null);
     resetNewCategory();
     setEditingTx(tx);
@@ -373,7 +384,7 @@ export function TransactionsPage() {
           const response = await api.updateInstallmentItem(editingTx.sourceId ?? editingTx.id, {
             amountMinor,
             occurredOn: formData.occurredOn,
-            note: formData.note || null,
+            note: [description, notes ? `Notas: ${notes}` : ''].filter(Boolean).join('\n') || null,
             version: editingTx.version
           });
           if (response.error) throw new Error(response.error.message);
@@ -385,14 +396,14 @@ export function TransactionsPage() {
             categoryId: formData.categoryId,
             accountId: formData.accountId || undefined,
             occurredOn: formData.occurredOn,
-            note: formData.note || undefined,
+            note: [description, notes ? `Notas: ${notes}` : ''].filter(Boolean).join('\n') || undefined,
             version: editingTx.version
           });
           if (response.error) throw new Error(response.error.message);
         }
       } else if (entryMode === 'installment') {
         const response = await api.createInstallmentPlan({
-          concept: formData.note || 'Compra en cuotas',
+          concept: description || 'Compra en cuotas',
           totalMinor: amountMinor,
           currency: formData.currency,
           installmentsCount: installmentsCount,
@@ -404,7 +415,7 @@ export function TransactionsPage() {
       } else if (entryMode === 'recurring') {
         const response = await api.createRecurringRule({
           kind: formData.kind,
-          concept: formData.note || 'Movimiento recurrente',
+          concept: description || 'Movimiento recurrente',
           amountMinor,
           currency: formData.currency,
           categoryId: formData.categoryId,
@@ -424,7 +435,7 @@ export function TransactionsPage() {
           categoryId: formData.categoryId,
           accountId: formData.accountId,
           occurredOn: formData.occurredOn,
-          note: formData.note || undefined
+          note: [description, notes ? `Notas: ${notes}` : ''].filter(Boolean).join('\n') || undefined
         };
         const response = await api.createTransaction(payload);
         if (response.error?.code === 'NETWORK_ERROR' || (!navigator.onLine && response.error)) {
@@ -620,24 +631,71 @@ export function TransactionsPage() {
           <Stack gap="md">
             {formError && <Notice tone="strong">{formError}</Notice>}
 
-            {!editingTx?.id && (
-              <Select
-                label="Modo"
-                value={entryMode}
-                 onChange={v => {
-                   const mode = v as 'manual' | 'installment' | 'recurring';
-                   setEntryMode(mode);
-                   if (mode === 'installment') setFormData(f => ({ ...f, kind: 'expense' }));
-                 }}
-                options={[
-                  { value: 'manual', label: 'Movimiento manual' },
-                  { value: 'installment', label: 'Compra en cuotas' },
-                  { value: 'recurring', label: 'Movimiento recurrente' }
-                ]}
-              />
-            )}
+            {/* 1. Tipo */}
+            <SegmentedControl
+              label="Tipo"
+              value={formData.kind}
+              onChange={v => {
+                const kind = v as TransactionKind;
+                const first = categories.find(c => c.kind === kind);
+                resetNewCategory();
+                setFormData(f => ({ ...f, kind, categoryId: first?.id ?? '' }));
+              }}
+              options={[{ value: 'income', label: 'Ingreso' }, { value: 'expense', label: 'Gasto' }]}
+            />
 
-            {entryMode === 'installment' && !editingTx?.id && (
+            {/* 2. Fecha + Hoy/Ayer */}
+            <div className="tx-date-row">
+              <Input
+                label="Fecha"
+                type="date"
+                value={formData.occurredOn}
+                onChange={v => setFormData(f => ({ ...f, occurredOn: v }))}
+                required
+              />
+              <Button type="button" variant="secondary" size="sm" onClick={() => setFormData(f => ({ ...f, occurredOn: todayLocalISO() }))}>Hoy</Button>
+              <Button type="button" variant="secondary" size="sm" onClick={() => {
+                const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1);
+                setFormData(f => ({ ...f, occurredOn: d.toISOString().slice(0, 10) }));
+              }}>Ayer</Button>
+            </div>
+
+            {/* 3. Importe + repetir */}
+            <div className="tx-amount-row">
+              <div>
+                <Input
+                  label="Importe"
+                  value={amountInput.displayValue}
+                  onChange={amountInput.onChangeString}
+                  onBlur={amountInput.onBlur}
+                  onFocus={amountInput.onFocus}
+                  placeholder="0,00"
+                  prefix="$"
+                  required
+                  inputMode="decimal"
+                  pattern="[0-9.,]*"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                />
+              </div>
+              <SegmentedControl
+                label="Moneda"
+                value={formData.currency}
+                onChange={v => {
+                  const newCurrency = v as CurrencyCode;
+                  setFormData(f => ({ ...f, currency: newCurrency }));
+                }}
+                options={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]}
+                className="tx-currency-segment"
+              />
+              <Button type="button" variant="secondary" onClick={() => { setRepeatStep('choose'); setRepeatModalOpen(true); }} leftIcon={<Repeat size={16} />}>
+                Repetir
+              </Button>
+            </div>
+
+            {entryMode === 'installment' && (
               <Grid columns={2} gap="md">
                 <Input
                   label="Cantidad de cuotas"
@@ -656,7 +714,7 @@ export function TransactionsPage() {
               </Grid>
             )}
 
-            {entryMode === 'recurring' && !editingTx?.id && (
+            {entryMode === 'recurring' && (
               <>
                 <Grid columns={2} gap="md">
                   <Select
@@ -704,52 +762,31 @@ export function TransactionsPage() {
               </>
             )}
 
-            {/* 1. Tipo - SegmentedControl */}
-            <SegmentedControl
-              label="Tipo"
-              value={formData.kind}
-              onChange={v => {
-                const kind = v as TransactionKind;
-                const first = categories.find(c => c.kind === kind);
-                resetNewCategory();
-                setFormData(f => ({ ...f, kind, categoryId: first?.id ?? '' }));
-              }}
-              options={[{ value: 'income', label: 'Ingreso' }, { value: 'expense', label: 'Gasto' }]}
+            {/* 4. Cuenta */}
+            <Select
+              label="Cuenta"
+              value={formData.accountId}
+              onChange={v => setFormData(f => ({ ...f, accountId: v }))}
+              options={accounts.filter(a => !a.archivedAt).map(a => ({ value: a.id, label: a.name }))}
             />
-            
-            {/* 2. Importe + Moneda inline */}
-            <div className="tx-amount-row">
-              <div>
-                <Input
-                  label="Importe"
-                  value={amountInput.displayValue}
-                  onChange={amountInput.onChangeString}
-                  onBlur={amountInput.onBlur}
-                  onFocus={amountInput.onFocus}
-                  placeholder="0,00"
-                  prefix="$"
-                  required
-                  inputMode="decimal"
-                  pattern="[0-9.,]*"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                />
-              </div>
-              <SegmentedControl
-                label="Moneda"
-                value={formData.currency}
-                onChange={v => {
-                  const newCurrency = v as CurrencyCode;
-                  setFormData(f => ({ ...f, currency: newCurrency }));
-                }}
-                options={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]}
-                className="tx-currency-segment"
-              />
-            </div>
-            
-            {/* 3. Categoría */}
+
+            {/* 5. Descripción */}
+            <Input
+              label="Descripción"
+              value={description}
+              onChange={setDescription}
+              placeholder="Ej: Supermercado"
+            />
+
+            {/* 6. Notas (opcional) */}
+            <Input
+              label="Notas (opcional)"
+              value={notes}
+              onChange={setNotes}
+              placeholder="Observación breve"
+            />
+
+            {/* Categoría (adaptada por tipo) */}
             <Select
               label="Categoría"
               value={formData.categoryId}
@@ -758,88 +795,17 @@ export function TransactionsPage() {
                   setNewCategoryOpen(true);
                   setNewCategoryName('');
                   setNewCategoryIcon(formData.kind === 'income' ? 'briefcase' : 'tag');
-                  setNewCategoryError(null);
                   return;
                 }
                 setFormData(f => ({ ...f, categoryId: v }));
               }}
-              options={[...categoryOptions, { value: '__new__', label: '+ Nueva categoría' }]}
-              placeholder="Elegí una categoría"
-              required
+              options={[
+                ...categories
+                  .filter(c => c.kind === formData.kind && (!c.archivedAt || c.id === formData.categoryId))
+                  .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name })),
+                { value: '__new__', label: 'Crear categoría' }
+              ]}
             />
-            
-            {/* 4. Cuenta - SegmentedControl si ≤3, si no Select */}
-            {accounts.length > 0 && accounts.length <= 3 ? (
-              <SegmentedControl
-                label="Cuenta"
-                value={formData.accountId}
-                onChange={v => setFormData(f => ({ ...f, accountId: v }))}
-                options={accounts.map(a => ({ value: a.id, label: a.name }))}
-              />
-            ) : accounts.length > 3 ? (
-              <Select
-                label="Cuenta"
-                value={formData.accountId}
-                onChange={v => setFormData(f => ({ ...f, accountId: v }))}
-                options={accounts.map(a => ({ value: a.id, label: a.name }))}
-                placeholder="Elegí una cuenta"
-                required
-              />
-            ) : null}
-            
-            {/* 5. Fecha + 6. Nota */}
-            <Grid columns={2} gap="md">
-              <Input
-                label="Fecha"
-                type="date"
-                value={formData.occurredOn}
-                onChange={v => setFormData(f => ({ ...f, occurredOn: v }))}
-                required
-              />
-              <Input
-                label="Nota (opcional)"
-                value={formData.note}
-                onChange={v => setFormData(f => ({ ...f, note: v }))}
-                placeholder="Descripción"
-                maxLength={500}
-              />
-            </Grid>
-            
-            {newCategoryOpen && (
-              <div className="tx-new-category">
-                <Text variant="small">
-                  Nueva categoría de {formData.kind === 'income' ? 'ingreso' : 'gasto'}
-                </Text>
-                <Input
-                  label="Nombre"
-                  value={newCategoryName}
-                  onChange={setNewCategoryName}
-                  placeholder="Ej.: Supermercado"
-                  maxLength={50}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      void handleCreateCategory();
-                    }
-                  }}
-                />
-                <Select
-                  label="Ícono"
-                  value={newCategoryIcon}
-                  onChange={setNewCategoryIcon}
-                  options={CATEGORY_ICON_OPTIONS}
-                />
-                {newCategoryError && <Notice tone="strong">{newCategoryError}</Notice>}
-                <div className="tx-new-category__actions">
-                  <Button variant="ghost" size="sm" onClick={resetNewCategory} disabled={savingCategory}>
-                    Descartar
-                  </Button>
-                  <Button size="sm" loading={savingCategory} onClick={() => void handleCreateCategory()}>
-                    Crear categoría
-                  </Button>
-                </div>
-              </div>
-            )}
           </Stack>
         </form>
       </Modal>
