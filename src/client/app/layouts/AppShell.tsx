@@ -84,6 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             className={`ui-sync ui-sync--${syncTone}`}
             onClick={() => { void syncNow().catch(() => undefined); }}
+            title="Tus datos están guardados y al día"
             aria-label={`${syncLabel}. Sincronizar ahora`}
           >
             <Status label={syncLabel} tone={syncState.error ? 'danger' : 'onInk'} />

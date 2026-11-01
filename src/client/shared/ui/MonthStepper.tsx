@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { addMonths, isValidMonth } from '@domain/date';
+import { addMonths, isValidMonth, todayLocalISO } from '@domain/date';
 import { getPeriodLabel } from '@shared/format/formatters';
 import './MonthStepper.css';
 
@@ -14,8 +14,9 @@ export function MonthStepper({ month, onChange }: MonthStepperProps) {
     const next = addMonths(month, delta);
     if (next && isValidMonth(next)) onChange(next);
   };
+  const currentMonth = todayLocalISO().slice(0, 7);
   const canPrev = !!addMonths(month, -1) && isValidMonth(addMonths(month, -1)!);
-  const canNext = !!addMonths(month, 1) && isValidMonth(addMonths(month, 1)!);
+  const canNext = month < currentMonth && !!addMonths(month, 1) && isValidMonth(addMonths(month, 1)!);
 
   return (
     <div className="ui-month">
@@ -23,7 +24,7 @@ export function MonthStepper({ month, onChange }: MonthStepperProps) {
         <ChevronLeft size={18} />
       </button>
       <span className="ui-month__label" aria-live="polite">{getPeriodLabel(month)}</span>
-      <button type="button" className="ui-month__button" onClick={() => shift(1)} disabled={!canNext} aria-label="Mes siguiente">
+      <button type="button" className={`ui-month__button ${!canNext ? 'is-disabled' : ''}`} onClick={() => shift(1)} disabled={!canNext} aria-disabled={!canNext} aria-label="Mes siguiente">
         <ChevronRight size={18} />
       </button>
     </div>

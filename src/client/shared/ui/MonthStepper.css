@@ -46,3 +46,15 @@
     min-width: 0;
   }
 }
+
+.ui-month__button.is-disabled,
+.ui-month__button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ui-month__button.is-disabled:hover,
+.ui-month__button:disabled:hover {
+  background: transparent;
+  color: var(--color-stone);
+}

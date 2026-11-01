@@ -192,20 +192,22 @@ export function OverviewPage() {
               </button>
             </Inline>
             <div className="overview-net__amounts">
-              <div className="overview-net__row">
-                <Text variant="micro" tone="on-ink-muted">ARS</Text>
+              <div className="overview-net__column">
+                <Text variant="micro" tone="on-ink-muted">Pesos · ARS</Text>
                 <Money amountMinor={arsSummary.netMinor} currency="ARS" sign="auto" tone="onInk" size="xl" censored={!showAmounts} className={arsSummary.netMinor < 0 ? 'overview-net__amount--negative' : ''} />
               </div>
-              <div className="overview-net__row">
-                <Text variant="micro" tone="on-ink-muted">USD</Text>
+              <div className="overview-net__column">
+                <Text variant="micro" tone="on-ink-muted">Dólares · USD</Text>
                 <Money amountMinor={usdSummary.netMinor} currency="USD" sign="auto" tone="onInk" size="xl" censored={!showAmounts} className={usdSummary.netMinor < 0 ? 'overview-net__amount--negative' : ''} />
               </div>
             </div>
-            <Text variant="small" tone="on-ink-muted">{dataStatus === 'unavailable' ? '—' : dataStatus === 'cached' ? 'Datos locales (pueden estar desactualizados)' : dataStatus === 'partial' ? 'Comparación sin actualizar' : 'Actualizado'}</Text>
+            {dataStatus !== 'current' && (
+              <Text variant="small" tone="on-ink-muted">{dataStatus === 'unavailable' ? '—' : dataStatus === 'cached' ? 'Datos locales (pueden estar desactualizados)' : 'Comparación sin actualizar'}</Text>
+            )}
           </Stack>
         </Panel>
         <Grid columns={2} gap="sm" className="overview-income-expense">
-          <Panel tone="paper" radius="card" padding="md" className="overview-amount-card">
+          <Panel tone="paper" radius="card" padding="md" className="overview-amount-card overview-amount-card--income">
             <Stack gap="xs">
               <Text variant="small" tone="stone">{KIND_LABELS.income}</Text>
               <div className="overview-amount-card__values">
@@ -218,7 +220,7 @@ export function OverviewPage() {
               </div>
             </Stack>
           </Panel>
-          <Panel tone="paper" radius="card" padding="md" className="overview-amount-card">
+          <Panel tone="paper" radius="card" padding="md" className="overview-amount-card overview-amount-card--expense">
             <Stack gap="xs">
               <Text variant="small" tone="stone">{KIND_LABELS.expense}</Text>
               <div className="overview-amount-card__values">
@@ -234,7 +236,7 @@ export function OverviewPage() {
         </Grid>
       </div>
 
-      <Section title="Presupuestos" action={<ButtonLink to="/presupuestos" variant="ghost" size="sm">Ver todos</ButtonLink>}>
+      <Section title="Presupuestos" className="overview-section-spaced" action={<ButtonLink to="/presupuestos" variant="ghost" size="sm" className="overview-section-action">Ver todos</ButtonLink>}>
         <BudgetList
           items={budgets.map(b => ({
             id: b.id,
@@ -258,7 +260,7 @@ export function OverviewPage() {
         />
       </Section>
 
-      <Section title="Movimientos recientes" className="overview-recent" action={<ButtonLink to={`/movimientos?period=${month}`} variant="ghost" size="sm">Ver historial</ButtonLink>}>
+      <Section title="Movimientos recientes" className="overview-recent overview-section-spaced" action={<ButtonLink to={`/movimientos?period=${month}`} variant="ghost" size="sm" className="overview-section-action">Ver historial</ButtonLink>}>
         <LedgerList
           items={transactions.slice(0, 8).map(t => ({
             id: t.id,
