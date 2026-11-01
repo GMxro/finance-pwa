@@ -285,6 +285,11 @@ export async function deleteTransaction(
   }
 
   await writeTransactionDeletionMarker(env, userId, id, now);
+  // Si era una cuota, marcar el item como cancelado para mantener consistencia
+  try {
+    await env.DB.prepare(`UPDATE installment_items SET status = 'cancelled', updated_at = ? WHERE transaction_id = ? AND user_id = ?`).bind(now, id, userId).run();
+    await env.DB.prepare(`UPDATE recurring_occurrences SET status = 'cancelled', updated_at = ? WHERE transaction_id = ? AND user_id = ?`).bind(now, id, userId).run();
+  } catch {}
 }
 
 async function writeTransactionDeletionMarker(env: Env, userId: string, id: string, deletedAt: number): Promise<void> {

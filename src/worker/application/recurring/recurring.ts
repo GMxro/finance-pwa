@@ -116,11 +116,12 @@ export async function processDueRecurring(env: Env, userId?: string, asOfDate?: 
       let processed = 0;
       while (currentDue && currentDue <= today && processed < 100) {
         const exists = await env.DB.prepare(`SELECT id FROM recurring_occurrences WHERE rule_id = ? AND due_on = ?`).bind(rule.id, currentDue).first();
+        const next = computeNextDue(rule.frequency, currentDue, rule);
         if (!exists) {
           const flowRow = await env.DB.prepare(`SELECT COALESCE(SUM(CASE WHEN kind = 'income' THEN amount_minor ELSE -amount_minor END), 0) AS total FROM transactions WHERE user_id = ? AND currency_code = ? AND deleted_at IS NULL`).bind(rule.user_id, rule.currency_code).first<{ total: number }>();
           const delta = rule.kind === 'income' ? rule.amount_minor : -rule.amount_minor;
           const projected = (flowRow?.total ?? 0) + delta;
-          if (Math.abs(projected) > MAX_MINOR_UNITS) continue;
+          if (Math.abs(projected) > MAX_MINOR_UNITS) break;
           const now = Date.now();
           const txId = crypto.randomUUID();
           const occId = crypto.randomUUID();
@@ -133,7 +134,6 @@ export async function processDueRecurring(env: Env, userId?: string, asOfDate?: 
               .bind(occId, rule.id, rule.user_id, currentDue, txId, now, now),
             env.DB.prepare(`UPDATE user_sync_state SET sequence = ? WHERE user_id = ?`).bind(newSeq, rule.user_id)
           ];
-          const next = computeNextDue(rule.frequency, currentDue, rule);
           if (next && (!rule.end_on || next <= rule.end_on)) {
             stmts.push(env.DB.prepare(`UPDATE recurring_rules SET next_due_on = ?, updated_at = ? WHERE id = ?`).bind(next, now, rule.id));
           } else {
@@ -145,8 +145,15 @@ export async function processDueRecurring(env: Env, userId?: string, asOfDate?: 
             // duplicate/atomic failure -> stop
             break;
           }
+        } else {
+          // occurrence already exists: ensure next_due_on advances (idempotent recovery)
+          const now = Date.now();
+          if (next && (!rule.end_on || next <= rule.end_on)) {
+            await env.DB.prepare(`UPDATE recurring_rules SET next_due_on = ?, updated_at = ? WHERE id = ? AND (next_due_on = ? OR next_due_on < ?)`).bind(next, now, rule.id, currentDue, currentDue).run();
+          } else {
+            await env.DB.prepare(`UPDATE recurring_rules SET active = 0, updated_at = ? WHERE id = ?`).bind(now, rule.id).run();
+          }
         }
-        const next = computeNextDue(rule.frequency, currentDue, rule);
         if (!next || next === currentDue) break;
         currentDue = next;
         processed += 1;

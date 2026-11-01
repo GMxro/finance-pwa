@@ -131,7 +131,7 @@ export async function updateInstallmentItem(env: Env, userId: string, itemId: st
   const r1 = await stmt1.run();
   if ((r1.meta?.changes ?? 0) === 0) throw new Error('CONFLICT');
   await env.DB.prepare(`UPDATE user_sync_state SET sequence = sequence + 1 WHERE user_id = ?`).bind(userId).run();
-  const itemUpdates: string[] = ['version = version + 1', 'updated_at = ?'];
+  const itemUpdates: string[] = ['updated_at = ?'];
   const itemBindings: any[] = [now];
   if (data.amountMinor !== undefined) { itemUpdates.push('amount_minor = ?'); itemBindings.push(data.amountMinor); }
   if (data.occurredOn !== undefined) { itemUpdates.push('due_on = ?'); itemBindings.push(data.occurredOn); }

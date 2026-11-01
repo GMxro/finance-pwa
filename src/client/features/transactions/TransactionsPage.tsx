@@ -628,6 +628,7 @@ export function TransactionsPage() {
         }
       >
         <form id="tx-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }}>
+          <div className="tx-modal-compact">
           <Stack gap="md">
             {formError && <Notice tone="strong">{formError}</Notice>}
 
@@ -661,25 +662,25 @@ export function TransactionsPage() {
             </div>
 
             {/* 3. Importe + repetir */}
-            <div className="tx-amount-row">
-              <div>
-                <Input
-                  label="Importe"
-                  value={amountInput.displayValue}
-                  onChange={amountInput.onChangeString}
-                  onBlur={amountInput.onBlur}
-                  onFocus={amountInput.onFocus}
-                  placeholder="0,00"
-                  prefix="$"
-                  required
-                  inputMode="decimal"
-                  pattern="[0-9.,]*"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                />
-              </div>
+            <div className="tx-amount-full">
+              <Input
+                label="Importe"
+                value={amountInput.displayValue}
+                onChange={amountInput.onChangeString}
+                onBlur={amountInput.onBlur}
+                onFocus={amountInput.onFocus}
+                placeholder="0,00"
+                prefix="$"
+                required
+                inputMode="decimal"
+                pattern="[0-9.,]*"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="tx-currency-row">
               <SegmentedControl
                 label="Moneda"
                 value={formData.currency}
@@ -807,6 +808,7 @@ export function TransactionsPage() {
               ]}
             />
           </Stack>
+          </div>
         </form>
       </Modal>
 

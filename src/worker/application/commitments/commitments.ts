@@ -13,8 +13,8 @@ export async function listCommitments(env: Env, userId: string, from: string, to
   for (const r of inst.results as any[]) {
     commitments.push({ date: r.occurred_on, kind: r.kind, amountMinor: r.amount_minor, currency: r.currency_code, label: r.note, source: 'installment', sourceId: r.source_id, isFuture: r.occurred_on > today });
   }
-  // recurring projected
-  const rules = await env.DB.prepare(`SELECT * FROM recurring_rules WHERE user_id = ? AND active = 1`).bind(userId).all<any>();
+  // recurring projected (excluye reglas cuya cuenta está archivada)
+  const rules = await env.DB.prepare(`SELECT r.* FROM recurring_rules r LEFT JOIN accounts a ON a.id = r.account_id AND a.user_id = r.user_id WHERE r.user_id = ? AND r.active = 1 AND (r.account_id IS NULL OR a.archived_at IS NULL)`).bind(userId).all<any>();
   for (const rule of rules.results as any[]) {
     const dates = projectOccurrences(rule, from, to, 24);
     for (const d of dates) {
