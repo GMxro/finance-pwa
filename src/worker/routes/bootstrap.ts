@@ -4,13 +4,17 @@ import { getUserId } from '../middleware/session';
 import { initializeUserData } from '../application/bootstrap/initialize-user';
 import { getLegalAcceptance } from '../application/legal/legal-acceptance';
 import { ARGENTINA_TZ } from '@domain/date';
+import { processDueRecurring } from '../application/recurring/recurring';
 
 const bootstrapRoutes = new Hono<{ Bindings: Env }>();
 
 bootstrapRoutes.get('/', async (c) => {
   const userId = getUserId(c);
   const legalAcceptance = await getLegalAcceptance(c.env, userId);
-  if (legalAcceptance.accepted) await initializeUserData(c.env, userId);
+  if (legalAcceptance.accepted) {
+    await initializeUserData(c.env, userId);
+    try { await processDueRecurring(c.env, userId); } catch {}
+  }
   const [preferences, onboarding] = legalAcceptance.accepted ? await Promise.all([
     c.env.DB.prepare(`SELECT default_currency, time_zone FROM user_preferences WHERE user_id = ?`)
       .bind(userId).first<{ default_currency: 'ARS' | 'USD'; time_zone: string }>(),

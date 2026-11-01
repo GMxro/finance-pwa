@@ -72,3 +72,19 @@ review_after: 2027-05-01
 - **Dexie schema**: Current v3. `upgrade` drops all tables — destructive for any pre-v3 clients. Plan version bump + migration if needed.
 - **MIN_APP_VERSION**: Must be set in `wrangler.jsonc` to block stale clients.
 - **Build**: `prebuild` deletes `dist/`. Use isolated `outDir` for Cloudflare build verification before cleaning.
+
+## UI / Overview (Home)
+- **Multi-currency (no conversion)**: Home shows ARS and USD simultaneously and independently; never convert or sum across currencies. Net balance = ingresos − gastos del período (not account available balance). Formats: `+$2.000.000,00` (ARS) and `+US$350,00` (USD) — USD neto always uses `US$` prefix, never bare `$`.
+- **Layout**: one black main card (net balance) + two compact white cards (Ingresos/Gastos) side by side. Black card: two columns, label ("Pesos · ARS"/"Dólares · USD") above amount, both left-aligned; eye button top-right aligned with title. No "Actualizado" text.
+- **Privacy**: reuse existing `showAmounts` (persisted in localStorage) via setter; don't create a new mechanism. Eye button hides ALL overview amounts consistently; accessible (`aria-pressed`, `aria-label`), clear visual state.
+- **Sign-only coloring**: on income/expense cards color only the sign (+ green soft, − red soft, AA contrast); amount stays normal text color. Arrows are visual support, not color-only.
+- **Interactive amounts**: each amount is a link opening Movimientos pre-filtered by period, type, and currency. Movements page reads `currency` query param.
+- **CSS specificity trap**: `.ui-section:first-of-type { margin-top: 0 }` (Layout.css) and `.ui-page .ui-section.overview-recent` override `.overview-section-spaced`. Use higher specificity (`.ui-page .ui-section.overview-section-spaced`) for section top spacing.
+- **Spacing stacking**: `.ui-section` default `margin-top: 48px` + `.overview-section-spaced` 28px = 76px total. Fix: use 28px only. Empty states compacted to 8px gap/padding to avoid "duplicated space" feeling. Multiple vertical gaps stack (margin-top + margin-bottom + padding-top); audit all three when adjusting spacing.
+- **Empty states**: align left with section title (same x, no extra padding). Compact spacing (8px gap/padding).
+- **"Ver todos"/"Ver historial"**: align to right edge of cards (same right padding as content, not ~25px before).
+- **MonthStepper**: disable right arrow (reduced opacity, no hover, `aria-disabled`) when displayed month === current month.
+
+## Sidebar (AppShell)
+- **Email overflow**: apply `min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap` to email container.
+- **Sync indicator**: renamed "Al día" → "Sincronizado" with tooltip ("Tus datos están guardados y al día").

@@ -1,0 +1,39 @@
+// Domain: Installments
+import { MAX_MINOR_UNITS } from './money';
+import { isValidISODate } from './date';
+
+export function splitInstallmentAmount(totalMinor: number, count: number): number[] {
+  if (!Number.isSafeInteger(totalMinor) || totalMinor <= 0) throw new RangeError('Importe inválido');
+  if (!Number.isSafeInteger(count) || count < 2 || count > 999) throw new RangeError('Cantidad de cuotas inválida');
+  const base = Math.floor(totalMinor / count);
+  const rest = totalMinor % count;
+  const amounts: number[] = [];
+  for (let i = 0; i < count; i++) {
+    amounts.push(i < rest ? base + 1 : base);
+  }
+  return amounts;
+}
+
+function lastDayOfMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+export function installmentDueDate(firstDueOn: string, index: number): string | null {
+  if (!isValidISODate(firstDueOn)) return null;
+  if (!Number.isInteger(index) || index < 0) return null;
+  const _p = firstDueOn.split('-').map(Number); const y = _p[0]!; const m = _p[1]!; const d = _p[2]!;
+  const date = new Date(Date.UTC(y, m - 1 + index, d));
+  const day = date.getUTCDate();
+  const last = lastDayOfMonth(date.getUTCFullYear(), date.getUTCMonth() + 1);
+  if (day > last) {
+    date.setUTCDate(last);
+  }
+  const yy = date.getUTCFullYear();
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+export function validateInstallmentCount(count: number): boolean {
+  return Number.isInteger(count) && count >= 2 && count <= 999;
+}

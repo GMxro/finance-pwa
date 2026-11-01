@@ -38,6 +38,10 @@ export async function deleteAccount(env: Env, userId: string, requestId: string)
         SELECT ?, id, COALESCE(deleted_at, ?) FROM transactions WHERE user_id = ?
       `).bind(requestId, deletedAt, userId),
       env.DB.prepare(`DELETE FROM transfers WHERE user_id = ?`).bind(userId),
+      env.DB.prepare(`DELETE FROM recurring_occurrences WHERE user_id = ?`).bind(userId),
+      env.DB.prepare(`DELETE FROM recurring_rules WHERE user_id = ?`).bind(userId),
+      env.DB.prepare(`DELETE FROM installment_items WHERE user_id = ?`).bind(userId),
+      env.DB.prepare(`DELETE FROM installment_plans WHERE user_id = ?`).bind(userId),
       env.DB.prepare(`DELETE FROM transactions WHERE user_id = ?`).bind(userId),
       env.DB.prepare(`DELETE FROM budgets WHERE user_id = ?`).bind(userId),
       env.DB.prepare(`DELETE FROM categories WHERE user_id = ?`).bind(userId),

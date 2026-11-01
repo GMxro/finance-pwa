@@ -7,6 +7,7 @@ import type {
   AccountWithBalances
 } from '@contracts/account';
 import { NotFoundError, ValidationError } from '../../middleware/error-handler';
+import { todayLocalISO } from '@domain/date';
 
 function safeBalance(value: unknown): number {
   const amount = Number(value);
@@ -49,24 +50,25 @@ const ACCOUNT_COLUMNS = `id, user_id, name, kind, is_default, sort_order, archiv
  * cuenta de origen y suma en la de destino. Nunca toca ingresos ni gastos.
  */
 async function balancesByAccount(env: Env, userId: string): Promise<Map<string, Array<{ currency: 'ARS' | 'USD'; amountMinor: number }>>> {
+  const today = todayLocalISO();
   const result = await balanceQuery(env.DB.prepare(`
     SELECT account_id, currency_code, SUM(delta_minor) AS net_minor
     FROM (
       SELECT account_id, currency_code,
              CASE WHEN kind = 'income' THEN amount_minor ELSE -amount_minor END AS delta_minor
       FROM transactions
-      WHERE user_id = ? AND deleted_at IS NULL AND account_id IS NOT NULL
+      WHERE user_id = ? AND deleted_at IS NULL AND account_id IS NOT NULL AND occurred_on <= ?
       UNION ALL
       SELECT from_account_id, from_currency_code, -from_amount_minor
       FROM transfers
-      WHERE user_id = ? AND deleted_at IS NULL
+      WHERE user_id = ? AND deleted_at IS NULL AND occurred_on <= ?
       UNION ALL
       SELECT to_account_id, to_currency_code, to_amount_minor
       FROM transfers
-      WHERE user_id = ? AND deleted_at IS NULL
+      WHERE user_id = ? AND deleted_at IS NULL AND occurred_on <= ?
     )
     GROUP BY account_id, currency_code
-  `).bind(userId, userId, userId).all());
+  `).bind(userId, today, userId, today, userId, today).all());
 
   const map = new Map<string, Array<{ currency: 'ARS' | 'USD'; amountMinor: number }>>();
   for (const row of result.results as any[]) {

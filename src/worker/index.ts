@@ -21,6 +21,11 @@ import { categoriesRoutes } from './routes/categories';
 import { syncRoutes } from './routes/sync';
 import { healthRoutes } from './routes/health';
 import { legalRoutes } from './routes/legal';
+import { installmentRoutes } from './routes/installments';
+import { recurringRoutes } from './routes/recurring';
+import { commitmentsRoutes } from './routes/commitments';
+import { calendarRoutes } from './routes/calendar';
+import { processDueRecurring } from './application/recurring/recurring';
 
 import type { Env } from '@env';
 
@@ -57,6 +62,10 @@ protectedApi.route('/transfers', transfersRoutes);
 protectedApi.route('/budgets', budgetsRoutes);
 protectedApi.route('/categories', categoriesRoutes);
 protectedApi.route('/sync', syncRoutes);
+protectedApi.route('/installments', installmentRoutes);
+protectedApi.route('/recurring', recurringRoutes);
+protectedApi.route('/commitments', commitmentsRoutes);
+protectedApi.route('/calendar', calendarRoutes);
 
 app.route('/api', protectedApi);
 
@@ -143,4 +152,11 @@ app.get('*', async (c) => {
   });
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  async scheduled(controller: any, env: Env, ctx: ExecutionContext) {
+    try {
+      await processDueRecurring(env);
+    } catch {}
+  }
+} satisfies ExportedHandler<Env>;

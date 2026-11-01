@@ -84,6 +84,12 @@ export function TransactionsPage() {
   const [newCategoryIcon, setNewCategoryIcon] = useState('tag');
   const [newCategoryError, setNewCategoryError] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
+  const [entryMode, setEntryMode] = useState<'manual' | 'installment' | 'recurring'>('manual');
+  const [installmentsCount, setInstallmentsCount] = useState(2);
+  const [firstDueOn, setFirstDueOn] = useState(todayLocalISO());
+  const [recurringFrequency, setRecurringFrequency] = useState('monthly');
+  const [recurringDaysOfWeek, setRecurringDaysOfWeek] = useState<number>(1 << new Date().getDay());
+  const [recurringEndOn, setRecurringEndOn] = useState('');
 
   // Hook para input de moneda con formateo ARS en vivo
   const amountInput = useCurrencyInput({
@@ -223,6 +229,12 @@ export function TransactionsPage() {
     setFormData(newForm);
     setAmountMinor(null);
     setFormError(null);
+    setEntryMode('manual');
+    setInstallmentsCount(2);
+    setFirstDueOn(todayLocalISO());
+    setRecurringFrequency('monthly');
+    setRecurringDaysOfWeek(1 << new Date().getDay());
+    setRecurringEndOn('');
     resetNewCategory();
     setEditingTx({ kind });
   };
@@ -306,6 +318,7 @@ export function TransactionsPage() {
       };
       setFormData(newForm);
       setAmountMinor(null);
+      setEntryMode('manual');
       setEditingTx({ kind: mode });
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete('new');
@@ -356,15 +369,50 @@ export function TransactionsPage() {
 
     try {
       if (editingTx.id) {
-        const response = await api.updateTransaction(editingTx.id, {
+        if (editingTx.sourceType === 'installment' && (editingTx.occurredOn ?? '') > todayLocalISO()) {
+          const response = await api.updateInstallmentItem(editingTx.sourceId ?? editingTx.id, {
+            amountMinor,
+            occurredOn: formData.occurredOn,
+            note: formData.note || null,
+            version: editingTx.version
+          });
+          if (response.error) throw new Error(response.error.message);
+        } else {
+          const response = await api.updateTransaction(editingTx.id, {
+            kind: formData.kind,
+            amountMinor,
+            currency: formData.currency,
+            categoryId: formData.categoryId,
+            accountId: formData.accountId || undefined,
+            occurredOn: formData.occurredOn,
+            note: formData.note || undefined,
+            version: editingTx.version
+          });
+          if (response.error) throw new Error(response.error.message);
+        }
+      } else if (entryMode === 'installment') {
+        const response = await api.createInstallmentPlan({
+          concept: formData.note || 'Compra en cuotas',
+          totalMinor: amountMinor,
+          currency: formData.currency,
+          installmentsCount: installmentsCount,
+          categoryId: formData.categoryId,
+          accountId: formData.accountId || undefined,
+          firstDueOn: firstDueOn
+        });
+        if (response.error) throw new Error(response.error.message);
+      } else if (entryMode === 'recurring') {
+        const response = await api.createRecurringRule({
           kind: formData.kind,
+          concept: formData.note || 'Movimiento recurrente',
           amountMinor,
           currency: formData.currency,
           categoryId: formData.categoryId,
           accountId: formData.accountId || undefined,
-          occurredOn: formData.occurredOn,
-          note: formData.note || undefined,
-          version: editingTx.version
+          frequency: recurringFrequency,
+          daysOfWeek: recurringFrequency === 'weekly_days' ? recurringDaysOfWeek : recurringFrequency === 'weekend' ? 65 : undefined,
+          startOn: formData.occurredOn,
+          endOn: recurringEndOn || null
         });
         if (response.error) throw new Error(response.error.message);
       } else {
@@ -571,7 +619,91 @@ export function TransactionsPage() {
         <form id="tx-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }}>
           <Stack gap="md">
             {formError && <Notice tone="strong">{formError}</Notice>}
-            
+
+            {!editingTx?.id && (
+              <Select
+                label="Modo"
+                value={entryMode}
+                 onChange={v => {
+                   const mode = v as 'manual' | 'installment' | 'recurring';
+                   setEntryMode(mode);
+                   if (mode === 'installment') setFormData(f => ({ ...f, kind: 'expense' }));
+                 }}
+                options={[
+                  { value: 'manual', label: 'Movimiento manual' },
+                  { value: 'installment', label: 'Compra en cuotas' },
+                  { value: 'recurring', label: 'Movimiento recurrente' }
+                ]}
+              />
+            )}
+
+            {entryMode === 'installment' && !editingTx?.id && (
+              <Grid columns={2} gap="md">
+                <Input
+                  label="Cantidad de cuotas"
+                  type="number"
+                  value={String(installmentsCount)}
+                  onChange={v => setInstallmentsCount(Math.max(2, Math.min(999, Number(v) || 2)))}
+                  min={2}
+                  max={999}
+                />
+                <Input
+                  label="Primer vencimiento"
+                  type="date"
+                  value={firstDueOn}
+                  onChange={v => setFirstDueOn(v)}
+                />
+              </Grid>
+            )}
+
+            {entryMode === 'recurring' && !editingTx?.id && (
+              <>
+                <Grid columns={2} gap="md">
+                  <Select
+                    label="Frecuencia"
+                    value={recurringFrequency}
+                    onChange={v => setRecurringFrequency(v)}
+                    options={[
+                      { value: 'never', label: 'Nunca' },
+                      { value: 'daily', label: 'Cada día' },
+                      { value: 'weekly_days', label: 'Días de la semana' },
+                      { value: 'weekend', label: 'Fin de semana' },
+                      { value: 'weekly', label: 'Cada semana' },
+                      { value: 'biweekly', label: 'Cada dos semanas' },
+                      { value: 'four_weekly', label: 'Cada cuatro semanas' },
+                      { value: 'monthly', label: 'Cada mes' },
+                      { value: 'month_end', label: 'Fin de mes' },
+                      { value: 'bimonthly', label: 'Cada dos meses' },
+                      { value: 'trimonthly', label: 'Cada tres meses' },
+                      { value: 'fourmonthly', label: 'Cada cuatro meses' },
+                      { value: 'sixmonthly', label: 'Cada seis meses' },
+                      { value: 'yearly', label: 'Cada año' }
+                    ]}
+                  />
+                  <Input
+                    label="Fecha de fin (opcional)"
+                    type="date"
+                    value={recurringEndOn}
+                    onChange={v => setRecurringEndOn(v)}
+                  />
+                </Grid>
+                {recurringFrequency === 'weekly_days' && (
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((label, idx) => {
+                      const bit = 1 << idx;
+                      const checked = (recurringDaysOfWeek & bit) !== 0;
+                      return (
+                        <label key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <input type="checkbox" checked={checked} onChange={() => setRecurringDaysOfWeek(prev => checked ? prev & ~bit : prev | bit)} />
+                          {label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
             {/* 1. Tipo - SegmentedControl */}
             <SegmentedControl
               label="Tipo"

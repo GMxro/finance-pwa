@@ -33,7 +33,9 @@ function mapTransaction(row: any): TransactionResponse {
     changeSeq: row.change_seq,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    deletedAt: row.deleted_at ?? null
+    deletedAt: row.deleted_at ?? null,
+    sourceType: row.source_type ?? 'manual',
+    sourceId: row.source_id ?? null
   } as TransactionResponse;
 }
 
@@ -80,7 +82,7 @@ export async function listTransactions(
   
   const result = await env.DB.prepare(`
     SELECT id, user_id, category_id, account_id, kind, amount_minor, currency_code, 
-           occurred_on, note, version, change_seq, created_at, updated_at, deleted_at
+           occurred_on, note, version, change_seq, created_at, updated_at, deleted_at, source_type, source_id
     FROM transactions
     WHERE ${whereClause}
     ORDER BY occurred_on DESC, id DESC
@@ -140,7 +142,7 @@ export async function createTransaction(
   }
   
   const tx = await env.DB.prepare(`
-    SELECT id, user_id, category_id, account_id, kind, amount_minor, currency_code, occurred_on, note, version, change_seq, created_at, updated_at, deleted_at
+    SELECT id, user_id, category_id, account_id, kind, amount_minor, currency_code, occurred_on, note, version, change_seq, created_at, updated_at, deleted_at, source_type, source_id
     FROM transactions WHERE id = ? AND user_id = ?
   `).bind(data.id, userId).first<TransactionResponse>();
   

@@ -1,4 +1,4 @@
-import { Home, List, Wallet, Target, ChartColumn, Settings, type LucideIcon } from 'lucide-react';
+import { Home, List, Wallet, Target, ChartColumn, Settings, Calendar, CalendarClock, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   to: string;
@@ -25,5 +25,7 @@ export const MOBILE_NAV_ITEMS: NavItem[] = [
 export const MORE_NAV_ITEMS: NavItem[] = [
   { to: '/cuentas', label: 'Cuentas', icon: Wallet },
   { to: '/presupuestos', label: 'Presupuestos', icon: Target },
+  { to: '/calendario', label: 'Calendario', icon: Calendar },
+  { to: '/compromisos', label: 'Compromisos', icon: CalendarClock },
   { to: '/ajustes', label: 'Ajustes', icon: Settings }
 ];

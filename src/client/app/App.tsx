@@ -15,6 +15,8 @@ import { LoadingScreen } from '@shared/ui/LoadingScreen';
 import { TermsPage } from '@client/features/legal/TermsPage';
 import { PrivacyPage } from '@client/features/legal/PrivacyPage';
 import { LegalAcceptancePage } from '@client/features/legal/LegalAcceptancePage';
+import { CalendarPage } from '@client/features/calendar/CalendarPage';
+import { CommitmentsPage } from '@client/features/commitments/CommitmentsPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, legalAcceptance, onboardingComplete } = useAuth();
@@ -37,8 +39,10 @@ function AppLayout() {
       <Route path="/presupuestos" element={<BudgetsPage />} />
       <Route path="/estadisticas" element={<StatisticsPage />} />
       <Route path="/ajustes/categorias" element={<CategoriesPage />} />
-     <Route path="/categorias" element={<Navigate to="/ajustes/categorias" replace />} />
-     <Route path="/ajustes" element={<SettingsPage />} />
+      <Route path="/categorias" element={<Navigate to="/ajustes/categorias" replace />} />
+      <Route path="/calendario" element={<CalendarPage />} />
+      <Route path="/compromisos" element={<CommitmentsPage />} />
+      <Route path="/ajustes" element={<SettingsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

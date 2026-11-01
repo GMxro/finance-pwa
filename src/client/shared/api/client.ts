@@ -363,6 +363,49 @@ export async function waitForAccountDeletion(lookup: AccountDeletionLookup): Pro
   };
 }
 
+// Installments
+export async function listInstallmentPlans(): Promise<ApiResponse<any[]>> {
+  return request<any[]>('/installments');
+}
+export async function createInstallmentPlan(data: any): Promise<ApiResponse<any>> {
+  return request<any>('/installments', { method: 'POST', body: JSON.stringify(data) });
+}
+export async function cancelInstallmentPlan(id: string, version: number): Promise<ApiResponse<any>> {
+  return request<any>(`/installments/${id}/cancel`, { method: 'POST', body: JSON.stringify({ version }) });
+}
+
+export async function updateInstallmentItem(id: string, data: any): Promise<ApiResponse<any>> {
+  return request<any>(`/installments/items/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+// Recurring
+export async function listRecurringRules(): Promise<ApiResponse<any[]>> {
+  return request<any[]>('/recurring');
+}
+export async function createRecurringRule(data: any): Promise<ApiResponse<any>> {
+  return request<any>('/recurring', { method: 'POST', body: JSON.stringify(data) });
+}
+export async function cancelRecurringRule(id: string, version: number): Promise<ApiResponse<any>> {
+  return request<any>(`/recurring/${id}/cancel`, { method: 'POST', body: JSON.stringify({ version }) });
+}
+
+export async function updateRecurringRule(id: string, data: any): Promise<ApiResponse<any>> {
+  return request<any>(`/recurring/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+// Commitments
+export async function listCommitments(from: string, to: string): Promise<ApiResponse<any[]>> {
+  return request<any[]>(`/commitments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+}
+export async function getCommitmentsSummary(month: string): Promise<ApiResponse<any>> {
+  return request<any>(`/commitments/summary?month=${encodeURIComponent(month)}`);
+}
+
+// Calendar
+export async function getCalendarMonth(month: string): Promise<ApiResponse<any[]>> {
+  return request<any[]>(`/calendar?month=${encodeURIComponent(month)}`);
+}
+
 // Export api object for convenience
 export const api = {
   getSession,
@@ -390,7 +433,18 @@ export const api = {
   exportCSV,
   deleteAccount,
   getAccountDeletionStatus,
-waitForAccountDeletion,
-   updatePreferences,
-   getMonthlySummary
- };
+  waitForAccountDeletion,
+  updatePreferences,
+  getMonthlySummary,
+  listInstallmentPlans,
+  createInstallmentPlan,
+  cancelInstallmentPlan,
+  updateInstallmentItem,
+  listRecurringRules,
+  createRecurringRule,
+  cancelRecurringRule,
+  updateRecurringRule,
+  listCommitments,
+  getCommitmentsSummary,
+  getCalendarMonth
+};

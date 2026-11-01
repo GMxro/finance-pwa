@@ -99,7 +99,23 @@ export function AccountsPage() {
   const setToAmountMinor = toAmountInput.setValueMinor;
 
   const [archiveTarget, setArchiveTarget] = useState<AccountWithBalances | null>(null);
+  const [archiveHasCommitments, setArchiveHasCommitments] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TransferResponse | null>(null);
+
+  const requestArchive = async (account: AccountWithBalances) => {
+    try {
+      const [plansRes, rulesRes] = await Promise.all([
+        api.listInstallmentPlans(),
+        api.listRecurringRules()
+      ]);
+      const hasInstallments = (plansRes.data || []).some((p: any) => p.accountId === account.id);
+      const hasRecurring = (rulesRes.data || []).some((r: any) => r.accountId === account.id && r.active);
+      setArchiveHasCommitments(hasInstallments || hasRecurring);
+    } catch {
+      setArchiveHasCommitments(false);
+    }
+    setArchiveTarget(account);
+  };
 
   // Actualizar hooks cuando cambia la moneda
   useEffect(() => {
@@ -436,7 +452,7 @@ export function AccountsPage() {
                       <IconButton label={`Editar ${account.name}`} onClick={() => openEditAccount(account)} disabled={saving}>
                         <Pencil size={16} />
                       </IconButton>
-                      <IconButton label={`Archivar ${account.name}`} onClick={() => setArchiveTarget(account)} disabled={saving}>
+                      <IconButton label={`Archivar ${account.name}`} onClick={() => void requestArchive(account)} disabled={saving}>
                         <Archive size={16} />
                       </IconButton>
                       </Inline>
@@ -686,7 +702,7 @@ export function AccountsPage() {
          onClose={() => setArchiveTarget(null)}
          busy={saving}
          title="Archivar cuenta"
-        description={archiveTarget ? `“${archiveTarget.name}” deja de aparecer al cargar movimientos. Su historial se conserva.` : undefined}
+        description={archiveTarget ? (archiveHasCommitments ? "Estás a punto de archivar una cuenta que tiene compromisos financieros pendientes. ¿Estás seguro de que querés continuar?" : `“${archiveTarget.name}” deja de aparecer al cargar movimientos. Su historial se conserva.`) : undefined}
         footer={
           <>
             <Button variant="secondary" onClick={() => setArchiveTarget(null)} disabled={saving}>Cancelar</Button>

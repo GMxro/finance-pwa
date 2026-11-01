@@ -29,7 +29,9 @@ export const transactionResponseSchema = transactionCreateSchema.extend({
   changeSeq: z.number().int().nonnegative(),
   createdAt: z.number(),
   updatedAt: z.number(),
-  deletedAt: z.number().nullable()
+  deletedAt: z.number().nullable(),
+  sourceType: z.enum(['manual', 'installment', 'recurring']).optional(),
+  sourceId: z.string().nullable().optional()
 });
 
 export const transactionListQuerySchema = z.object({

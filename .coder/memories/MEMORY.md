@@ -4,3 +4,4 @@
 - [Financial Calculations](financial-calculations.md) — Precision rules, overflow guards, and aggregation patterns for monetary values
 - [Security Boundaries](security-boundaries.md) — Origin validation, rate limits, body limits, and authentication patterns
 - [User Preferences](user-preferences.md) — User's expectations for audit depth, evidence-based reporting, and fix verification
+- [Planned Features Cuotas Recurrencias](planned-features-cuotas-recurrencias.md) — Roadmap aprobado: cuotas, recurrencias, compromisos y calendario, con decisiones clave y pendientes
