@@ -813,6 +813,39 @@ export function TransactionsPage() {
       </Modal>
 
        <Modal
+        open={repeatModalOpen}
+        onClose={() => setRepeatModalOpen(false)}
+        title="Selecciona el tipo de transacción"
+      >
+        <Stack gap="md">
+          {repeatStep === 'choose' ? (
+            <>
+              <Button onClick={() => setRepeatStep('installment')}>Cuota</Button>
+              <Button onClick={() => { setEntryMode('recurring'); setRepeatModalOpen(false); }}>Repetir</Button>
+            </>
+          ) : (
+            <>
+              <Input
+                label="Cantidad de cuotas"
+                type="number"
+                value={String(installmentsCount)}
+                onChange={v => setInstallmentsCount(Math.max(2, Math.min(999, Number(v) || 2)))}
+                min={2}
+                max={999}
+              />
+              <Input
+                label="Primer vencimiento"
+                type="date"
+                value={firstDueOn}
+                onChange={v => setFirstDueOn(v)}
+              />
+              <Button onClick={() => { setEntryMode('installment'); setRepeatModalOpen(false); }}>Confirmar</Button>
+            </>
+          )}
+        </Stack>
+      </Modal>
+
+      <Modal
          open={deleteTarget !== null}
          onClose={() => setDeleteTarget(null)}
          busy={saving}
