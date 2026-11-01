@@ -291,7 +291,7 @@
 
 .ui-page .ui-section.overview-section-spaced,
 .ui-page .ui-section.overview-recent.overview-section-spaced {
-  margin-top: calc(var(--space-12) + 28px);
+  margin-top: 28px;
 }
 
 .ui-page .ui-section.overview-section-spaced .ui-section__header {
