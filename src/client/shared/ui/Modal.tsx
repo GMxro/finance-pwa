@@ -28,9 +28,11 @@ export interface ModalProps {
   size?: 'sm' | 'md';
   /** Si true, solo autofocus la primera vez que se abre el modal y el primer campo está vacío */
   autoFocusFirstEmpty?: boolean;
+  /** Si true, impide cerrar el modal (Escape, overlay, botón X) mientras hay una operación en curso */
+  busy?: boolean;
 }
 
-export function Modal({ open, onClose, title, description, children, footer, size = 'md', autoFocusFirstEmpty = true }: ModalProps) {
+export function Modal({ open, onClose, title, description, children, footer, size = 'md', autoFocusFirstEmpty = true, busy = false }: ModalProps) {
   const titleId = useId();
   const descriptionId = useId();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -61,12 +63,13 @@ export function Modal({ open, onClose, title, description, children, footer, siz
       hasAutoFocused.current = true;
     }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
+     const handleKeyDown = (event: KeyboardEvent) => {
+       if (event.key === 'Escape') {
+         event.preventDefault();
+         if (busy) return;
+         onClose();
+         return;
+       }
       if (event.key !== 'Tab' || !contentRef.current) return;
 
       const focusable = Array.from(
@@ -134,6 +137,8 @@ export function Modal({ open, onClose, title, description, children, footer, siz
 
   // Tocar fuera del modal en mobile: baja el teclado pero no cierra
   const handleOverlayPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (busy) return;
     if (event.pointerType === 'touch' && isEditableField(document.activeElement)) {
       blurActiveField();
       return;
@@ -157,7 +162,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
             {title && <h2 id={titleId} className="ui-modal__title">{title}</h2>}
             {description && <p id={descriptionId} className="ui-modal__description">{description}</p>}
           </div>
-          <button type="button" className="ui-modal__close" onClick={onClose} aria-label="Cerrar">
+           <button type="button" className="ui-modal__close" onClick={onClose} disabled={busy} aria-label="Cerrar">
             <X size={20} />
           </button>
         </header>

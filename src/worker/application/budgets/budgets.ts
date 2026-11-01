@@ -181,12 +181,17 @@ export async function getBudgetWithSpent(
   return mapBudget(row);
 }
 export async function deleteBudget(env: Env, userId: string, id: string, version: number) {
+  const exists = await env.DB.prepare(`
+    SELECT id FROM budgets WHERE id = ? AND user_id = ?
+  `).bind(id, userId).first<any>();
+  if (!exists) throw new Error('NOT_FOUND');
+
   const result = await env.DB.prepare(`
     DELETE FROM budgets WHERE id = ? AND user_id = ? AND version = ?
   `).bind(id, userId, version).run();
 
   if (result.meta.changes === 0) {
-    throw new Error('NOT_FOUND');
+    throw new Error('CONFLICT');
   }
 
   return { success: true };

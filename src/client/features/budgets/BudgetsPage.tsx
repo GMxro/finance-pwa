@@ -52,11 +52,8 @@ export function BudgetsPage() {
   });
   const setLimitMinor = limitInput.setValueMinor;
 
-  // Actualizar hook cuando cambia la moneda
-  useEffect(() => {
-    setLimitMinor(form.limitMinor);
-  }, [form.currency, form.limitMinor, setLimitMinor]);
-
+  // El límite se sincroniza explícitamente al abrir el modal (create/edit).
+  // No re-formatear aquí para no pisar el cursor del input.
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);

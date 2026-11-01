@@ -130,18 +130,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const loginAttempted = readClientFlag(LOGIN_ATTEMPT_KEY) === '1';
         if (!shouldRestoreStoredSession(localLogoutPending, loginAttempted)) return;
 
-        const response = await api.getSession();
-        if (response.data) {
-          clearClientFlag(OFFLINE_LOGOUT_KEY);
-          clearClientFlag(LOGIN_ATTEMPT_KEY);
-          setDefaultCurrency('ARS');
-          setUser(response.data);
-          setSession(response.data);
-          setOnboardingComplete(false);
-          const bootstrap = await api.getBootstrap();
-          if (bootstrap.error || !bootstrap.data) throw new Error(bootstrap.error?.message ?? 'No pudimos cargar tu cuenta.');
-          if (bootstrap.data.userId !== response.data.id) throw new Error('La sesión cambió durante el inicio.');
-          setLegalAcceptance(bootstrap.data.legalAcceptance);
+    const response = await api.getSession();
+    if (response.data) {
+      clearClientFlag(OFFLINE_LOGOUT_KEY);
+      clearClientFlag(LOGIN_ATTEMPT_KEY);
+      const bootstrap = await api.getBootstrap();
+      if (bootstrap.error || !bootstrap.data) throw new Error(bootstrap.error?.message ?? 'No pudimos cargar tu cuenta.');
+      if (bootstrap.data.userId !== response.data.id) throw new Error('La sesión cambió durante el inicio.');
+      setDefaultCurrency('ARS');
+      setUser(response.data);
+      setSession(response.data);
+      setOnboardingComplete(false);
+      setLegalAcceptance(bootstrap.data.legalAcceptance);
           setSyncEpoch(bootstrap.data.syncEpoch);
           setDefaultCurrency(bootstrap.data.defaultCurrency);
           setOnboardingComplete(bootstrap.data.onboardingComplete);
@@ -324,11 +324,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (response.error || !response.data?.accepted) {
       throw new Error(response.error?.message ?? 'No pudimos guardar tu aceptación.');
     }
+    if (response.data) setLegalAcceptance(response.data);
   }, []);
 
   const syncNow = useCallback(async () => {
     if (!legalAcceptance?.accepted) throw new Error('Aceptá los documentos vigentes antes de sincronizar.');
-    if (user) await syncForUser(user.id);
+    if (!user) return;
+    try {
+      await syncForUser(user.id);
+    } catch (error) {
+      setSyncState((current) => ({
+        ...current,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'No se pudo sincronizar.'
+      }));
+      throw error;
+    }
   }, [legalAcceptance?.accepted, syncForUser, user]);
   
   return (

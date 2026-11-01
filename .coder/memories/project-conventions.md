@@ -3,7 +3,7 @@ name: Project Conventions
 description: Coding patterns, validation rules, and architectural decisions established during audit fixes
 type: feedback
 date: 2026-10-31
-review_after: 2027-04-30
+review_after: 2027-05-01
 ---
 
 ## Architecture & Layering
@@ -20,7 +20,7 @@ review_after: 2027-04-30
 - **All amounts**: Integer minor units (cents). `money.ts` enforces `Number.isSafeInteger`, range ±999,999,999,999. Reject floats, strings, `null`.
 - **Pagination**: `limit` max 100, min 1, default 20. Validate in contract, not just service. Reject negative/zero/overflow.
 - **Category invariants** (centralized in `transactions.ts` and `budgets.ts`): Must be owned by user, `archived_at IS NULL`, `kind` matches movement type (`expense` for budgets/expenses, `income` for incomes).
-- **Transfer amounts**: If `fromCurrency === toCurrency`, `toAmountMinor` MUST equal `fromAmountMinor` (server enforces). Contract allows distinct only when currencies differ.
+- **Transfer amounts**: If `fromCurrency === toCurrency`, `toAmountMinor` MUST equal `fromAmountMinor` (server enforces + contract `refine` + client validation). Contract allows distinct only when currencies differ.
 
 ## Financial Calculations
 
@@ -50,6 +50,14 @@ review_after: 2027-04-30
 - **Error handling**: Check `error` from `apiClient` before using `data`. Show explicit offline/stale indicator when falling back to cache.
 - **Date defaults**: Always use `todayLocalISO()` / `currentMonthISO()` from `domain/date.ts`. Never `new Date().toISOString().slice()`.
 - **Sync listener**: Global `online`/`focus` listener in `providers.tsx`, not per-page. Deduplicate by `userId`.
+- **Modal backdrop**: Close only when `event.target === event.currentTarget` (click on overlay), never on clicks inside content (F-08).
+- **Modal busy guard**: Modals accept a `busy` prop; while busy, Escape, overlay click, and close button are disabled (F-24 second pass). Parent sets `busy` during async save/delete.
+- **Session bootstrap**: Set `user`/`session` in auth context **only after** bootstrap succeeds; on failure keep unauthenticated and surface error (F-03).
+- **Legal acceptance**: After `acceptLegalDocuments` succeeds, update in-memory `legalAcceptance` state; don't require re-fetch to reflect acceptance (F-04).
+- **Currency locale**: All currencies format with `es-AR` locale in `useCurrencyInput` (USD was `en-US` — F-02). Keep consistent.
+- **DangerZone**: When `onAction` returns a promise, track internal `busy` state and disable controls; don't rely solely on parent `loading` (F-20).
+- **Error propagation**: Pages that fall back to cache must propagate the fetch error (e.g. Overview movements) so the UI can show retry, not swallow it (F-13).
+- **Known dead/unfinished**: Overview import toggle has state without setter (decide feature or remove); transfers have no UI in TransactionsPage; `getMonthlySummary` returns only first currency. Document, don't assume.
 
 ## Testing Standards
 

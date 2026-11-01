@@ -3,7 +3,7 @@ name: Sync Protocol
 description: Offline sync engine behavior, idempotency, tombstones, and cursor management
 type: feedback
 date: 2026-10-31
-review_after: 2027-04-30
+review_after: 2027-05-01
 ---
 
 ## Overview
@@ -49,8 +49,9 @@ Offline-first for **transaction creation only**. Edits and deletes require conne
 ## Full Sync / Epoch Change
 
 - Triggered on epoch mismatch or manual "Full sync"
-- Server returns **all** user's transactions (paginated)
+- Server returns **all** user's transactions (paginated), including tombstones (`deletedAt`) for removed rows
 - Client rebuilds cache: **preserve only outbox items owned by active user**
+- **Apply tombstones from the full-sync response** to local cache (set `deletedAt`), same as incremental pull. Do not ignore deletes during full sync — otherwise removed transactions reappear (F-23).
 - Critical: Filter `outbox` by `userId` before preserving. Old code preserved all users' pending items (A-1)
 
 ## Cursor & Concurrency (Critical)

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { MoreHorizontal, Plus } from 'lucide-react';
 import { useAuth } from '../providers';
@@ -11,6 +11,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, syncState, syncNow } = useAuth();
   const { pathname } = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const moreMenuRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (moreMenuRef.current?.contains(target) || moreButtonRef.current?.contains(target)) return;
+      setMoreOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMoreOpen(false);
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [moreOpen]);
   const showQuickAdd = pathname === '/' || pathname === '/estadisticas';
   const moreActive = MORE_NAV_ITEMS.some(item => pathname.startsWith(item.to));
 
@@ -112,6 +132,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
           <button
+            ref={moreButtonRef}
             type="button"
             className={`ui-bottom-nav__item ${moreActive || moreOpen ? 'is-active' : ''}`}
             aria-expanded={moreOpen}
@@ -123,7 +144,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
         </nav>
         {moreOpen && (
-          <nav id="ui-more-menu" className="ui-more-menu" aria-label="Más secciones">
+          <nav ref={moreMenuRef} id="ui-more-menu" className="ui-more-menu" aria-label="Más secciones">
             {MORE_NAV_ITEMS.map(item => {
               const Icon = item.icon;
               return (

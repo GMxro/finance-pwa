@@ -85,6 +85,9 @@ export async function createTransfer(
   if (!toAmount) {
     throw new ValidationError('Indicá cuánto entra en la cuenta de destino.');
   }
+  if (sameCurrency && toAmount !== data.fromAmountMinor) {
+    throw new ValidationError('En la misma moneda, el monto que entra debe ser igual al que sale.');
+  }
 
   const existing = await env.DB.prepare(`
     ${TRANSFER_SELECT} WHERE t.id = ? AND t.user_id = ?

@@ -3,7 +3,7 @@ name: Financial Calculations
 description: Precision rules, overflow guards, and aggregation patterns for monetary values
 type: feedback
 date: 2026-10-31
-review_after: 2027-04-30
+review_after: 2027-05-01
 ---
 
 ## Core Principle
@@ -35,6 +35,7 @@ Individual guards **do not protect sums**. `summary.ts`, `budgets.ts`, `accounts
 | `domain/summary.ts:29-42` | `income += t.amountMinor` per transaction | 2,000+ txns × 1M minor → overflow |
 | `worker/application/budgets/budgets.ts:28,43` | `SUM(amount_minor)` → `Number()` | SQL sum can exceed safe integer |
 | `worker/application/accounts/accounts.ts:33-56` | Balance aggregation per currency | Multi-account sum unbounded |
+| `src/client/features/accounts/AccountsPage.tsx` | Client-side total per currency | Must use checked accumulation with overflow detection (F-21) |
 
 ### Required Pattern (apply to all aggregations)
 
@@ -74,7 +75,8 @@ function sumMinorUnits(amounts: number[]): bigint {
 ## Statistics & Reports
 
 - `StatisticsPage` caps at 20 pages × 100 = 2,000 transactions (F-16). Shows truncation warning if more exist.
-- `OverviewPage` (summary) pulls only 100 txns per month (F-03). **Must fetch all pages or use server aggregation**.
+- `OverviewPage` (summary) now uses the server monthly summary when available; falls back to cached movements only if the summary fails, propagating the error (F-03/F-13). Do not re-introduce client-side aggregation over the first 100 cached rows.
+- `getMonthlySummary` (worker) now validates `SUM(amount_minor)` with `Number.isSafeInteger` and throws `ValidationError` on overflow (pass 2). Keep the guard; do not revert to unchecked accumulation.
 - Daily average: `totalMinor / daysInPeriod` — use integer division with remainder handling, not float.
 
 ## Currency Handling

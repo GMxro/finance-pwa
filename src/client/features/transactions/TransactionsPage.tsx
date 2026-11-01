@@ -224,7 +224,7 @@ export function TransactionsPage() {
     setEditingTx({ kind });
   };
 
-  const startEdit = (item: LedgerItem) => {
+  const startEdit = useCallback((item: LedgerItem) => {
     const tx = transactions.find(t => t.id === item.id);
     if (!tx) return;
     setFormData({
@@ -240,7 +240,7 @@ export function TransactionsPage() {
     setFormError(null);
     resetNewCategory();
     setEditingTx(tx);
-  };
+  }, [transactions, setAmountMinor]);
 
   const handleCreateCategory = async () => {
     const name = newCategoryName.trim();
@@ -292,11 +292,8 @@ export function TransactionsPage() {
     }
   }, [categories, editingTx, formData.categoryId, formData.kind]);
 
-  // Actualizar hook cuando cambia la moneda
-  useEffect(() => {
-    setAmountMinor(formData.amountMinor);
-  }, [formData.currency, formData.amountMinor, setAmountMinor]);
-
+  // El importe se sincroniza explícitamente al abrir el modal (openCreate/startEdit)
+  // y al tipear (onChange del hook). No re-formatear aquí para no pisar el cursor.
   useEffect(() => {
     const mode = searchParams.get('new');
     if (mode === 'expense' || mode === 'income') {
@@ -403,6 +400,7 @@ export function TransactionsPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    setSaving(true);
     try {
       const response = await api.deleteTransaction(deleteTarget.id, deleteTarget.version);
       if (response.error) throw new Error(response.error.message);
@@ -411,6 +409,8 @@ export function TransactionsPage() {
     } catch (e: any) {
       setError(e?.message ?? 'No pudimos eliminar el movimiento.');
       setDeleteTarget(null);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -539,12 +539,13 @@ export function TransactionsPage() {
         </div>
       )}
 
-      <Modal
-        open={editingTx !== null}
-        onClose={closeModal}
-        title={editingTx?.id ? 'Editar movimiento' : 'Nuevo movimiento'}
-        description="Los importes se guardan en la moneda del movimiento."
-        autoFocusFirstEmpty
+       <Modal
+         open={editingTx !== null}
+         onClose={closeModal}
+         busy={saving}
+         title={editingTx?.id ? 'Editar movimiento' : 'Nuevo movimiento'}
+         description="Los importes se guardan en la moneda del movimiento."
+         autoFocusFirstEmpty
         footer={
           <>
             {editingTx?.id && (
@@ -708,15 +709,16 @@ export function TransactionsPage() {
         </form>
       </Modal>
 
-      <Modal
-        open={deleteTarget !== null}
-        onClose={() => setDeleteTarget(null)}
-        title="Eliminar movimiento"
-        size="sm"
+       <Modal
+         open={deleteTarget !== null}
+         onClose={() => setDeleteTarget(null)}
+         busy={saving}
+         title="Eliminar movimiento"
+         size="sm"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
-            <Button variant="danger" onClick={() => void handleDelete()}>Eliminar</Button>
+            <Button variant="secondary" onClick={() => setDeleteTarget(null)} disabled={saving}>Cancelar</Button>
+            <Button variant="danger" onClick={() => void handleDelete()} loading={saving} disabled={saving}>Eliminar</Button>
           </>
         }
       >

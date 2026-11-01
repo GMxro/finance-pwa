@@ -20,8 +20,8 @@ export async function performAccountDeletion(
   }
 
   const finish = async () => {
-    await logout({ accountDeleted: true });
     localStorage.removeItem(key);
+    await logout({ accountDeleted: true });
   };
 
   if (savedId === requestId) {

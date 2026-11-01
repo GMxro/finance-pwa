@@ -3,7 +3,7 @@ name: Security Boundaries
 description: Origin validation, rate limits, body limits, and authentication patterns
 type: feedback
 date: 2026-10-31
-review_after: 2027-04-30
+review_after: 2027-05-01
 ---
 
 ## Authentication & Session
@@ -78,6 +78,10 @@ user: {
 - **Cascades**: Depends on D1 FK constraints (may partial-fail silently)
 - **Action**: Keep disabled. All deletions via app saga.
 
+### Account Deletion Status Check (F-22)
+- `GET`/check of deletion status **requires an authenticated session** and ownership of the `userId` being queried. Do not accept a bare `userId` without session — prevents cross-user probing of deletion state.
+- Rate limit: 30/min per IP (see table above).
+
 ## Sync Endpoint Hardening (A-4)
 
 - **Contract validation**: Each operation validated against `contracts/sync.ts` schemas (create/update/delete per entity)
@@ -112,6 +116,18 @@ Permissions-Policy: geolocation=(), microphone=(), camera=()
   - `navigator.storage.persist()` requested (not guaranteed)
   - Document limitation in `OFFLINE-SYNC.md` and Settings
 - **No false security**: Do not add client-side encryption with key in JS (XSS defeats it)
+
+## Error Code → HTTP Status Mapping (`src/worker/middleware/error-handler.ts`)
+- Application errors must map to semantically correct HTTP codes, not a generic 500:
+  - `NOT_FOUND` → 404
+  - `CONFLICT` / idempotency mismatch → 409
+  - `DELETED` (tombstone) → 410
+  - `BUDGET_NOT_FOUND` → 404
+  - Duplicate slug/category → 409
+  - Validation failures → 400
+- Preserve legitimate validation/security protections; do not weaken them to "make it pass."
+- Client (`apiClient`) must check `error` before using `data` and surface the code (F-15).
+- `HTTPException` subclasses in `error-handler.ts` must set `this.name` explicitly in constructors; otherwise `instanceof`/name-based mapping degrades to a generic 500 (pass 2).
 
 ## Testing Requirements
 

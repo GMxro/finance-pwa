@@ -17,6 +17,7 @@ import { MonthStepper } from '@shared/ui/MonthStepper';
 import { SegmentedControl } from '@shared/ui/SegmentedControl';
 import { ButtonLink } from '@shared/ui/Button';
 import { Notice } from '@shared/ui/Notice';
+import { LoadingSpinner } from '@shared/ui/LoadingSpinner';
 import { LedgerList } from '@shared/ui/LedgerList';
 import { BudgetList } from '@shared/ui/BudgetList';
 import '../../app/styles/overview.css';
@@ -44,11 +45,12 @@ export function OverviewPage() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [budgets, setBudgets] = useState<BudgetWithSpent[]>([]);
   const [accounts, setAccounts] = useState<AccountWithBalances[]>([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dataStatus, setDataStatus] = useState<'current' | 'cached' | 'partial' | 'unavailable'>('unavailable');
   const [budgetLoadError, setBudgetLoadError] = useState(false);
   const [previousTransactions, setPreviousTransactions] = useState<any[]>([]);
+  const [serverSummary, setServerSummary] = useState<any | null>(null);
 
   useEffect(() => setCurrency(defaultCurrency), [defaultCurrency]);
 
@@ -78,6 +80,7 @@ export function OverviewPage() {
         api.listTransactions({ period: previousMonth, page: 1, limit: TRANSACTION_PAGE_SIZE }),
         api.listAccounts()
       ]);
+      setServerSummary(currentSummary.data ?? null);
       const mergeRows = async (rows: any[]) => {
         try {
           return await mergeWithCache(user.id, rows);
@@ -88,7 +91,7 @@ export function OverviewPage() {
 
       const transactionErrors = [currentTxRes.error, previousTxRes.error].filter(Boolean);
       const mayUseCache = transactionErrors.some((item) => canUseStaleData(item));
-      const cached = mayUseCache ? await readCached(user.id) : [];
+      const cached = mayUseCache ? await readCached(user.id).catch(() => []) : [];
       const cachedCurrent = cached.filter((tx) => !tx.deletedAt && tx.occurredOn?.startsWith(month));
       const cachedPrevious = cached.filter((tx) => !tx.deletedAt && tx.occurredOn?.startsWith(previousMonth));
       const currentRows = currentTxRes.data !== null
@@ -109,15 +112,20 @@ export function OverviewPage() {
          : previousSummary.data === null
            ? 'partial'
            : 'current');
-     if (currentSummary.error || previousSummary.error) {
-       const failure = currentSummary.error ?? previousSummary.error;
-       const message = (failure as any)?.message ?? 'error de conexión';
-       setError(currentSummary.data === null && currentAvailable
-         ? `No se pudo actualizar el período actual (${message}). Se muestran datos guardados en este dispositivo y pueden estar desactualizados.`
-         : !currentAvailable
-           ? `No se pudo cargar el período actual (${message}). No se muestran importes sin confirmar.`
-           : `No se pudo cargar la comparación mensual (${message}). Los importes del período actual sí fueron actualizados.`);
-     }
+      const summaryErrors = [currentSummary.error, previousSummary.error].filter(Boolean);
+      if (summaryErrors.length > 0 || transactionErrors.length > 0) {
+        const failure = summaryErrors[0] ?? transactionErrors[0];
+        const message = (failure as any)?.message ?? 'error de conexión';
+        if (currentSummary.data === null && !currentAvailable) {
+          setError(`No se pudo cargar el período actual (${message}). No se muestran importes sin confirmar.`);
+        } else if (transactionErrors.length > 0) {
+          setError(`No se pudieron cargar todos los movimientos del período (${message}). Los totales pueden estar incompletos.`);
+        } else if (currentSummary.data === null) {
+          setError(`No se pudo actualizar el período actual (${message}). Se muestran datos guardados en este dispositivo y pueden estar desactualizados.`);
+        } else {
+          setError(`No se pudo cargar la comparación mensual (${message}). Los importes del período actual sí fueron actualizados.`);
+        }
+      }
 
       const auxiliaryErrors = [catRes.error?.message, budgetRes.error?.message].filter(Boolean);
       if (catRes.error) setCategories([]);
@@ -151,14 +159,16 @@ export function OverviewPage() {
     () => computeAllCurrenciesSummary(transactions as any, month),
     [transactions, month]
   );
-  const summary = summaries.find((s: { currency: CurrencyCode }) => s.currency === currency) ?? summaries[0]!;
+  const clientSummary = summaries.find((s: { currency: CurrencyCode }) => s.currency === currency) ?? summaries[0]!;
+  // Preferir el resumen del servidor (completo, no limitado a la página cargada).
+  const summary = (serverSummary && serverSummary.currency === currency)
+    ? { incomeMinor: serverSummary.incomeMinor, expenseMinor: serverSummary.expenseMinor, netMinor: serverSummary.netMinor }
+    : clientSummary;
   const previousSummaries = useMemo(
     () => computeAllCurrenciesSummary(previousTransactions as any, previousMonth),
     [previousTransactions, previousMonth]
   );
   const previousSummary = previousSummaries.find((s: { currency: CurrencyCode }) => s.currency === currency) ?? previousSummaries[0]!;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _previousSummary = previousSummary;
   const categoriesById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
   const accountsById = useMemo(() => new Map(accounts.map(account => [account.id, account.name])), [accounts]);
 
@@ -183,6 +193,7 @@ export function OverviewPage() {
         }
       />
       <div className="overview-period"><MonthStepper month={month} onChange={setMonth} /></div>
+      {loading && <LoadingSpinner />}
 
       <div className="overview-summary">
         <Panel tone="ink" radius="panel" padding="md" className="overview-net">
@@ -257,7 +268,7 @@ export function OverviewPage() {
         />
       </Section>
 
-      {error && <Notice tone="strong">{error}</Notice>}
+      {error && <Notice tone="strong" action={{ label: 'Reintentar', onClick: () => void load() }}>{error}</Notice>}
     </Page>
   );
 }

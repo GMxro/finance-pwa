@@ -51,8 +51,10 @@ export function LegalAcceptancePage() {
       const link = document.createElement('a');
       link.href = url;
       link.download = `finanzas-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch (exportError) {
       setError(exportError instanceof Error ? exportError.message : 'No pudimos exportar los datos.');
     } finally {
@@ -62,8 +64,11 @@ export function LegalAcceptancePage() {
 
   const deleteAccount = async () => {
     setDeletingAccount(true);
+    setError(null);
     try {
       await performAccountDeletion(user.id, logout);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'No pudimos eliminar la cuenta. Probá de nuevo.');
     } finally {
       setDeletingAccount(false);
     }

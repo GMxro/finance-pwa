@@ -3,7 +3,7 @@ name: Audit Methodology
 description: How to conduct thorough static audits for this finance PWA
 type: feedback
 date: 2026-10-31
-review_after: 2027-04-30
+review_after: 2027-05-01
 ---
 
 **Conduct multi-pass static audits with concrete evidence**
@@ -28,6 +28,33 @@ review_after: 2027-04-30
 
 10. **Verify error propagation**: Sync engine must return discriminated `{ok, error}` not just set internal state. Consumers (pages) must handle and display error vs. stale cache distinctly.
 
-11. **Run typecheck, lint, and tests after every change batch**: The project has `--max-warnings 0`; any new warning blocks CI. Fix ESLint issues (missing deps, unused vars) immediately.
+11. **Run typecheck, lint, and tests after every change batch**: The project has `--max-warnings 0`; any new warning blocks CI. Fix ESLint issues (missing deps, unused vars) immediately. Also re-verify after each audit pass: corrections themselves can introduce compile/lint errors (observed TS2552/TS2304 in OverviewPage after pass 1; fixed in pass 2). Never assume a prior pass left the codebase clean.
 
 12. **Document gaps explicitly**: Distinguish "confirmed defect in code" from "risk not reproducible statically." Note what was not verified (browser, production D1/R2, concurrent load).
+
+## Parallel Subagent Coordination
+- Up to 6 subagents in parallel. Assign by screen/related interfaces, balanced by real complexity.
+- Avoid multiple agents editing the same file simultaneously; centralize shared-component fixes in the main agent.
+- Main agent consolidates diagnostics, resolves cross-interface issues, performs final review.
+
+## Per-Element Diagnosis (button-by-button)
+- For each interactive element determine: expected behavior, actual behavior, full flow (event → final effects), dependencies (state/hooks/validations/services/API/persistence/sync), diagnosis (functional/partial/defective/unimplemented), correction.
+- A button with an attached handler is **not** functional by itself. Follow the complete flow, including conditions that can block execution, silent errors, and post-update UI refresh.
+
+## Regression Investigation Checklist
+When recent security/performance/architecture changes may have broken interactions, check:
+- Validations or permissions blocking legitimate operations.
+- Auth/session changes.
+- Endpoint/contract changes between frontend and backend.
+- State not updating correctly (hooks/contexts/shared components).
+- Incorrect error handling; async operations failing silently.
+- Sync/persistence issues.
+- Visually enabled elements that execute no action.
+- Layers/overlays/styles blocking interaction.
+
+## Correction Priority & Final Review
+- Restore full functionality before optimizations/refactors.
+- Respect existing architecture; keep legitimate security protections; don't disable necessary validations.
+- No unnecessary compatibility, temp code, artificial fallbacks, or superficial fixes.
+- Centralize fixes in shared components to avoid duplication.
+- Final: no screen left unaudited; interaction inventory; which were broken vs working; verify corrections by code inspection; cross-screen consistency; document residual uncertainty.

@@ -81,7 +81,12 @@ export async function archiveCategory(env: Env, userId: string, id: string) {
     UPDATE categories SET archived_at = ?, updated_at = ? WHERE id = ? AND user_id = ?
   `).bind(now, now, id, userId).run();
   if (result.meta.changes === 0) throw new Error('NOT_FOUND');
-  return { success: true };
+  const row = await env.DB.prepare(`
+    SELECT id, user_id, kind, name, slug, icon_key, color_token, sort_order, archived_at, created_at, updated_at
+    FROM categories WHERE id = ? AND user_id = ?
+  `).bind(id, userId).first<any>();
+  if (!row) throw new Error('NOT_FOUND');
+  return mapCategory(row);
 }
 export async function unarchiveCategory(env: Env, userId: string, id: string) {
   const now = Date.now();

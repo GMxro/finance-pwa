@@ -1,5 +1,5 @@
 // App root component
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './providers';
 import { AppShell } from '@client/app/layouts/AppShell';
 import { LoginPage } from '@client/features/auth/LoginPage';
@@ -18,11 +18,12 @@ import { LegalAcceptancePage } from '@client/features/legal/LegalAcceptancePage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, legalAcceptance, onboardingComplete } = useAuth();
+  const { pathname } = useLocation();
 
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
   if (!legalAcceptance?.accepted) return <Navigate to="/aceptar-legal" replace />;
-  if (!onboardingComplete) return <Navigate to="/onboarding" replace />;
+  if (!onboardingComplete && pathname !== '/onboarding') return <Navigate to="/onboarding" replace />;
 
   return <>{children}</>;
 }

@@ -45,7 +45,7 @@ const exportCSV = async () => {
       link.href = url;
       link.download = `finanzas-${new Date().toISOString().slice(0, 10)}.csv`;
       link.click();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch (e: any) {
       setError(e?.message ?? 'No pudimos exportar los datos.');
     } finally {
@@ -239,10 +239,11 @@ const exportCSV = async () => {
         ref={logoutDialog}
         className="settings-logout-dialog"
         aria-labelledby="settings-logout-title"
-        onCancel={(event) => {
-          event.preventDefault();
-          setLogoutPrompt(null);
-        }}
+         onCancel={(event) => {
+           event.preventDefault();
+           if (logoutBusy) return;
+           setLogoutPrompt(null);
+         }}
       >
         {logoutPrompt?.step === 'choice' ? (
           <>

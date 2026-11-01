@@ -17,6 +17,8 @@ export function DangerZone({ title, description, actionLabel, confirmText, onAct
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const isBusy = loading || busy;
 
   const handleAction = async () => {
     if (inputValue !== confirmText) {
@@ -24,10 +26,13 @@ export function DangerZone({ title, description, actionLabel, confirmText, onAct
       return;
     }
     setError(null);
+    setBusy(true);
     try {
       await onAction();
     } catch (e: any) {
       setError(e?.message ?? 'No se pudo completar la acción.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -39,7 +44,7 @@ export function DangerZone({ title, description, actionLabel, confirmText, onAct
           <p className="ui-danger__description">{description}</p>
         </div>
         {!open && (
-          <Button variant="ghost" onClick={() => setOpen(true)} className="ui-danger__trigger">
+          <Button variant="ghost" onClick={() => setOpen(true)} disabled={disabled || isBusy} className="ui-danger__trigger">
             {actionLabel}
           </Button>
         )}
@@ -66,10 +71,11 @@ export function DangerZone({ title, description, actionLabel, confirmText, onAct
                 setInputValue('');
                 setError(null);
               }}
+              disabled={isBusy}
             >
               Cancelar
             </Button>
-            <Button variant="danger" onClick={handleAction} disabled={disabled || loading} loading={loading}>
+            <Button variant="danger" onClick={handleAction} disabled={disabled || isBusy} loading={isBusy}>
               {actionLabel}
             </Button>
           </div>

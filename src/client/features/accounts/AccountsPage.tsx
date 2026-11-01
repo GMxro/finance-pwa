@@ -157,10 +157,20 @@ export function AccountsPage() {
 
   const totals = useMemo(() => {
     const byCurrency = new Map<CurrencyCode, number>();
+    let overflow = false;
     for (const account of accounts) {
       for (const balance of account.balances) {
-        byCurrency.set(balance.currency, (byCurrency.get(balance.currency) ?? 0) + balance.amountMinor);
+        const current = byCurrency.get(balance.currency) ?? 0;
+        const next = current + balance.amountMinor;
+        if (!Number.isSafeInteger(next)) {
+          overflow = true;
+          continue;
+        }
+        byCurrency.set(balance.currency, next);
       }
+    }
+    if (overflow) {
+      setError('Los saldos superan el rango seguro; algunos totales no se muestran.');
     }
     return Array.from(byCurrency.entries())
       .filter(([, amount]) => amount !== 0)
@@ -211,12 +221,19 @@ export function AccountsPage() {
   };
 
   const makeDefault = async (account: AccountWithBalances) => {
-    const response = await api.updateAccount(account.id, { isDefault: true });
-    if (response.error) {
-      setError(response.error.message);
-      return;
+    setSaving(true);
+    try {
+      const response = await api.updateAccount(account.id, { isDefault: true });
+      if (response.error) {
+        setError(response.error.message);
+        return;
+      }
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? 'No pudimos actualizar la cuenta predeterminada.');
+    } finally {
+      setSaving(false);
     }
-    await load();
   };
 
   const confirmArchive = async () => {
@@ -257,6 +274,8 @@ export function AccountsPage() {
       toAccountId: to?.id ?? '',
     });
     setFormError(null);
+    setFromAmountMinor(null);
+    setToAmountMinor(null);
     setTransferOpen(true);
   };
 
@@ -281,6 +300,10 @@ export function AccountsPage() {
 
     let toAmountMinor: number | undefined;
     if (transferForm.crossCurrency) {
+      if (transferForm.toCurrency === transferForm.currency) {
+        setFormError('En la misma moneda el monto que entra debe ser igual al que sale. Desactivá la opción o elegí otra moneda.');
+        return;
+      }
       const toAmount = transferForm.toAmountMinor;
       if (toAmount === null || toAmount <= 0) {
         setFormError('El importe de destino debe ser mayor a cero.');
@@ -406,16 +429,16 @@ export function AccountsPage() {
                     trailing={
                       <Inline gap="xs" className="accounts-row-actions">
                         {!account.isDefault && (
-                          <Button variant="ghost" size="sm" onClick={() => void makeDefault(account)}>
-                            Predeterminar
-                          </Button>
-                        )}
-                        <IconButton label={`Editar ${account.name}`} onClick={() => openEditAccount(account)}>
-                          <Pencil size={16} />
-                        </IconButton>
-                        <IconButton label={`Archivar ${account.name}`} onClick={() => setArchiveTarget(account)}>
-                          <Archive size={16} />
-                        </IconButton>
+                        <Button variant="ghost" size="sm" onClick={() => void makeDefault(account)} disabled={saving}>
+                          Predeterminar
+                        </Button>
+                      )}
+                      <IconButton label={`Editar ${account.name}`} onClick={() => openEditAccount(account)} disabled={saving}>
+                        <Pencil size={16} />
+                      </IconButton>
+                      <IconButton label={`Archivar ${account.name}`} onClick={() => setArchiveTarget(account)} disabled={saving}>
+                        <Archive size={16} />
+                      </IconButton>
                       </Inline>
                     }
                   />
@@ -477,7 +500,7 @@ export function AccountsPage() {
                     </span>
                   }
                   trailing={
-                    <IconButton label="Eliminar transferencia" onClick={() => setDeleteTarget(transfer)}>
+                      <IconButton label="Eliminar transferencia" onClick={() => setDeleteTarget(transfer)} disabled={saving}>
                       <Trash2 size={16} />
                     </IconButton>
                   }
@@ -496,9 +519,10 @@ export function AccountsPage() {
       </Section>
 
       <Modal
-        open={accountModal !== null}
-        onClose={() => setAccountModal(null)}
-        title={accountModal?.mode === 'edit' ? 'Editar cuenta' : 'Nueva cuenta'}
+         open={accountModal !== null}
+         onClose={() => setAccountModal(null)}
+         busy={saving}
+         title={accountModal?.mode === 'edit' ? 'Editar cuenta' : 'Nueva cuenta'}
         description="Las cuentas agrupan tu plata: efectivo, banco, billeteras."
         footer={
           <>
@@ -536,9 +560,10 @@ export function AccountsPage() {
       </Modal>
 
       <Modal
-        open={transferOpen}
-        onClose={() => setTransferOpen(false)}
-        title="Transferir entre cuentas"
+         open={transferOpen}
+         onClose={() => setTransferOpen(false)}
+         busy={saving}
+         title="Transferir entre cuentas"
         description="Sale de una cuenta y entra en otra. No es gasto ni ingreso."
         footer={
           <>
@@ -583,7 +608,7 @@ export function AccountsPage() {
                   onBlur={fromAmountInput.onBlur}
                   onFocus={fromAmountInput.onFocus}
                   placeholder="0,00"
-                  prefix="$"
+                  prefix={transferForm.currency === 'USD' ? 'US$' : '$'}
                   required
                   inputMode="decimal"
                   pattern="[0-9.,]*"
@@ -618,7 +643,7 @@ export function AccountsPage() {
                     onBlur={toAmountInput.onBlur}
                     onFocus={toAmountInput.onFocus}
                     placeholder="0,00"
-                    prefix="$"
+                    prefix={transferForm.toCurrency === 'USD' ? 'US$' : '$'}
                     required
                     inputMode="decimal"
                     pattern="[0-9.,]*"
@@ -657,9 +682,10 @@ export function AccountsPage() {
       </Modal>
 
       <Modal
-        open={archiveTarget !== null}
-        onClose={() => setArchiveTarget(null)}
-        title="Archivar cuenta"
+         open={archiveTarget !== null}
+         onClose={() => setArchiveTarget(null)}
+         busy={saving}
+         title="Archivar cuenta"
         description={archiveTarget ? `“${archiveTarget.name}” deja de aparecer al cargar movimientos. Su historial se conserva.` : undefined}
         footer={
           <>
@@ -672,9 +698,10 @@ export function AccountsPage() {
       </Modal>
 
       <Modal
-        open={deleteTarget !== null}
-        onClose={() => setDeleteTarget(null)}
-        title="Eliminar transferencia"
+         open={deleteTarget !== null}
+         onClose={() => setDeleteTarget(null)}
+         busy={saving}
+         title="Eliminar transferencia"
         description={deleteTarget ? `${deleteTarget.fromAccountName} → ${deleteTarget.toAccountName}` : undefined}
         footer={
           <>

@@ -22,7 +22,7 @@ import { LoadingSpinner } from '@shared/ui/LoadingSpinner';
 import { getPeriodLabel } from '@shared/format/formatters';
 import '../../app/styles/statistics.css';
 
-const MAX_PAGES = 1_000;
+const MAX_PAGES = 20;
 
 async function fetchMonth(period: string): Promise<any[]> {
   const rows: any[] = [];
@@ -106,7 +106,6 @@ export function StatisticsPage() {
         const current = cached.filter(tx => tx.occurredOn?.startsWith(month));
         setTransactions(current);
         setPreviousTransactions(cached.filter(tx => tx.occurredOn?.startsWith(previousMonth)));
-        setCategories([]);
         setError(current.length > 0
           ? `No se pudieron actualizar las estadísticas (${formatApiError(e, 'error de conexión')}). Se muestran datos locales que pueden estar desactualizados.`
           : `No se pudieron cargar las estadísticas (${formatApiError(e, 'error de conexión')}). No se muestran cifras sin confirmar.`);

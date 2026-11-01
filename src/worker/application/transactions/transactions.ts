@@ -349,18 +349,24 @@ export async function getMonthlySummary(
       WHERE user_id = ? AND currency_code = ? AND occurred_on LIKE ? AND deleted_at IS NULL
     `).bind(userId, curr, `${periodMonth}%`).first<{ count: number }>();
     
-    const byCategory = (categoryResult.results as any[]).map(row => ({
-      categoryId: row.category_id,
-      kind: row.kind,
-      amountMinor: Number(row.total)
-    }));
-    
-results.push({
+    const incomeMinor = Number(incomeResult?.total ?? 0);
+    const expenseMinor = Number(expenseResult?.total ?? 0);
+    const netMinor = incomeMinor - expenseMinor;
+    if (!Number.isSafeInteger(incomeMinor) || !Number.isSafeInteger(expenseMinor) || !Number.isSafeInteger(netMinor)) {
+      throw new ValidationError('El total financiero excede el rango exacto admitido.');
+    }
+    const byCategory = (categoryResult.results as any[]).map(row => {
+      const amount = Number(row.total);
+      if (!Number.isSafeInteger(amount)) throw new ValidationError('El total financiero excede el rango exacto admitido.');
+      return { categoryId: row.category_id, kind: row.kind, amountMinor: amount };
+    });
+
+    results.push({
       periodMonth,
       currency: curr as 'ARS' | 'USD',
-     incomeMinor: Number(incomeResult?.total ?? 0),
-     expenseMinor: Number(expenseResult?.total ?? 0),
-      netMinor: Number(incomeResult?.total ?? 0) - Number(expenseResult?.total ?? 0),
+      incomeMinor,
+      expenseMinor,
+      netMinor,
       byCategory,
       transactionCount: Number(countResult?.count ?? 0)
     });

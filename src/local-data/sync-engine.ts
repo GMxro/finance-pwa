@@ -92,7 +92,7 @@ export class SyncEngine {
   }
   
   private async fullSync(userId: string, epoch: string): Promise<void> {
-    const pendingLocal = await db.transactions.filter((transaction) => !transaction.synced).toArray();
+    const pendingLocal = await db.transactions.filter((transaction) => !transaction.synced && transaction.userId === userId).toArray();
     let cursor = 0;
     let firstPage = true;
     let hasMore = true;
@@ -102,6 +102,7 @@ export class SyncEngine {
       if (response.error) throw new Error(response.error.message);
       if (response.data?.userId !== userId) throw new Error('SYNC_USER_MISMATCH');
       const transactions = (response.data?.transactions ?? []) as any[];
+      const tombstones = response.data?.tombstones ?? [];
       const nextCursor = response.data?.sequence ?? cursor;
       hasMore = response.data?.hasMore ?? false;
       if (hasMore && nextCursor <= cursor) throw new Error('La sincronización no avanzó el cursor.');
@@ -118,7 +119,15 @@ export class SyncEngine {
             await db.transactions.put({ ...tx, userId, synced: true, pendingOp: undefined, localVersion: tx.version });
           }
         }
+        for (const tomb of tombstones) {
+          const local = await db.transactions.get(tomb.id);
+          if (local?.userId === userId) {
+            await db.transactions.update(tomb.id, { deletedAt: tomb.deletedAt, synced: true, pendingOp: undefined });
+          }
+        }
+        const tombstoneIds = new Set(tombstones.map((t: any) => t.id));
         for (const transaction of pendingLocal) {
+          if (tombstoneIds.has(transaction.id)) continue;
           if (!(await db.transactions.get(transaction.id))) await db.transactions.put(transaction);
         }
       });

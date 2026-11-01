@@ -205,11 +205,18 @@ export function CategoriesPage() {
 
       {loading && categories.length === 0 && <LoadingSpinner />}
 
-      {!loading && active.length === 0 && !error && (
+      {!loading && active.length === 0 && archived.length === 0 && !error && (
         <EmptyState
           title="Sin categorías"
           message="Creá tu primera categoría para empezar a ordenar los movimientos."
           action={{ label: 'Crear categoría', onClick: () => openCreate('expense') }}
+        />
+      )}
+      {!loading && active.length === 0 && archived.length > 0 && !error && (
+        <EmptyState
+          title="Todas las categorías están archivadas"
+          message="Desarchivá alguna o creá una nueva para registrar movimientos."
+          action={{ label: 'Ver archivadas', onClick: () => setShowArchived(true) }}
         />
       )}
 

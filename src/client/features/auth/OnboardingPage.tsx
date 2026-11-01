@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../app/providers';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@shared/ui/Button';
 import { Select } from '@shared/ui/Select';
 import { AuthLayout } from '@shared/ui/AuthLayout';
@@ -15,6 +16,7 @@ const CURRENCY_OPTIONS = [
 
 export function OnboardingPage() {
   const { completeOnboarding, defaultCurrency } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
   const [loading, setLoading] = useState(false);
@@ -25,6 +27,7 @@ export function OnboardingPage() {
     setError(null);
     try {
       await completeOnboarding(currency);
+      navigate('/', { replace: true });
     } catch (e: any) {
       setError(e?.message ?? 'No pudimos guardar tus preferencias.');
     } finally {

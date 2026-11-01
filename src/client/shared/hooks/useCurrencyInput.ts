@@ -64,8 +64,8 @@ export function useCurrencyInput({
   onChange,
   allowEmpty = true
 }: UseCurrencyInputOptions): UseCurrencyInputReturn {
-  const locale = currency === 'ARS' ? 'es-AR' : 'en-US'; // USD usa es-AR también para formato consistente
-  const exponent = 2; // ARS y USD tienen 2 decimales
+  const locale = 'es-AR'; // ARS y USD se formatean igual (punto miles, coma decimal)
+  const exponent = currency === 'ARS' || currency === 'USD' ? 2 : 2; // ARS y USD tienen 2 decimales
   
   const [displayValue, setDisplayValueState] = useState<string>('');
   const [valueMinor, setValueMinorState] = useState<number | null>(null);

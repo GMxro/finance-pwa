@@ -5,7 +5,7 @@ import { MAX_MINOR_UNITS } from '@domain/money';
 
 const currencySchema = z.enum(['ARS', 'USD']);
 
-export const transferCreateSchema = z.object({
+const transferCreateBaseSchema = z.object({
   id: z.string().uuid(),
   fromAccountId: z.string().min(1),
   toAccountId: z.string().min(1),
@@ -17,12 +17,24 @@ export const transferCreateSchema = z.object({
   toCurrency: currencySchema.optional(),
   occurredOn: calendarDateSchema,
   note: z.string().max(500).optional()
-}).refine(data => data.fromAccountId !== data.toAccountId, {
-  message: 'Elegí dos cuentas distintas',
-  path: ['toAccountId']
 });
 
-export const transferResponseSchema = transferCreateSchema.innerType().extend({
+export const transferCreateSchema = transferCreateBaseSchema
+  .refine(data => data.fromAccountId !== data.toAccountId, {
+    message: 'Elegí dos cuentas distintas',
+    path: ['toAccountId']
+  })
+  .refine(data => {
+    const toCurrency = data.toCurrency ?? data.fromCurrency;
+    if (toCurrency !== data.fromCurrency) return true;
+    if (data.toAmountMinor === undefined) return true;
+    return data.toAmountMinor === data.fromAmountMinor;
+  }, {
+    message: 'En la misma moneda, el monto que entra debe ser igual al que sale.',
+    path: ['toAmountMinor']
+  });
+
+export const transferResponseSchema = transferCreateBaseSchema.extend({
   userId: z.string(),
   toAmountMinor: z.number().int().positive().max(MAX_MINOR_UNITS),
   toCurrency: currencySchema,
