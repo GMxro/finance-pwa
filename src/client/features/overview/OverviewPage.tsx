@@ -183,23 +183,23 @@ export function OverviewPage() {
       <MonthStepper month={month} onChange={setMonth} />
 
       <Grid gap="md">
-        <Panel tone="paper" radius="panel" padding="lg">
+        <Panel tone="ink" radius="panel" padding="lg">
           <Stack gap="xs">
-            <Text variant="small" tone="stone">Saldo neto</Text>
+            <Text variant="small" tone="on-ink-muted">Saldo neto</Text>
             <Money amountMinor={summary.netMinor} currency={currency} sign="auto" tone="onInk" size="xl" censored={!showAmounts} />
-            <Text variant="small" tone="stone">{dataStatus === 'unavailable' ? '—' : dataStatus === 'cached' ? 'Datos locales (pueden estar desactualizados)' : dataStatus === 'partial' ? 'Comparación sin actualizar' : 'Actualizado'}</Text>
+            <Text variant="small" tone="on-ink-muted">{dataStatus === 'unavailable' ? '—' : dataStatus === 'cached' ? 'Datos locales (pueden estar desactualizados)' : dataStatus === 'partial' ? 'Comparación sin actualizar' : 'Actualizado'}</Text>
           </Stack>
         </Panel>
         <Panel tone="paper" radius="panel" padding="lg">
           <Stack gap="xs">
             <Text variant="small" tone="stone">{KIND_LABELS.income}</Text>
-            <Money amountMinor={summary.incomeMinor} currency={currency} sign="plus" tone="onInk" size="xl" censored={!showAmounts} />
+            <Money amountMinor={summary.incomeMinor} currency={currency} sign="plus" tone="ink" size="xl" censored={!showAmounts} />
           </Stack>
         </Panel>
         <Panel tone="paper" radius="panel" padding="lg">
           <Stack gap="xs">
             <Text variant="small" tone="stone">{KIND_LABELS.expense}</Text>
-            <Money amountMinor={summary.expenseMinor} currency={currency} sign="minus" tone="onInk" size="xl" censored={!showAmounts} />
+            <Money amountMinor={summary.expenseMinor} currency={currency} sign="minus" tone="ink" size="xl" censored={!showAmounts} />
           </Stack>
         </Panel>
       </Grid>
