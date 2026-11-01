@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/providers';
 import { api, canUseStaleData } from '@shared/api/client';
@@ -14,7 +15,6 @@ import { Panel } from '@shared/ui/Panel';
 import { Text } from '@shared/ui/Text';
 import { Money } from '@shared/ui/Money';
 import { MonthStepper } from '@shared/ui/MonthStepper';
-import { SegmentedControl } from '@shared/ui/SegmentedControl';
 import { ButtonLink } from '@shared/ui/Button';
 import { Notice } from '@shared/ui/Notice';
 import { LoadingSpinner } from '@shared/ui/LoadingSpinner';
@@ -36,12 +36,13 @@ function getInitialShowAmounts(): boolean {
 }
 
 export function OverviewPage() {
-  const { user, defaultCurrency } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [month, setMonth] = useState(() => todayLocalISO().slice(0, 7));
-  const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency);
-  const [showAmounts] = useState<boolean>(getInitialShowAmounts);
+  const [showAmounts, setShowAmounts] = useState<boolean>(getInitialShowAmounts);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [serverSummaryARS, setServerSummaryARS] = useState<any | null>(null);
+  const [serverSummaryUSD, setServerSummaryUSD] = useState<any | null>(null);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [budgets, setBudgets] = useState<BudgetWithSpent[]>([]);
   const [accounts, setAccounts] = useState<AccountWithBalances[]>([]);
@@ -49,11 +50,6 @@ export function OverviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [dataStatus, setDataStatus] = useState<'current' | 'cached' | 'partial' | 'unavailable'>('unavailable');
   const [budgetLoadError, setBudgetLoadError] = useState(false);
-  const [previousTransactions, setPreviousTransactions] = useState<any[]>([]);
-  const [serverSummary, setServerSummary] = useState<any | null>(null);
-
-  useEffect(() => setCurrency(defaultCurrency), [defaultCurrency]);
-
   // Persist showAmounts preference
   useEffect(() => {
     try {
@@ -71,16 +67,18 @@ export function OverviewPage() {
     setBudgetLoadError(false);
     const previousMonth = addMonths(month, -1) ?? month;
     try {
-      const [currentSummary, previousSummary, catRes, budgetRes, currentTxRes, previousTxRes, accountRes] = await Promise.all([
-        api.getMonthlySummary(month, currency),
-        api.getMonthlySummary(previousMonth, currency),
+      const [currentSummaryARS, currentSummaryUSD, previousSummaryARS, previousSummaryUSD, catRes, budgetRes, currentTxRes, accountRes] = await Promise.all([
+        api.getMonthlySummary(month, 'ARS'),
+        api.getMonthlySummary(month, 'USD'),
+        api.getMonthlySummary(previousMonth, 'ARS'),
+        api.getMonthlySummary(previousMonth, 'USD'),
         api.listCategories(),
         api.listBudgets(month),
         api.listTransactions({ period: month, page: 1, limit: TRANSACTION_PAGE_SIZE }),
-        api.listTransactions({ period: previousMonth, page: 1, limit: TRANSACTION_PAGE_SIZE }),
         api.listAccounts()
       ]);
-      setServerSummary(currentSummary.data ?? null);
+      setServerSummaryARS(currentSummaryARS.data ?? null);
+      setServerSummaryUSD(currentSummaryUSD.data ?? null);
       const mergeRows = async (rows: any[]) => {
         try {
           return await mergeWithCache(user.id, rows);
@@ -89,38 +87,36 @@ export function OverviewPage() {
         }
       };
 
-      const transactionErrors = [currentTxRes.error, previousTxRes.error].filter(Boolean);
+      const transactionErrors = [currentTxRes.error].filter(Boolean);
       const mayUseCache = transactionErrors.some((item) => canUseStaleData(item));
       const cached = mayUseCache ? await readCached(user.id).catch(() => []) : [];
       const cachedCurrent = cached.filter((tx) => !tx.deletedAt && tx.occurredOn?.startsWith(month));
-      const cachedPrevious = cached.filter((tx) => !tx.deletedAt && tx.occurredOn?.startsWith(previousMonth));
+
       const currentRows = currentTxRes.data !== null
         ? (await mergeRows(currentTxRes.data ?? [])).filter((tx) => tx.occurredOn?.startsWith(month))
         : currentTxRes.error && canUseStaleData(currentTxRes.error) ? cachedCurrent : [];
-      const previousRows = previousTxRes.data !== null
-        ? (await mergeRows(previousTxRes.data ?? [])).filter((tx) => tx.occurredOn?.startsWith(previousMonth))
-        : previousTxRes.error && canUseStaleData(previousTxRes.error) ? cachedPrevious : [];
-      
+
       setTransactions(currentRows);
-      setPreviousTransactions(previousRows);
-      
-     const currentAvailable = currentSummary.data !== null || (currentSummary.error && canUseStaleData(currentSummary.error) && cachedCurrent.length > 0);
-     setDataStatus(!currentAvailable
-       ? 'unavailable'
-       : currentSummary.data === null
-         ? 'cached'
-         : previousSummary.data === null
-           ? 'partial'
-           : 'current');
-      const summaryErrors = [currentSummary.error, previousSummary.error].filter(Boolean);
+
+      const arsAvailable = currentSummaryARS.data !== null || (Boolean(currentSummaryARS.error) && canUseStaleData(currentSummaryARS.error) && cachedCurrent.some((tx: any) => tx.currency === 'ARS'));
+      const usdAvailable = currentSummaryUSD.data !== null || (Boolean(currentSummaryUSD.error) && canUseStaleData(currentSummaryUSD.error) && cachedCurrent.some((tx: any) => tx.currency === 'USD'));
+      const currentAvailable = arsAvailable || usdAvailable;
+      setDataStatus(!currentAvailable
+        ? 'unavailable'
+        : (currentSummaryARS.data === null || currentSummaryUSD.data === null)
+          ? 'cached'
+          : (previousSummaryARS.data === null || previousSummaryUSD.data === null)
+            ? 'partial'
+            : 'current');
+      const summaryErrors = [currentSummaryARS.error, currentSummaryUSD.error, previousSummaryARS.error, previousSummaryUSD.error].filter(Boolean);
       if (summaryErrors.length > 0 || transactionErrors.length > 0) {
         const failure = summaryErrors[0] ?? transactionErrors[0];
         const message = (failure as any)?.message ?? 'error de conexión';
-        if (currentSummary.data === null && !currentAvailable) {
+        if (!currentAvailable) {
           setError(`No se pudo cargar el período actual (${message}). No se muestran importes sin confirmar.`);
         } else if (transactionErrors.length > 0) {
           setError(`No se pudieron cargar todos los movimientos del período (${message}). Los totales pueden estar incompletos.`);
-        } else if (currentSummary.data === null) {
+        } else if (currentSummaryARS.data === null || currentSummaryUSD.data === null) {
           setError(`No se pudo actualizar el período actual (${message}). Se muestran datos guardados en este dispositivo y pueden estar desactualizados.`);
         } else {
           setError(`No se pudo cargar la comparación mensual (${message}). Los importes del período actual sí fueron actualizados.`);
@@ -144,31 +140,28 @@ export function OverviewPage() {
       }
     } catch (loadError) {
       setTransactions([]);
-      setPreviousTransactions([]);
       setDataStatus('unavailable');
       setError(loadError instanceof Error ? loadError.message : 'No pudimos cargar tu resumen.');
     } finally {
       setLoading(false);
     }
-  }, [month, user, currency]);
+  }, [month, user]);
+
 
   useEffect(() => { void load(); }, [load]);
 
-  const previousMonth = addMonths(month, -1) ?? month;
   const summaries = useMemo(
     () => computeAllCurrenciesSummary(transactions as any, month),
     [transactions, month]
   );
-  const clientSummary = summaries.find((s: { currency: CurrencyCode }) => s.currency === currency) ?? summaries[0]!;
-  // Preferir el resumen del servidor (completo, no limitado a la página cargada).
-  const summary = (serverSummary && serverSummary.currency === currency)
-    ? { incomeMinor: serverSummary.incomeMinor, expenseMinor: serverSummary.expenseMinor, netMinor: serverSummary.netMinor }
-    : clientSummary;
-  const previousSummaries = useMemo(
-    () => computeAllCurrenciesSummary(previousTransactions as any, previousMonth),
-    [previousTransactions, previousMonth]
-  );
-  const previousSummary = previousSummaries.find((s: { currency: CurrencyCode }) => s.currency === currency) ?? previousSummaries[0]!;
+  const summaryFor = (cur: CurrencyCode) => {
+    const server = cur === 'ARS' ? serverSummaryARS : serverSummaryUSD;
+    if (server) return { incomeMinor: server.incomeMinor, expenseMinor: server.expenseMinor, netMinor: server.netMinor };
+    const client = summaries.find((s: { currency: CurrencyCode }) => s.currency === cur) ?? summaries[0]!;
+    return { incomeMinor: client.incomeMinor, expenseMinor: client.expenseMinor, netMinor: client.netMinor };
+  };
+  const arsSummary = summaryFor('ARS');
+  const usdSummary = summaryFor('USD');
   const categoriesById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
   const accountsById = useMemo(() => new Map(accounts.map(account => [account.id, account.name])), [accounts]);
 
@@ -178,48 +171,66 @@ export function OverviewPage() {
     <Page className="overview-page">
       <PageHeader
         title="Resumen"
-        actions={
-          <Inline justify="end" gap="sm">
-            <SegmentedControl
-              value={currency}
-              onChange={(v) => setCurrency(v as CurrencyCode)}
-              label="Moneda"
-              options={[
-                { value: 'ARS', label: 'ARS' },
-                { value: 'USD', label: 'USD' }
-              ]}
-            />
-          </Inline>
-        }
       />
       <div className="overview-period"><MonthStepper month={month} onChange={setMonth} /></div>
       {loading && <LoadingSpinner />}
 
       <div className="overview-summary">
         <Panel tone="ink" radius="panel" padding="md" className="overview-net">
-          <Stack gap="xs">
-            <Text variant="small" tone="on-ink-muted">Saldo neto</Text>
-            <Money amountMinor={summary.netMinor} currency={currency} sign="auto" tone="onInk" size="xl" censored={!showAmounts} />
+          <Stack gap="sm">
+            <Inline justify="between" align="center">
+              <Text variant="small" tone="on-ink-muted">Saldo neto</Text>
+              <button
+                type="button"
+                className="overview-hero__eye"
+                onClick={() => setShowAmounts((prev) => !prev)}
+                aria-label={showAmounts ? 'Ocultar montos' : 'Mostrar montos'}
+                aria-pressed={showAmounts}
+                title={showAmounts ? 'Ocultar montos' : 'Mostrar montos'}
+              >
+                {showAmounts ? <Eye size={18} aria-hidden="true" /> : <EyeOff size={18} aria-hidden="true" />}
+              </button>
+            </Inline>
+            <div className="overview-net__amounts">
+              <div className="overview-net__row">
+                <Text variant="micro" tone="on-ink-muted">ARS</Text>
+                <Money amountMinor={arsSummary.netMinor} currency="ARS" sign="auto" tone="onInk" size="xl" censored={!showAmounts} className={arsSummary.netMinor < 0 ? 'overview-net__amount--negative' : ''} />
+              </div>
+              <div className="overview-net__row">
+                <Text variant="micro" tone="on-ink-muted">USD</Text>
+                <Money amountMinor={usdSummary.netMinor} currency="USD" sign="auto" tone="onInk" size="xl" censored={!showAmounts} className={usdSummary.netMinor < 0 ? 'overview-net__amount--negative' : ''} />
+              </div>
+            </div>
             <Text variant="small" tone="on-ink-muted">{dataStatus === 'unavailable' ? '—' : dataStatus === 'cached' ? 'Datos locales (pueden estar desactualizados)' : dataStatus === 'partial' ? 'Comparación sin actualizar' : 'Actualizado'}</Text>
           </Stack>
         </Panel>
         <Grid columns={2} gap="sm" className="overview-income-expense">
-          <Link className="overview-summary-link" to={`/movimientos?period=${month}&kind=income`} aria-label={`Ver ingresos de ${month}`}>
-            <Panel tone="paper" radius="card" padding="md" className="overview-amount-card">
-              <Stack gap="xs">
-                <Text variant="small" tone="stone">{KIND_LABELS.income}</Text>
-                <Money amountMinor={summary.incomeMinor} currency={currency} sign="plus" tone="ink" size="md" censored={!showAmounts} />
-              </Stack>
-            </Panel>
-          </Link>
-          <Link className="overview-summary-link" to={`/movimientos?period=${month}&kind=expense`} aria-label={`Ver gastos de ${month}`}>
-            <Panel tone="paper" radius="card" padding="md" className="overview-amount-card">
-              <Stack gap="xs">
-                <Text variant="small" tone="stone">{KIND_LABELS.expense}</Text>
-                <Money amountMinor={summary.expenseMinor} currency={currency} sign="minus" tone="ink" size="md" censored={!showAmounts} />
-              </Stack>
-            </Panel>
-          </Link>
+          <Panel tone="paper" radius="card" padding="md" className="overview-amount-card">
+            <Stack gap="xs">
+              <Text variant="small" tone="stone">{KIND_LABELS.income}</Text>
+              <div className="overview-amount-card__values">
+                <Link className="overview-amount-link" to={`/movimientos?period=${month}&kind=income&currency=ARS`} aria-label={`Ver ingresos en ARS de ${month}`}>
+                  <Money amountMinor={arsSummary.incomeMinor} currency="ARS" sign="plus" tone="ink" size="lg" censored={!showAmounts} />
+                </Link>
+                <Link className="overview-amount-link" to={`/movimientos?period=${month}&kind=income&currency=USD`} aria-label={`Ver ingresos en USD de ${month}`}>
+                  <Money amountMinor={usdSummary.incomeMinor} currency="USD" sign="plus" tone="ink" size="lg" censored={!showAmounts} />
+                </Link>
+              </div>
+            </Stack>
+          </Panel>
+          <Panel tone="paper" radius="card" padding="md" className="overview-amount-card">
+            <Stack gap="xs">
+              <Text variant="small" tone="stone">{KIND_LABELS.expense}</Text>
+              <div className="overview-amount-card__values">
+                <Link className="overview-amount-link" to={`/movimientos?period=${month}&kind=expense&currency=ARS`} aria-label={`Ver gastos en ARS de ${month}`}>
+                  <Money amountMinor={arsSummary.expenseMinor} currency="ARS" sign="minus" tone="ink" size="lg" censored={!showAmounts} />
+                </Link>
+                <Link className="overview-amount-link" to={`/movimientos?period=${month}&kind=expense&currency=USD`} aria-label={`Ver gastos en USD de ${month}`}>
+                  <Money amountMinor={usdSummary.expenseMinor} currency="USD" sign="minus" tone="ink" size="lg" censored={!showAmounts} />
+                </Link>
+              </div>
+            </Stack>
+          </Panel>
         </Grid>
       </div>
 

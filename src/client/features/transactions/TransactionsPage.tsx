@@ -64,13 +64,16 @@ export function TransactionsPage() {
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const [filters, setFilters] = useState(() => ({
-    currency: '',
-    kind: ['income', 'expense'].includes(searchParams.get('kind') ?? '') ? searchParams.get('kind')! : '',
-    categoryId: searchParams.get('categoryId') ?? ''
-  }));
+  const [filters, setFilters] = useState(() => {
+    const urlCurrency = searchParams.get('currency');
+    return {
+      currency: urlCurrency === 'ARS' || urlCurrency === 'USD' ? urlCurrency : '',
+      kind: ['income', 'expense'].includes(searchParams.get('kind') ?? '') ? searchParams.get('kind')! : '',
+      categoryId: searchParams.get('categoryId') ?? ''
+    };
+  });
   const [search, setSearch] = useState('');
-  const [showFilters, setShowFilters] = useState(() => Boolean(searchParams.get('kind') || searchParams.get('categoryId')));
+  const [showFilters, setShowFilters] = useState(() => Boolean(searchParams.get('kind') || searchParams.get('categoryId') || searchParams.get('currency')));
   const [editingTx, setEditingTx] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [formData, setFormData] = useState<TxFormData>(() => emptyForm('expense', defaultCurrency));

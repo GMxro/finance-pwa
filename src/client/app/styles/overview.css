@@ -30,7 +30,57 @@
 }
 
 .overview-net {
-  min-height: 132px;
+  min-height: 148px;
+}
+
+.overview-net__amounts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.overview-net__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.overview-net__amount--negative {
+  color: #f87171;
+}
+
+.overview-amount-card__values {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.overview-amount-link {
+  display: block;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.overview-amount-link:hover {
+  text-decoration: none;
+}
+
+.overview-net .ui-money,
+.overview-amount-card .ui-money {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overview-net .ui-money {
+  font-size: clamp(1.1rem, 5vw, 2rem);
+}
+
+.overview-amount-card .ui-money {
+  font-size: clamp(0.75rem, 3.6vw, 1.5rem);
 }
 
 .overview-income-expense {
@@ -53,7 +103,7 @@
 }
 
 .overview-amount-card {
-  min-height: 92px;
+  min-height: 104px;
   height: 100%;
 }
 
