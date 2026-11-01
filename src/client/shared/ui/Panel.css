@@ -1,5 +1,22 @@
 .ui-panel {
   min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ui-panel > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ui-panel .ui-btn {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.ui-panel .ui-btn__text {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .ui-panel--paper {

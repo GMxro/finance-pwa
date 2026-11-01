@@ -2,9 +2,12 @@
   display: inline-flex;
   align-items: baseline;
   gap: 0;
+  min-width: 0;
+  max-width: 100%;
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: 'tnum' 1, 'lnum' 1;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   letter-spacing: -0.02em;
 }
 
@@ -32,10 +35,18 @@
 
 .ui-money--xl {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 8.4vw, 3.5rem);
+  font-size: clamp(1.25rem, 2.5vw, 3.5rem);
   line-height: 1.02;
   font-weight: var(--weight-display);
   letter-spacing: var(--tracking-display);
+}
+
+.overview-page .ui-panel {
+  container-type: inline-size;
+}
+
+.overview-page .ui-money--xl {
+  font-size: clamp(1.25rem, 9cqi, 3.5rem);
 }
 
 .ui-money--ink { color: var(--color-ink); }

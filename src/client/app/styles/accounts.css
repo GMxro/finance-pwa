@@ -35,7 +35,9 @@
   font-variant-numeric: tabular-nums;
   font-size: var(--text-sm);
   color: var(--color-ink);
-  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .accounts-totals {

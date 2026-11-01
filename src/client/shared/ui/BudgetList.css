@@ -46,7 +46,11 @@
   display: flex;
   align-items: baseline;
   gap: 4px;
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .ui-budget__limit {

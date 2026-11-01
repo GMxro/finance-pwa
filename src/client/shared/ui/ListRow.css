@@ -54,7 +54,9 @@
 }
 
 .ui-row__meta {
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   color: var(--color-stone);
   font-size: var(--text-caption);
   text-align: right;
