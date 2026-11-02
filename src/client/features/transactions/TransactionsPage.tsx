@@ -223,9 +223,10 @@ export function TransactionsPage() {
   }, []);
 
   const closeModal = useCallback(() => {
+    if (deleteTarget) return; // No cerrar el modal de edición mientras se confirma eliminación
     setEditingTx(null);
     resetNewCategory();
-  }, [resetNewCategory]);
+  }, [resetNewCategory, deleteTarget]);
 
   const openCreate = (kind: TransactionKind = 'expense') => {
     const firstCategory = categories.find(c => c.kind === kind && !c.archivedAt);
@@ -467,8 +468,10 @@ export function TransactionsPage() {
     try {
       const response = await api.deleteTransaction(deleteTarget.id, deleteTarget.version);
       if (response.error) throw new Error(response.error.message);
-      setDeleteTarget(null);
-      await loadData(false, 1);
+       setDeleteTarget(null);
+       setEditingTx(null);
+       resetNewCategory();
+       await loadData(false, 1);
     } catch (e: any) {
       setError(e?.message ?? 'No pudimos eliminar el movimiento.');
       setDeleteTarget(null);
@@ -617,7 +620,6 @@ export function TransactionsPage() {
                 className="tx-modal-delete"
                 onClick={() => {
                   setDeleteTarget(editingTx);
-                  closeModal();
                 }}
               >
                 Eliminar
