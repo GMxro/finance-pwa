@@ -824,11 +824,43 @@ export function TransactionsPage() {
                   .filter(c => c.kind === formData.kind && (!c.archivedAt || c.id === formData.categoryId))
                   .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name })),
                 { value: '__new__', label: 'Crear categoría' }
-              ]}
-            />
-          </Stack>
-          </div>
-        </form>
+               ]}
+             />
+             {newCategoryOpen && (
+               <div className="tx-new-category">
+                 <Input
+                   label="Nombre de la categoría"
+                   value={newCategoryName}
+                   onChange={setNewCategoryName}
+                   placeholder="Ej. Supermercado"
+                   autoFocus
+                 />
+                 <div className="tx-new-category__actions">
+                   <Button
+                     type="button"
+                     variant="secondary"
+                     onClick={resetNewCategory}
+                     disabled={savingCategory}
+                   >
+                     Cancelar
+                   </Button>
+                   <Button
+                     type="button"
+                     onClick={handleCreateCategory}
+                     loading={savingCategory}
+                     disabled={savingCategory}
+                   >
+                     Crear
+                   </Button>
+                 </div>
+                 {newCategoryError && (
+                   <p className="ui-field__error" role="alert">{newCategoryError}</p>
+                 )}
+               </div>
+             )}
+           </Stack>
+           </div>
+         </form>
       </Modal>
 
        <Modal
