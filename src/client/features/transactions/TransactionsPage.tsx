@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Filter, WifiOff, CloudOff, Repeat } from 'lucide-react';
 import { useAuth } from '../../app/providers';
@@ -88,6 +88,7 @@ export function TransactionsPage() {
   const [description, setDescription] = useState('');
   const [notes, setNotes] = useState('');
   const [repeatModalOpen, setRepeatModalOpen] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [repeatStep, setRepeatStep] = useState<'choose' | 'installment'>('choose');
   const [installmentsCount, setInstallmentsCount] = useState(2);
   const [firstDueOn, setFirstDueOn] = useState(todayLocalISO());
@@ -647,15 +648,31 @@ export function TransactionsPage() {
 
             {/* 2. Fecha + Hoy/Ayer */}
             <div className="tx-date-row">
-              <Input
-                label="Fecha"
-                type="date"
-                value={formData.occurredOn}
-                onChange={v => setFormData(f => ({ ...f, occurredOn: v }))}
-                required
-              />
-              <Button type="button" variant="secondary" size="sm" onClick={() => setFormData(f => ({ ...f, occurredOn: todayLocalISO() }))}>Hoy</Button>
-              <Button type="button" variant="secondary" size="sm" onClick={() => {
+              <div style={{ flex: '1 1 auto', minWidth: 130 }}>
+                <Input
+                  label="Fecha"
+                  type="text"
+                  inputMode="numeric"
+                  value={(() => {
+                    if (!formData.occurredOn) return '';
+                    const [y, m, d] = formData.occurredOn.split('-');
+                    if (!y || !m || !d) return formData.occurredOn;
+                    return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
+                  })()}
+                  readOnly
+                  onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
+                  required
+                />
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={formData.occurredOn}
+                  onChange={(e) => setFormData(f => ({ ...f, occurredOn: e.target.value }))}
+                  style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
+                />
+              </div>
+              <Button type="button" variant={formData.occurredOn === todayLocalISO() ? 'primary' : 'secondary'} size="sm" onClick={() => setFormData(f => ({ ...f, occurredOn: todayLocalISO() }))}>Hoy</Button>
+              <Button type="button" variant={(() => { const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1); return formData.occurredOn === d.toISOString().slice(0, 10); })() ? 'primary' : 'secondary'} size="sm" onClick={() => {
                 const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1);
                 setFormData(f => ({ ...f, occurredOn: d.toISOString().slice(0, 10) }));
               }}>Ayer</Button>

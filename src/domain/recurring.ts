@@ -27,9 +27,12 @@ function addDaysISO(iso: string, days: number): string | null {
 function addMonthsISO(iso: string, months: number): string | null {
   if (!isValidISODate(iso)) return null;
   const _p = iso.split('-').map(Number); const y = _p[0]!; const m = _p[1]!; const day = _p[2]!;
-  const date = new Date(Date.UTC(y, m - 1 + months, day));
-  const last = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
-  if (date.getUTCDate() > last) date.setUTCDate(last);
+  const targetMonth = m - 1 + months;
+  const targetYear = y + Math.floor(targetMonth / 12);
+  const targetMonth0 = ((targetMonth % 12) + 12) % 12;
+  const last = new Date(Date.UTC(targetYear, targetMonth0 + 1, 0)).getUTCDate();
+  const d = Math.min(day, last);
+  const date = new Date(Date.UTC(targetYear, targetMonth0, d));
   return date.toISOString().slice(0, 10);
 }
 

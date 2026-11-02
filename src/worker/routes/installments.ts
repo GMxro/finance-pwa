@@ -35,7 +35,7 @@ installmentRoutes.patch('/items/:id', async (c) => {
   const userId = getUserId(c);
   const id = c.req.param('id');
   const body = await c.req.json();
-  const parsed = installmentItemUpdateSchema.safeParse({ ...body, id });
+  const parsed = installmentItemUpdateSchema.safeParse(body);
   if (!parsed.success) throw new ValidationError('Datos inválidos', parsed.error.flatten());
   const result = await updateInstallmentItem(c.env, userId, id, parsed.data as any);
   return c.json(result);

@@ -1,5 +1,4 @@
 // Domain: Installments
-import { MAX_MINOR_UNITS } from './money';
 import { isValidISODate } from './date';
 
 export function splitInstallmentAmount(totalMinor: number, count: number): number[] {
@@ -21,16 +20,18 @@ function lastDayOfMonth(year: number, month: number): number {
 export function installmentDueDate(firstDueOn: string, index: number): string | null {
   if (!isValidISODate(firstDueOn)) return null;
   if (!Number.isInteger(index) || index < 0) return null;
-  const _p = firstDueOn.split('-').map(Number); const y = _p[0]!; const m = _p[1]!; const d = _p[2]!;
-  const date = new Date(Date.UTC(y, m - 1 + index, d));
-  const day = date.getUTCDate();
-  const last = lastDayOfMonth(date.getUTCFullYear(), date.getUTCMonth() + 1);
-  if (day > last) {
-    date.setUTCDate(last);
-  }
-  const yy = date.getUTCFullYear();
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(date.getUTCDate()).padStart(2, '0');
+  const parts = firstDueOn.split('-').map(Number);
+  const y = parts[0]!;
+  const m = parts[1]!;
+  const d = parts[2]!;
+  const targetMonth = m - 1 + index;
+  const targetYear = y + Math.floor(targetMonth / 12);
+  const targetMonth0 = ((targetMonth % 12) + 12) % 12;
+  const last = lastDayOfMonth(targetYear, targetMonth0 + 1);
+  const day = Math.min(d, last);
+  const yy = targetYear;
+  const mm = String(targetMonth0 + 1).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
   return `${yy}-${mm}-${dd}`;
 }
 

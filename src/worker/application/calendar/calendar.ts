@@ -26,6 +26,7 @@ export async function getCalendarMonth(env: Env, userId: string, month: string) 
     }
   }
   for (const c of commitments) {
+    if (c.source === 'installment') continue; // ya aparece como transacción
     if (days[c.date]) days[c.date].commitments.push(c);
   }
   return Object.values(days);

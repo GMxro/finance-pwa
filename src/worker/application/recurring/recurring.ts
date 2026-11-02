@@ -139,12 +139,15 @@ export async function processDueRecurring(env: Env, userId?: string, asOfDate?: 
           } else {
             stmts.push(env.DB.prepare(`UPDATE recurring_rules SET active = 0, updated_at = ? WHERE id = ?`).bind(now, rule.id));
           }
-          try {
-            await env.DB.batch(stmts);
-          } catch (e) {
-            // duplicate/atomic failure -> stop
-            break;
-          }
+           try {
+             await env.DB.batch(stmts);
+           } catch (e) {
+             // duplicate/atomic failure -> advance to next date
+             if (!next || next === currentDue) break;
+             currentDue = next;
+             processed += 1;
+             continue;
+           }
         } else {
           // occurrence already exists: ensure next_due_on advances (idempotent recovery)
           const now = Date.now();
