@@ -665,8 +665,9 @@ export function TransactionsPage() {
                 />
                 <input
                   ref={dateInputRef}
-                  type="date"
-                  value={formData.occurredOn}
+                   type="date"
+                   tabIndex={-1}
+                   value={formData.occurredOn}
                   onChange={(e) => setFormData(f => ({ ...f, occurredOn: e.target.value }))}
                   style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
                 />
@@ -688,8 +689,9 @@ export function TransactionsPage() {
                 onFocus={amountInput.onFocus}
                 placeholder="0,00"
                 prefix="$"
-                required
-                inputMode="decimal"
+                 required
+                 data-autofocus
+                 inputMode="decimal"
                 pattern="[0-9.,]*"
                 autoComplete="off"
                 autoCorrect="off"
