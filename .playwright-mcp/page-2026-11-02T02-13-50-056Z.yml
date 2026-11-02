@@ -1,0 +1,87 @@
+- generic [ref=f4e1]:
+  - generic [ref=f4e10]:
+    - generic [ref=f4e12]:
+      - banner [ref=f4e13]:
+        - generic [ref=f4e14]:
+          - generic [ref=f4e15]: Ingresos y gastos
+          - heading "Movimientos" [level=1] [ref=f4e16]
+        - button "Nuevo movimiento" [ref=f4e18] [cursor=pointer]
+      - generic [ref=f4e22]:
+        - generic [ref=f4e23]:
+          - button "Mes anterior" [ref=f4e24] [cursor=pointer]
+          - generic [ref=f4e27]: Noviembre de 2026
+          - button "Mes siguiente" [disabled] [ref=f4e28]
+        - button "Filtros" [ref=f4e31] [cursor=pointer]
+      - generic [ref=f4e36]:
+        - generic [ref=f4e37]: Buscar movimientos
+        - searchbox "Buscar movimientos" [ref=f4e39]
+      - generic [ref=f4e44]:
+        - heading "Sin movimientos" [level=3] [ref=f4e45]
+        - paragraph [ref=f4e46]: Todavía no registraste movimientos este mes.
+    - navigation "Navegación principal" [ref=f4e47]:
+      - link "Inicio" [ref=f4e48] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f4e53] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f4e56] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f4e60] [cursor=pointer]
+  - dialog [ref=f4e66]:
+    - banner [ref=f4e67]:
+      - generic [ref=f4e68]:
+        - heading "Nuevo movimiento" [level=2] [ref=f4e69]
+        - paragraph [ref=f4e70]: Los importes se guardan en la moneda del movimiento.
+      - button "Cerrar" [ref=f4e71] [cursor=pointer]
+    - generic [ref=f4e78]:
+      - group "Tipo" [ref=f4e79]:
+        - button "Ingreso" [ref=f4e80] [cursor=pointer]
+        - button "Gasto" [pressed] [ref=f4e81] [cursor=pointer]
+      - generic [ref=f4e82]:
+        - generic [ref=f4e83]:
+          - generic [ref=f4e84]:
+            - generic [ref=f4e85]: Fecha *
+            - textbox "Fecha" [ref=f4e87]: 01/11/2026
+          - textbox: 2026-11-01
+        - button "Hoy" [ref=f4e88] [cursor=pointer]
+        - button "Ayer" [ref=f4e90] [cursor=pointer]
+      - generic [ref=f4e93]:
+        - generic [ref=f4e94]: Importe *
+        - generic [ref=f4e95]:
+          - generic [aria-hidden] [ref=f4e96]: $
+          - textbox "Importe" [ref=f4e97]:
+            - /placeholder: 0,00
+      - generic [ref=f4e98]:
+        - group "Moneda" [ref=f4e99]:
+          - button "ARS" [pressed] [ref=f4e100] [cursor=pointer]
+          - button "USD" [ref=f4e101] [cursor=pointer]
+        - button "Repetir" [ref=f4e102] [cursor=pointer]
+      - generic [ref=f4e110]:
+        - generic [ref=f4e111]: Cuenta
+        - combobox "Cuenta" [ref=f4e113] [cursor=pointer]:
+          - option "Efectivo" [selected]
+          - option "Sueldo"
+          - option "Otros ingresos"
+      - generic [ref=f4e114]:
+        - generic [ref=f4e115]: Descripción
+        - textbox "Descripción" [ref=f4e117]:
+          - /placeholder: "Ej: Supermercado"
+      - generic [ref=f4e118]:
+        - generic [ref=f4e119]: Notas (opcional)
+        - textbox "Notas (opcional)" [ref=f4e121]:
+          - /placeholder: Observación breve
+      - generic [ref=f4e122]:
+        - generic [ref=f4e123]: Categoría
+        - combobox "Categoría" [ref=f4e125] [cursor=pointer]:
+          - option "Alimentación" [selected]
+          - option "Transporte"
+          - option "Vivienda"
+          - option "Servicios"
+          - option "Salud"
+          - option "Entretenimiento"
+          - option "Compras"
+          - option "Educación"
+          - option "Otros gastos"
+          - option "Crear categoría"
+    - contentinfo [ref=f4e126]:
+      - button "Cancelar" [ref=f4e127] [cursor=pointer]
+      - button "Crear" [ref=f4e129] [cursor=pointer]

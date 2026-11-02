@@ -1,0 +1,104 @@
+- generic [ref=f14e1]:
+  - generic [ref=f14e9]:
+    - complementary "Navegación principal" [ref=f14e10]:
+      - generic [ref=f14e11]: Finanzas
+      - navigation [ref=f14e13]:
+        - link "Inicio" [ref=f14e14] [cursor=pointer]:
+          - /url: /
+        - link "Movimientos" [ref=f14e20] [cursor=pointer]:
+          - /url: /movimientos
+        - link "Cuentas" [ref=f14e24] [cursor=pointer]:
+          - /url: /cuentas
+        - link "Presupuestos" [ref=f14e30] [cursor=pointer]:
+          - /url: /presupuestos
+        - link "Estadísticas" [ref=f14e37] [cursor=pointer]:
+          - /url: /estadisticas
+        - link "Ajustes" [ref=f14e42] [cursor=pointer]:
+          - /url: /ajustes
+      - generic [ref=f14e48]:
+        - link "Nuevo movimiento" [ref=f14e49] [cursor=pointer]:
+          - /url: /movimientos?new=expense
+        - button "Al día. Sincronizar ahora" [ref=f14e53] [cursor=pointer]:
+          - generic [ref=f14e54]: Al día
+        - generic [ref=f14e56]:
+          - generic [aria-hidden] [ref=f14e57]: T
+          - generic [ref=f14e58]:
+            - generic [ref=f14e59]: Test User
+            - generic [ref=f14e60]: test@test.com
+    - generic [ref=f14e63]:
+      - banner [ref=f14e64]:
+        - generic [ref=f14e65]:
+          - generic [ref=f14e66]: Ingresos y gastos
+          - heading "Movimientos" [level=1] [ref=f14e67]
+        - button "Nuevo movimiento" [ref=f14e69] [cursor=pointer]
+      - generic [ref=f14e73]:
+        - generic [ref=f14e74]:
+          - button "Mes anterior" [ref=f14e75] [cursor=pointer]
+          - generic [ref=f14e78]: Noviembre de 2026
+          - button "Mes siguiente" [disabled] [ref=f14e79]
+        - button "Filtros" [ref=f14e82] [cursor=pointer]
+      - generic [ref=f14e87]:
+        - generic [ref=f14e88]: Buscar movimientos
+        - searchbox "Buscar movimientos" [ref=f14e90]
+      - generic [ref=f14e95]:
+        - heading "Sin movimientos" [level=3] [ref=f14e96]
+        - paragraph [ref=f14e97]: Todavía no registraste movimientos este mes.
+  - dialog [ref=f14e98]:
+    - banner [ref=f14e99]:
+      - generic [ref=f14e100]:
+        - heading "Nuevo movimiento" [level=2] [ref=f14e101]
+        - paragraph [ref=f14e102]: Los importes se guardan en la moneda del movimiento.
+      - button "Cerrar" [ref=f14e103] [cursor=pointer]
+    - generic [ref=f14e110]:
+      - group "Tipo" [ref=f14e111]:
+        - button "Ingreso" [ref=f14e112] [cursor=pointer]
+        - button "Gasto" [pressed] [ref=f14e113] [cursor=pointer]
+      - generic [ref=f14e114]:
+        - generic [ref=f14e115]:
+          - generic [ref=f14e116]:
+            - generic [ref=f14e117]: Fecha *
+            - textbox "Fecha" [ref=f14e119]: 01/11/2026
+          - textbox: 2026-11-01
+        - button "Hoy" [ref=f14e120] [cursor=pointer]
+        - button "Ayer" [ref=f14e122] [cursor=pointer]
+      - generic [ref=f14e125]:
+        - generic [ref=f14e126]: Importe *
+        - generic [ref=f14e127]:
+          - generic [aria-hidden] [ref=f14e128]: $
+          - textbox "Importe" [ref=f14e129]:
+            - /placeholder: 0,00
+      - generic [ref=f14e130]:
+        - group "Moneda" [ref=f14e131]:
+          - button "ARS" [pressed] [ref=f14e132] [cursor=pointer]
+          - button "USD" [ref=f14e133] [cursor=pointer]
+        - button "Repetir" [ref=f14e134] [cursor=pointer]
+      - generic [ref=f14e142]:
+        - generic [ref=f14e143]: Cuenta
+        - combobox "Cuenta" [ref=f14e145] [cursor=pointer]:
+          - option "Efectivo" [selected]
+          - option "Sueldo"
+          - option "Otros ingresos"
+      - generic [ref=f14e146]:
+        - generic [ref=f14e147]: Descripción
+        - textbox "Descripción" [active] [ref=f14e149]:
+          - /placeholder: "Ej: Supermercado"
+      - generic [ref=f14e150]:
+        - generic [ref=f14e151]: Notas (opcional)
+        - textbox "Notas (opcional)" [ref=f14e153]:
+          - /placeholder: Observación breve
+      - generic [ref=f14e154]:
+        - generic [ref=f14e155]: Categoría
+        - combobox "Categoría" [ref=f14e157] [cursor=pointer]:
+          - option "Alimentación" [selected]
+          - option "Transporte"
+          - option "Vivienda"
+          - option "Servicios"
+          - option "Salud"
+          - option "Entretenimiento"
+          - option "Compras"
+          - option "Educación"
+          - option "Otros gastos"
+          - option "Crear categoría"
+    - contentinfo [ref=f14e158]:
+      - button "Cancelar" [ref=f14e159] [cursor=pointer]
+      - button "Crear" [ref=f14e161] [cursor=pointer]

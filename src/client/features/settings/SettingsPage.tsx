@@ -33,7 +33,7 @@ export function SettingsPage() {
     if (!logoutPrompt && dialog?.open) dialog.close();
   }, [logoutPrompt]);
 
-const exportCSV = async () => {
+  const exportCSV = async () => {
     setExporting(true);
     setError(null);
     try {
@@ -121,15 +121,13 @@ const exportCSV = async () => {
   return (
     <Page className="settings-page">
       <PageHeader
-        eyebrow="Tu cuenta"
         title="Ajustes"
-        description="Preferencias, datos y estado de la aplicación."
       />
 
       {error && <Notice tone="strong" onDismiss={() => setError(null)}>{error}</Notice>}
 
-      <Stack gap="lg">
-        <Panel tone="paper" radius="panel" padding="lg">
+      <Stack gap="md">
+        <Panel tone="paper" radius="panel" padding="md">
           <Stack gap="lg">
             <Inline justify="between" gap="md">
               <Inline gap="md">
@@ -137,8 +135,8 @@ const exportCSV = async () => {
                   {(user?.name || user?.email || '?').charAt(0).toUpperCase()}
                 </span>
                 <div>
-                  <Text variant="subtitle">{user?.name || 'Tu cuenta'}</Text>
-                  <Text variant="small" tone="stone">{user?.email}</Text>
+                  <Text variant="section-title">{user?.name || 'Tu cuenta'}</Text>
+                  <Text variant="caption" tone="stone">{user?.email}</Text>
                 </div>
               </Inline>
               <Button variant="secondary" leftIcon={<LogOut size={16} />} onClick={() => void requestLogout()} disabled={logoutBusy} loading={logoutBusy}>
@@ -148,9 +146,9 @@ const exportCSV = async () => {
           </Stack>
         </Panel>
 
-        <Panel tone="paper" radius="panel" padding="lg">
+        <Panel tone="paper" radius="panel" padding="md">
           <Stack gap="md">
-            <Text variant="subtitle">Organización</Text>
+            <Text variant="section-title">Organización</Text>
             <ListRow
               to="/ajustes/categorias"
               leading={<span className="settings-leading"><Layers size={18} /></span>}
@@ -161,7 +159,7 @@ const exportCSV = async () => {
             <Divider />
             <Inline justify="between" gap="md">
               <div>
-                <Text variant="small">Sincronización</Text>
+                <Text variant="body">Sincronización</Text>
                 <Text variant="caption" tone="stone">{lastSync}</Text>
               </div>
               <Inline gap="md">
@@ -185,11 +183,11 @@ const exportCSV = async () => {
           </Stack>
         </Panel>
 
-        <Panel tone="paper" radius="panel" padding="lg">
+        <Panel tone="paper" radius="panel" padding="md">
           <Stack gap="md">
-            <Text variant="subtitle">Datos</Text>
+            <Text variant="section-title">Datos</Text>
             <Inline justify="between" gap="md">
-              <Text variant="small" tone="stone">
+              <Text variant="caption" tone="stone">
                 Exportá movimientos, categorías y presupuestos en CSV.
               </Text>
               <Button variant="secondary" leftIcon={<Download size={16} />} onClick={() => void exportCSV()} loading={exporting}>
@@ -199,9 +197,9 @@ const exportCSV = async () => {
           </Stack>
         </Panel>
 
-        <Panel tone="paper" radius="panel" padding="lg">
+        <Panel tone="paper" radius="panel" padding="md">
           <Stack gap="md">
-            <Text variant="subtitle">Información</Text>
+            <Text variant="section-title">Información</Text>
             <div className="settings-grid">
               <div className="settings-field">
                 <span className="settings-field__label">Versión</span>
@@ -223,7 +221,7 @@ const exportCSV = async () => {
           </Stack>
         </Panel>
 
-        <Panel tone="paper" radius="panel" padding="lg">
+        <Panel tone="paper" radius="panel" padding="md">
           <DangerZone
             title="Eliminar cuenta"
             description="Se eliminan permanentemente tu cuenta, movimientos, categorías, presupuestos y preferencias. No se puede deshacer."
@@ -240,10 +238,10 @@ const exportCSV = async () => {
         className="settings-logout-dialog"
         aria-labelledby="settings-logout-title"
          onCancel={(event) => {
-           event.preventDefault();
-           if (logoutBusy) return;
-           setLogoutPrompt(null);
-         }}
+          event.preventDefault();
+          if (logoutBusy) return;
+          setLogoutPrompt(null);
+        }}
       >
         {logoutPrompt?.step === 'choice' ? (
           <>

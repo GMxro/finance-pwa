@@ -1,7 +1,7 @@
 import React from 'react';
 import './Text.css';
 
-type Variant = 'display' | 'title' | 'subtitle' | 'body' | 'small' | 'caption' | 'micro' | 'money-xl' | 'money' | 'money-sm';
+type Variant = 'display' | 'title' | 'subtitle' | 'section-title' | 'body' | 'small' | 'caption' | 'micro' | 'money-xl' | 'money' | 'money-sm';
 type Tone = 'ink' | 'stone' | 'on-ink' | 'on-ink-muted' | 'danger';
 
 interface TextProps {

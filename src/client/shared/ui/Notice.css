@@ -1,12 +1,12 @@
 .ui-notice {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--gap-field);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-card);
   background: var(--color-inset);
   color: var(--color-ink);
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
 }
 
 .ui-notice--strong {

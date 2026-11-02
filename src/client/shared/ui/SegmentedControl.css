@@ -1,40 +1,64 @@
 .ui-segment {
   display: inline-flex;
   align-items: center;
+  background: var(--color-paper);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-field);
+  padding: 2px;
   gap: 2px;
-  padding: 3px;
-  border-radius: var(--radius-pill);
-  background: var(--color-inset);
+}
+
+.ui-segment--onInk {
+  background: var(--color-ink);
+  border-color: var(--color-on-ink-line);
 }
 
 .ui-segment__item {
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: var(--radius-pill);
-  font-size: var(--text-caption);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-h-lg);
+  min-width: 0;
+  padding: 0 var(--space-4);
+  border-radius: calc(var(--radius-field) - 2px);
+  font-size: var(--text-body);
   font-weight: var(--weight-label);
   color: var(--color-stone);
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
-.ui-segment__item:hover {
+.ui-segment__item:hover:not(.is-disabled) {
   color: var(--color-ink);
 }
 
 .ui-segment__item.is-active {
-  background: var(--color-paper);
-  color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-on-ink);
 }
 
-.ui-segment--onInk {
-  background: rgba(255, 255, 255, 0.1);
+.ui-segment__item.is-active:hover:not(.is-disabled) {
+  background: var(--color-ink-soft);
+}
+
+.ui-segment__item.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ui-segment__item:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .ui-segment--onInk .ui-segment__item {
   color: var(--color-on-ink-muted);
 }
 
-.ui-segment--onInk .ui-segment__item:hover {
+.ui-segment--onInk .ui-segment__item:hover:not(.is-disabled) {
   color: var(--color-on-ink);
 }
 
@@ -43,6 +67,10 @@
   color: var(--color-ink);
 }
 
+.ui-segment--onInk .ui-segment__item.is-active:hover:not(.is-disabled) {
+  background: var(--color-accent-on-ink-hover);
+}
+
 .ui-segment--onInk .ui-segment__item:focus-visible {
-  outline-color: var(--color-accent-on-ink);
+  outline-color: var(--color-lime);
 }

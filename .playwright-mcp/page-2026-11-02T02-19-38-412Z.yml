@@ -1,0 +1,27 @@
+- generic [ref=f14e61]:
+  - generic [ref=f14e63]:
+    - banner [ref=f14e64]:
+      - generic [ref=f14e65]:
+        - generic [ref=f14e66]: Ingresos y gastos
+        - heading "Movimientos" [level=1] [ref=f14e67]
+      - button "Nuevo movimiento" [ref=f14e69] [cursor=pointer]
+    - generic [ref=f14e73]:
+      - generic [ref=f14e74]:
+        - button "Mes anterior" [ref=f14e75] [cursor=pointer]
+        - generic [ref=f14e78]: Noviembre de 2026
+        - button "Mes siguiente" [disabled] [ref=f14e79]
+      - button "Filtros" [ref=f14e82] [cursor=pointer]
+    - generic [ref=f14e87]:
+      - generic [ref=f14e88]: Buscar movimientos
+      - searchbox "Buscar movimientos" [ref=f14e90]
+    - generic [ref=f14e95]:
+      - heading "Sin movimientos" [level=3] [ref=f14e96]
+      - paragraph [ref=f14e97]: Todavía no registraste movimientos este mes.
+  - navigation "Navegación principal" [ref=f14e163]:
+    - link "Inicio" [ref=f14e164] [cursor=pointer]:
+      - /url: /
+    - link "Movimientos" [ref=f14e169] [cursor=pointer]:
+      - /url: /movimientos
+    - link "Estadísticas" [ref=f14e172] [cursor=pointer]:
+      - /url: /estadisticas
+    - button "Más" [ref=f14e176] [cursor=pointer]

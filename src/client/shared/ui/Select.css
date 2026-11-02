@@ -1,24 +1,244 @@
-.ui-select {
-  position: relative;
-  padding-right: var(--space-4);
-}
-
-.ui-select__input {
-  appearance: none;
-  -webkit-appearance: none;
-  padding-right: var(--space-8);
+.ui-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  height: var(--control-h-lg);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-field);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--text-input);
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  line-height: 1;
+  text-align: left;
   cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
-.ui-select__arrow {
-  position: absolute;
-  right: var(--space-5);
+.ui-select-trigger:hover:not(.ui-select-trigger--disabled) {
+  border-color: var(--color-ink);
+}
+
+.ui-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--color-ink);
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12);
+}
+
+.ui-select-trigger--disabled {
+  background: var(--color-inset);
   color: var(--color-stone);
-  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.ui-select-trigger--error {
+  border-color: var(--color-danger);
+}
+
+.ui-select-trigger--error:focus-visible {
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12);
+}
+
+.ui-select-trigger__value {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-stone);
+}
+
+.ui-select-trigger__value:not(:empty) {
+  color: var(--color-ink);
+}
+
+.ui-select-trigger__arrow {
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+  color: var(--color-stone);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.ui-select-trigger[aria-expanded="true"] .ui-select-trigger__arrow {
+  transform: rotate(180deg);
+}
+
+/* SegmentedControl integration - override for Select context */
+.ui-field .ui-segment {
+  width: 100%;
+  background: var(--color-paper);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-field);
+  padding: 2px;
+}
+
+.ui-field .ui-segment__item {
+  min-height: var(--control-h-lg);
+  padding: 0 var(--space-3);
+  border-radius: calc(var(--radius-field) - 2px);
+  font-size: var(--text-body);
+  font-weight: var(--weight-label);
+  color: var(--color-stone);
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.ui-field .ui-segment__item:hover {
+  color: var(--color-ink);
+}
+
+.ui-field .ui-segment__item.is-active {
+  background: var(--color-ink);
+  color: var(--color-on-ink);
+}
+
+.ui-field .ui-segment__item:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* Bottom Sheet */
+.ui-select-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  padding: 0;
+  background: var(--color-overlay);
+  animation: ui-overlay-in var(--dur-base) var(--ease-out);
+}
+
+.ui-select-sheet {
+  width: 100%;
+  max-height: var(--sheet-max-height);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-paper);
+  border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  outline: none;
+  overflow: hidden;
+  animation: ui-sheet-in var(--dur-base) var(--ease-out);
+}
+
+.ui-select-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.ui-select-sheet__title {
+  font-family: var(--font-display);
+  font-size: var(--text-page-title);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-weight: var(--weight-display);
+}
+
+.ui-select-sheet__close {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  color: var(--color-stone);
+  flex-shrink: 0;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.ui-select-sheet__close:hover {
+  background: var(--color-inset);
+  color: var(--color-ink);
+}
+
+.ui-select-sheet__search {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-line);
+  flex-shrink: 0;
+}
+
+.ui-select-sheet__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-2) var(--space-4) var(--space-4);
+}
+
+.ui-select-sheet__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-h-xl);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-field);
+  color: var(--color-ink);
+  font-size: var(--text-body);
+  font-weight: var(--weight-label);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.ui-select-sheet__item:hover {
+  background: var(--color-inset);
+}
+
+.ui-select-sheet__item.is-selected {
+  background: var(--color-ink);
+  color: var(--color-on-ink);
+}
+
+.ui-select-sheet__item.is-selected:hover {
+  background: var(--color-ink-soft);
+}
+
+.ui-select-sheet__check {
+  flex-shrink: 0;
+  color: var(--color-lime);
+}
+
+.ui-select-sheet__empty {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-stone);
+  font-size: var(--text-body);
 }
 
 @media (max-width: 640px) {
-  .ui-select__arrow {
-    right: var(--space-4);
+  .ui-select-sheet {
+    max-height: calc(var(--sheet-max-height) - var(--safe-top));
+    border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+    padding-bottom: var(--safe-bottom);
   }
+
+  .ui-select-sheet__header {
+    padding: var(--space-4) var(--space-4) var(--space-2);
+  }
+
+  .ui-select-sheet__list {
+    padding-bottom: calc(var(--space-4) + var(--safe-bottom));
+  }
+}
+
+@keyframes ui-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ui-sheet-in {
+  from { transform: translateY(18px); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
 }

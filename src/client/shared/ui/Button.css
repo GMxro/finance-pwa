@@ -6,7 +6,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
   font-family: var(--font-ui);
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
   font-weight: var(--weight-label);
   letter-spacing: -0.005em;
   line-height: 1;
@@ -29,9 +29,9 @@
   cursor: not-allowed;
 }
 
-.ui-btn--sm { min-height: var(--control-height-sm); padding: 0 var(--space-4); font-size: var(--text-caption); }
-.ui-btn--md { min-height: 48px; padding: 0 var(--space-5); }
-.ui-btn--lg { min-height: var(--control-height-lg); padding: 0 var(--space-6); font-size: var(--text-body); }
+.ui-btn--sm { min-height: var(--control-h-sm); padding: 0 var(--space-3); font-size: var(--text-caption); }
+.ui-btn--md { min-height: var(--control-h-md); padding: 0 var(--space-4); }
+.ui-btn--lg { min-height: var(--control-h-lg); padding: 0 var(--space-5); font-size: var(--text-body); }
 .ui-btn--full { width: 100%; }
 
 .ui-btn--primary {
@@ -130,8 +130,8 @@
 }
 
 .ui-icon-btn {
-  width: 44px;
-  height: 44px;
+  width: var(--control-h-lg);
+  height: var(--control-h-lg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -148,8 +148,8 @@
 }
 
 .ui-icon-btn--sm {
-  width: 44px;
-  height: 44px;
+  width: var(--control-h-md);
+  height: var(--control-h-md);
 }
 
 .ui-icon-btn--danger:hover:not(:disabled) {

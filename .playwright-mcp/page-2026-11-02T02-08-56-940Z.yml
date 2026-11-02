@@ -1,0 +1,87 @@
+- generic [ref=f1e9]:
+  - complementary "Navegación principal" [ref=f1e10]:
+    - generic [ref=f1e11]: Finanzas
+    - navigation [ref=f1e13]:
+      - link "Inicio" [ref=f1e14] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f1e20] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Cuentas" [ref=f1e24] [cursor=pointer]:
+        - /url: /cuentas
+      - link "Presupuestos" [ref=f1e30] [cursor=pointer]:
+        - /url: /presupuestos
+      - link "Estadísticas" [ref=f1e37] [cursor=pointer]:
+        - /url: /estadisticas
+      - link "Ajustes" [ref=f1e42] [cursor=pointer]:
+        - /url: /ajustes
+    - generic [ref=f1e48]:
+      - link "Nuevo movimiento" [ref=f1e49] [cursor=pointer]:
+        - /url: /movimientos?new=expense
+      - button "Al día. Sincronizar ahora" [ref=f1e53] [cursor=pointer]:
+        - generic [ref=f1e54]: Al día
+      - generic [ref=f1e56]:
+        - generic [aria-hidden] [ref=f1e57]: G
+        - generic [ref=f1e58]:
+          - generic [ref=f1e59]: Gonzalo Marinaro
+          - generic [ref=f1e60]: gonzalogomezmarinaro@gmail.com
+  - generic [ref=f1e63]:
+    - banner [ref=f1e64]:
+      - heading "Resumen" [level=1] [ref=f1e66]
+    - generic [ref=f1e68]:
+      - button "Mes anterior" [ref=f1e69] [cursor=pointer]
+      - generic [ref=f1e72]: Noviembre de 2026
+      - button "Mes siguiente" [disabled] [ref=f1e73]
+    - generic [ref=f1e76]:
+      - generic [ref=f1e78]:
+        - generic [ref=f1e79]:
+          - paragraph [ref=f1e80]: Saldo neto
+          - button "Ocultar montos" [pressed] [ref=f1e81] [cursor=pointer]
+        - generic [ref=f1e85]:
+          - generic [ref=f1e86]:
+            - paragraph [ref=f1e87]: Pesos · ARS
+            - generic [ref=f1e88]: $ 0,00
+          - generic [ref=f1e89]:
+            - paragraph [ref=f1e90]: Dólares · USD
+            - generic [ref=f1e91]: US$ 0,00
+      - generic [ref=f1e92]:
+        - generic [ref=f1e94]:
+          - paragraph [ref=f1e95]: Ingresos
+          - generic [ref=f1e96]:
+            - link "Ver ingresos en ARS de 2026-11" [ref=f1e97] [cursor=pointer]:
+              - /url: /movimientos?period=2026-11&kind=income&currency=ARS
+              - generic [ref=f1e98]:
+                - generic [aria-hidden] [ref=f1e99]: +
+                - text: $ 0,00
+            - link "Ver ingresos en USD de 2026-11" [ref=f1e100] [cursor=pointer]:
+              - /url: /movimientos?period=2026-11&kind=income&currency=USD
+              - generic [ref=f1e101]:
+                - generic [aria-hidden] [ref=f1e102]: +
+                - text: US$ 0,00
+        - generic [ref=f1e104]:
+          - paragraph [ref=f1e105]: Gastos
+          - generic [ref=f1e106]:
+            - link "Ver gastos en ARS de 2026-11" [ref=f1e107] [cursor=pointer]:
+              - /url: /movimientos?period=2026-11&kind=expense&currency=ARS
+              - generic [ref=f1e108]:
+                - generic [aria-hidden] [ref=f1e109]: −
+                - text: $ 0,00
+            - link "Ver gastos en USD de 2026-11" [ref=f1e110] [cursor=pointer]:
+              - /url: /movimientos?period=2026-11&kind=expense&currency=USD
+              - generic [ref=f1e111]:
+                - generic [aria-hidden] [ref=f1e112]: −
+                - text: US$ 0,00
+    - generic [ref=f1e113]:
+      - generic [ref=f1e114]:
+        - heading "Presupuestos" [level=2] [ref=f1e115]
+        - link "Ver todos" [ref=f1e117] [cursor=pointer]:
+          - /url: /presupuestos
+      - generic [ref=f1e119]:
+        - paragraph [ref=f1e120]: Todavía no definiste presupuestos para este mes.
+        - link "Definir mi primer presupuesto" [ref=f1e121] [cursor=pointer]:
+          - /url: /presupuestos
+    - generic [ref=f1e123]:
+      - generic [ref=f1e124]:
+        - heading "Movimientos recientes" [level=2] [ref=f1e125]
+        - link "Ver historial" [ref=f1e127] [cursor=pointer]:
+          - /url: /movimientos?period=2026-11
+      - paragraph [ref=f1e130]: Todavía no hay movimientos en este mes.

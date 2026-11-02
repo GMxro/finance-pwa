@@ -147,7 +147,6 @@ export function OverviewPage() {
     }
   }, [month, user]);
 
-
   useEffect(() => { void load(); }, [load]);
 
   const summaries = useMemo(
@@ -165,7 +164,7 @@ export function OverviewPage() {
   const categoriesById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
   const accountsById = useMemo(() => new Map(accounts.map(account => [account.id, account.name])), [accounts]);
 
- const KIND_LABELS: Record<'income' | 'expense', string> = { income: 'Ingresos', expense: 'Gastos' };
+  const KIND_LABELS: Record<'income' | 'expense', string> = { income: 'Ingresos', expense: 'Gastos' };
 
   return (
     <Page className="overview-page">
@@ -179,7 +178,7 @@ export function OverviewPage() {
         <Panel tone="ink" radius="panel" padding="md" className="overview-net">
           <Stack gap="sm">
             <Inline justify="between" align="center">
-              <Text variant="small" tone="on-ink-muted">Saldo neto</Text>
+              <Text variant="body" tone="on-ink-muted">Saldo neto</Text>
               <button
                 type="button"
                 className="overview-hero__eye"
@@ -193,23 +192,23 @@ export function OverviewPage() {
             </Inline>
             <div className="overview-net__amounts">
               <div className="overview-net__column">
-                <Text variant="micro" tone="on-ink-muted">Pesos · ARS</Text>
+                <Text variant="caption" tone="on-ink-muted">Pesos · ARS</Text>
                 <Money amountMinor={arsSummary.netMinor} currency="ARS" sign="auto" tone="onInk" size="xl" censored={!showAmounts} className={arsSummary.netMinor < 0 ? 'overview-net__amount--negative' : ''} />
               </div>
               <div className="overview-net__column">
-                <Text variant="micro" tone="on-ink-muted">Dólares · USD</Text>
+                <Text variant="caption" tone="on-ink-muted">Dólares · USD</Text>
                 <Money amountMinor={usdSummary.netMinor} currency="USD" sign="auto" tone="onInk" size="xl" censored={!showAmounts} className={usdSummary.netMinor < 0 ? 'overview-net__amount--negative' : ''} />
               </div>
             </div>
             {dataStatus !== 'current' && (
-              <Text variant="small" tone="on-ink-muted">{dataStatus === 'unavailable' ? '—' : dataStatus === 'cached' ? 'Datos locales (pueden estar desactualizados)' : 'Comparación sin actualizar'}</Text>
+              <Text variant="body" tone="on-ink-muted">{dataStatus === 'unavailable' ? '—' : dataStatus === 'cached' ? 'Datos locales (pueden estar desactualizados)' : 'Comparación sin actualizar'}</Text>
             )}
           </Stack>
         </Panel>
         <Grid columns={2} gap="sm" className="overview-income-expense">
           <Panel tone="paper" radius="card" padding="md" className="overview-amount-card overview-amount-card--income">
             <Stack gap="xs">
-              <Text variant="small" tone="stone">{KIND_LABELS.income}</Text>
+              <Text variant="body" tone="stone">{KIND_LABELS.income}</Text>
               <div className="overview-amount-card__values">
                 <Link className="overview-amount-link" to={`/movimientos?period=${month}&kind=income&currency=ARS`} aria-label={`Ver ingresos en ARS de ${month}`}>
                   <Money amountMinor={arsSummary.incomeMinor} currency="ARS" sign="plus" tone="ink" size="lg" censored={!showAmounts} />
@@ -222,7 +221,7 @@ export function OverviewPage() {
           </Panel>
           <Panel tone="paper" radius="card" padding="md" className="overview-amount-card overview-amount-card--expense">
             <Stack gap="xs">
-              <Text variant="small" tone="stone">{KIND_LABELS.expense}</Text>
+              <Text variant="body" tone="stone">{KIND_LABELS.expense}</Text>
               <div className="overview-amount-card__values">
                 <Link className="overview-amount-link" to={`/movimientos?period=${month}&kind=expense&currency=ARS`} aria-label={`Ver gastos en ARS de ${month}`}>
                   <Money amountMinor={arsSummary.expenseMinor} currency="ARS" sign="minus" tone="ink" size="lg" censored={!showAmounts} />

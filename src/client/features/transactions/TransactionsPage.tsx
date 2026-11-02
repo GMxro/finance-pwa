@@ -5,7 +5,7 @@ import { useAuth } from '../../app/providers';
 import { api } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
 import type { AccountWithBalances } from '@contracts/account';
-import { type CurrencyCode } from '@domain/money';
+import type { CurrencyCode } from '@domain/money';
 import { isValidMonth, todayLocalISO } from '@domain/date';
 import { mergeWithCache, cacheServerRows, readCached, savePendingCreate } from '@local-data/transaction-store';
 import { Page, PageHeader, Grid, Stack, Inline } from '@shared/ui/Layout';
@@ -13,7 +13,7 @@ import { Panel } from '@shared/ui/Panel';
 import { Button } from '@shared/ui/Button';
 import { Input } from '@shared/ui/Input';
 import { Select } from '@shared/ui/Select';
-import { SegmentedControl } from '@shared/ui/SegmentedControl';
+import { SegmentedControl, SegmentedOption } from '@shared/ui/SegmentedControl';
 import { Modal } from '@shared/ui/Modal';
 import { MonthStepper } from '@shared/ui/MonthStepper';
 import { Notice } from '@shared/ui/Notice';
@@ -29,7 +29,7 @@ import '../../app/styles/transactions.css';
 type TransactionKind = 'income' | 'expense';
 
 interface TxFormData {
-  amountMinor: number | null; // valor en centavos (minor units)
+  amountMinor: number | null;
   currency: CurrencyCode;
   categoryId: string;
   occurredOn: string;
@@ -85,10 +85,10 @@ export function TransactionsPage() {
   const [newCategoryError, setNewCategoryError] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
   const [entryMode, setEntryMode] = useState<'manual' | 'installment' | 'recurring'>('manual');
-  // Cuenta recordada por tipo de movimiento: ingreso y gasto no comparten la misma selección.
   const lastAccountByKind = useRef<Record<TransactionKind, string>>({ income: '', expense: '' });
   const [description, setDescription] = useState('');
   const [notes, setNotes] = useState('');
+  const [showNotes, setShowNotes] = useState(false);
   const [repeatModalOpen, setRepeatModalOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [repeatStep, setRepeatStep] = useState<'choose' | 'installment'>('choose');
@@ -185,11 +185,11 @@ export function TransactionsPage() {
   useEffect(() => {
     setPage(1);
     void loadData(false, 1);
-  }, [filters, month, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filters, month, user]);
 
   useEffect(() => {
     if (page > 1) void loadData(true, page);
-  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page]);
 
   useEffect(() => { void loadCategories(); }, [loadCategories]);
 
@@ -225,7 +225,7 @@ export function TransactionsPage() {
   }, []);
 
   const closeModal = useCallback(() => {
-    if (deleteTarget) return; // No cerrar el modal de edición mientras se confirma eliminación
+    if (deleteTarget) return;
     setEditingTx(null);
     resetNewCategory();
   }, [resetNewCategory, deleteTarget]);
@@ -242,6 +242,7 @@ export function TransactionsPage() {
     setEntryMode('manual');
     setDescription('');
     setNotes('');
+    setShowNotes(false);
     setRepeatModalOpen(false);
     setRepeatStep('choose');
     setInstallmentsCount('2');
@@ -269,6 +270,7 @@ export function TransactionsPage() {
     setAmountMinor(tx.amountMinor);
     setDescription(tx.note ?? '');
     setNotes('');
+    setShowNotes(false);
     setEntryMode('manual');
     setFormError(null);
     resetNewCategory();
@@ -325,8 +327,6 @@ export function TransactionsPage() {
     }
   }, [categories, editingTx, formData.categoryId, formData.kind]);
 
-  // El importe se sincroniza explícitamente al abrir el modal (openCreate/startEdit)
-  // y al tipear (onChange del hook). No re-formatear aquí para no pisar el cursor.
   useEffect(() => {
     const mode = searchParams.get('new');
     if (mode === 'expense' || mode === 'income') {
@@ -514,6 +514,18 @@ export function TransactionsPage() {
       ? 'Todavía no registraste movimientos este mes.'
       : 'No hay movimientos en este período con los filtros elegidos.';
 
+  const kindOptions: SegmentedOption[] = [
+    { value: 'income', label: 'Ingreso' },
+    { value: 'expense', label: 'Gasto' }
+  ];
+
+  const currencyOptions: SegmentedOption[] = [
+    { value: 'ARS', label: 'ARS' },
+    { value: 'USD', label: 'USD' }
+  ];
+
+  const accountOptions = accounts.filter(a => !a.archivedAt).map(a => ({ value: a.id, label: a.name }));
+
   return (
     <Page>
       <PageHeader
@@ -562,7 +574,7 @@ export function TransactionsPage() {
       </Stack>
 
       {showFilters && (
-        <Panel tone="paper" padding="md" className="tx-filters">
+        <Panel tone="paper" radius="panel" padding="md" className="tx-filters">
           <Grid columns={3} gap="md">
             <Select
               label="Moneda"
@@ -616,42 +628,39 @@ export function TransactionsPage() {
       )}
 
        <Modal
-         open={editingTx !== null}
-         onClose={closeModal}
-         busy={saving}
-         title={editingTx?.id ? 'Editar movimiento' : 'Nuevo movimiento'}
-         description="Los importes se guardan en la moneda del movimiento."
-         autoFocusFirstEmpty
-        footer={
-          <>
-            {editingTx?.id && (
-              <Button
-                variant="ghost"
-                className="tx-modal-delete"
-                onClick={() => {
-                  setDeleteTarget(editingTx);
-                }}
-              >
-                Eliminar
-              </Button>
-            )}
-            <Button variant="secondary" onClick={closeModal} disabled={saving}>Cancelar</Button>
-            <Button type="submit" form="tx-form" loading={saving} onClick={() => void handleSubmit()}>{editingTx?.id ? "Guardar" : "Crear"}</Button>
-          </>
-        }
-      >
+          open={editingTx !== null}
+          onClose={closeModal}
+          busy={saving}
+          title={editingTx?.id ? 'Editar movimiento' : 'Nuevo movimiento'}
+          autoFocusFirstEmpty
+         footer={
+           <>
+             {editingTx?.id && (
+               <Button
+                 variant="ghost"
+                 className="tx-modal-delete"
+                 onClick={() => {
+                   setDeleteTarget(editingTx);
+                 }}
+               >
+                 Eliminar
+               </Button>
+             )}
+             <Button variant="secondary" onClick={closeModal} disabled={saving}>Cancelar</Button>
+             <Button type="submit" form="tx-form" loading={saving} onClick={() => void handleSubmit()}>{editingTx?.id ? "Guardar" : "Crear"}</Button>
+           </>
+         }
+       >
         <form id="tx-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }}>
-          <div className="tx-modal-compact">
           <Stack gap="md">
             {formError && <Notice tone="strong">{formError}</Notice>}
 
-            {/* 1. Tipo */}
+            {/* 1. Tipo - SegmentedControl */}
             <SegmentedControl
               label="Tipo"
               value={formData.kind}
               onChange={v => {
                 const kind = v as TransactionKind;
-                // Guardar la cuenta elegida para el tipo que se deja
                 lastAccountByKind.current[formData.kind] = formData.accountId;
                 const first = categories.find(c => c.kind === kind && !c.archivedAt) ?? categories.find(c => c.kind === kind);
                 const remembered = lastAccountByKind.current[kind];
@@ -660,10 +669,10 @@ export function TransactionsPage() {
                 resetNewCategory();
                 setFormData(f => ({ ...f, kind, categoryId: first?.id ?? '', accountId }));
               }}
-              options={[{ value: 'income', label: 'Ingreso' }, { value: 'expense', label: 'Gasto' }]}
+              options={kindOptions}
             />
 
-            {/* 2. Fecha + Hoy/Ayer */}
+            {/* 2. Fecha + Hoy/Ayer en una línea */}
             <div className="tx-date-row">
               <div style={{ flex: '1 1 auto', minWidth: 130 }}>
                 <Input
@@ -696,7 +705,7 @@ export function TransactionsPage() {
               }}>Ayer</Button>
             </div>
 
-            {/* 3. Importe + repetir */}
+            {/* 3. Importe grande + moneda ARS/USD en misma línea */}
             <div className="tx-amount-full">
               <Input
                 label="Importe"
@@ -724,7 +733,7 @@ export function TransactionsPage() {
                   const newCurrency = v as CurrencyCode;
                   setFormData(f => ({ ...f, currency: newCurrency }));
                 }}
-                options={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]}
+                options={currencyOptions}
                 className="tx-currency-segment"
               />
               <Button type="button" variant="secondary" onClick={() => { setRepeatStep('choose'); setRepeatModalOpen(true); }} leftIcon={<Repeat size={16} />}>
@@ -812,7 +821,7 @@ export function TransactionsPage() {
                 setFormData(f => ({ ...f, accountId: v }));
                 lastAccountByKind.current[formData.kind] = v;
               }}
-              options={accounts.filter(a => !a.archivedAt).map(a => ({ value: a.id, label: a.name }))}
+              options={accountOptions}
             />
 
             {/* 5. Descripción */}
@@ -823,13 +832,21 @@ export function TransactionsPage() {
               placeholder="Ej: Supermercado"
             />
 
-            {/* 6. Notas (opcional) */}
-            <Input
-              label="Notas (opcional)"
-              value={notes}
-              onChange={setNotes}
-              placeholder="Observación breve"
-            />
+            {/* 6. Notas (opcional) - colapsable */}
+            <div className="tx-notes-section">
+              {!showNotes ? (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setShowNotes(true)} className="tx-add-note">
+                  Agregar nota
+                </Button>
+              ) : (
+                <Input
+                  label="Notas (opcional)"
+                  value={notes}
+                  onChange={setNotes}
+                  placeholder="Observación breve"
+                />
+              )}
+            </div>
 
             {/* Categoría (adaptada por tipo) */}
             <Select
@@ -850,81 +867,80 @@ export function TransactionsPage() {
                   .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name })),
                 { value: '__new__', label: 'Crear categoría' }
                ]}
-             />
-             {newCategoryOpen && (
-               <div className="tx-new-category">
-                 <Input
-                   label="Nombre de la categoría"
-                   value={newCategoryName}
-                   onChange={setNewCategoryName}
-                   placeholder="Ej. Supermercado"
-                   autoFocus
-                 />
-                 <div className="tx-new-category__actions">
-                   <Button
-                     type="button"
-                     variant="secondary"
-                     onClick={resetNewCategory}
-                     disabled={savingCategory}
-                   >
-                     Cancelar
-                   </Button>
-                   <Button
-                     type="button"
-                     onClick={handleCreateCategory}
-                     loading={savingCategory}
-                     disabled={savingCategory}
-                   >
-                     Crear
-                   </Button>
-                 </div>
-                 {newCategoryError && (
-                   <p className="ui-field__error" role="alert">{newCategoryError}</p>
-                 )}
-               </div>
-             )}
-           </Stack>
-           </div>
-         </form>
+            />
+            {newCategoryOpen && (
+              <div className="tx-new-category">
+                <Input
+                  label="Nombre de la categoría"
+                  value={newCategoryName}
+                  onChange={setNewCategoryName}
+                  placeholder="Ej. Supermercado"
+                  autoFocus
+                />
+                <div className="tx-new-category__actions">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={resetNewCategory}
+                    disabled={savingCategory}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    loading={savingCategory}
+                    disabled={savingCategory}
+                  >
+                    Crear
+                  </Button>
+                </div>
+                {newCategoryError && (
+                  <p className="ui-field__error" role="alert">{newCategoryError}</p>
+                )}
+              </div>
+            )}
+          </Stack>
+        </form>
       </Modal>
 
-       <Modal
-        open={repeatModalOpen}
-        onClose={() => setRepeatModalOpen(false)}
-        title="Selecciona el tipo de transacción"
-      >
-        <Stack gap="md">
-          {repeatStep === 'choose' ? (
-            <>
-              <Button onClick={() => setRepeatStep('installment')}>Cuota</Button>
-              <Button onClick={() => { setEntryMode('recurring'); setRepeatModalOpen(false); }}>Repetir</Button>
-            </>
-          ) : (
-            <>
-               <Input
-                 label="Cantidad de cuotas"
-                 type="number"
-                 value={installmentsCount}
-                 onChange={v => setInstallmentsCount(v)}
-                 onBlur={() => {
-                   const n = Number(installmentsCount);
-                   if (isNaN(n) || n < 2) setInstallmentsCount('2');
-                   else if (n > 999) setInstallmentsCount('999');
-                 }}
-                 min={2}
-                 max={999}
-               />
+      <Modal
+       open={repeatModalOpen}
+       onClose={() => setRepeatModalOpen(false)}
+       title="Selecciona el tipo de transacción"
+     >
+       <Stack gap="md">
+         {repeatStep === 'choose' ? (
+           <>
+             <Button onClick={() => setRepeatStep('installment')}>Cuota</Button>
+             <Button onClick={() => { setEntryMode('recurring'); setRepeatModalOpen(false); }}>Repetir</Button>
+           </>
+         ) : (
+           <>
               <Input
-                label="Primer vencimiento"
-                type="date"
-                value={firstDueOn}
-                onChange={v => setFirstDueOn(v)}
+                label="Cantidad de cuotas"
+                type="number"
+                value={installmentsCount}
+                onChange={v => setInstallmentsCount(v)}
+                onBlur={() => {
+                  const n = Number(installmentsCount);
+                  if (isNaN(n) || n < 2) setInstallmentsCount('2');
+                  else if (n > 999) setInstallmentsCount('999');
+                }}
+                min={2}
+                max={999}
               />
-              <Button onClick={() => { setEntryMode('installment'); setRepeatModalOpen(false); }}>Confirmar</Button>
-            </>
-          )}
-        </Stack>
-      </Modal>
+             <Input
+               label="Primer vencimiento"
+               type="date"
+               value={firstDueOn}
+               onChange={v => setFirstDueOn(v)}
+             />
+             <Button onClick={() => { setEntryMode('installment'); setRepeatModalOpen(false); }}>Confirmar</Button>
+           </>
+         )}
+       </Stack>
+     </Modal>
 
       <Modal
          open={deleteTarget !== null}

@@ -1,0 +1,96 @@
+- generic [ref=f17e1]:
+  - generic [ref=f17e10]:
+    - generic [ref=f17e12]:
+      - banner [ref=f17e13]:
+        - generic [ref=f17e14]:
+          - generic [ref=f17e15]: Ingresos y gastos
+          - heading "Movimientos" [level=1] [ref=f17e16]
+        - button "Nuevo movimiento" [ref=f17e18] [cursor=pointer]
+      - generic [ref=f17e22]:
+        - generic [ref=f17e23]:
+          - button "Mes anterior" [ref=f17e24] [cursor=pointer]
+          - generic [ref=f17e27]: Noviembre de 2026
+          - button "Mes siguiente" [disabled] [ref=f17e28]
+        - button "Filtros" [ref=f17e31] [cursor=pointer]
+      - generic [ref=f17e36]:
+        - generic [ref=f17e37]: Buscar movimientos
+        - searchbox "Buscar movimientos" [ref=f17e39]
+      - region "01/11/2026" [ref=f17e42]:
+        - heading "01/11/2026" [level=3] [ref=f17e43]
+        - button "Compras Compras Efectivo $ 500,00" [ref=f17e44] [cursor=pointer]:
+          - generic [ref=f17e50]:
+            - generic [ref=f17e51]: Compras
+            - generic [ref=f17e52]:
+              - text: Compras
+              - generic [aria-hidden] [ref=f17e53]: ·
+              - text: Efectivo
+          - generic [ref=f17e55]:
+            - generic [aria-hidden] [ref=f17e56]: −
+            - text: $ 500,00
+    - navigation "Navegación principal" [ref=f17e57]:
+      - link "Inicio" [ref=f17e58] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f17e63] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f17e66] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f17e70] [cursor=pointer]
+  - dialog [ref=f17e76]:
+    - banner [ref=f17e77]:
+      - generic [ref=f17e78]:
+        - heading "Nuevo movimiento" [level=2] [ref=f17e79]
+        - paragraph [ref=f17e80]: Los importes se guardan en la moneda del movimiento.
+      - button "Cerrar" [ref=f17e81] [cursor=pointer]
+    - generic [ref=f17e88]:
+      - group "Tipo" [ref=f17e89]:
+        - button "Ingreso" [ref=f17e90] [cursor=pointer]
+        - button "Gasto" [pressed] [ref=f17e91] [cursor=pointer]
+      - generic [ref=f17e92]:
+        - generic [ref=f17e93]:
+          - generic [ref=f17e94]:
+            - generic [ref=f17e95]: Fecha *
+            - textbox "Fecha" [ref=f17e97]: 01/11/2026
+          - textbox: 2026-11-01
+        - button "Hoy" [ref=f17e98] [cursor=pointer]
+        - button "Ayer" [ref=f17e100] [cursor=pointer]
+      - generic [ref=f17e103]:
+        - generic [ref=f17e104]: Importe *
+        - generic [ref=f17e105]:
+          - generic [aria-hidden] [ref=f17e106]: $
+          - textbox "Importe" [ref=f17e107]:
+            - /placeholder: 0,00
+      - generic [ref=f17e108]:
+        - group "Moneda" [ref=f17e109]:
+          - button "ARS" [pressed] [ref=f17e110] [cursor=pointer]
+          - button "USD" [ref=f17e111] [cursor=pointer]
+        - button "Repetir" [active] [ref=f17e112] [cursor=pointer]
+      - generic [ref=f17e120]:
+        - generic [ref=f17e121]: Cuenta
+        - combobox "Cuenta" [ref=f17e123] [cursor=pointer]:
+          - option "Efectivo" [selected]
+          - option "Sueldo"
+          - option "Otros ingresos"
+      - generic [ref=f17e124]:
+        - generic [ref=f17e125]: Descripción
+        - textbox "Descripción" [ref=f17e127]:
+          - /placeholder: "Ej: Supermercado"
+      - generic [ref=f17e128]:
+        - generic [ref=f17e129]: Notas (opcional)
+        - textbox "Notas (opcional)" [ref=f17e131]:
+          - /placeholder: Observación breve
+      - generic [ref=f17e132]:
+        - generic [ref=f17e133]: Categoría
+        - combobox "Categoría" [ref=f17e135] [cursor=pointer]:
+          - option "Alimentación" [selected]
+          - option "Transporte"
+          - option "Vivienda"
+          - option "Servicios"
+          - option "Salud"
+          - option "Entretenimiento"
+          - option "Compras"
+          - option "Educación"
+          - option "Otros gastos"
+          - option "Crear categoría"
+    - contentinfo [ref=f17e136]:
+      - button "Cancelar" [ref=f17e137] [cursor=pointer]
+      - button "Crear" [ref=f17e139] [cursor=pointer]

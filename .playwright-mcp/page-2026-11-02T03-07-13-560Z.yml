@@ -1,0 +1,22 @@
+- generic [ref=f26e2]:
+  - main [ref=f26e3]:
+    - generic [ref=f26e6]:
+      - generic [ref=f26e7]:
+        - heading "Ingresá a tu cuenta" [level=1] [ref=f26e8]
+        - paragraph [ref=f26e9]: Ingresos, gastos y presupuestos en pesos y dólares.
+      - button "Continuar con Google" [disabled] [ref=f26e11]
+      - paragraph [ref=f26e19]:
+        - text: Solo usamos tu cuenta de Google para identificarte. Iniciar sesión no implica aceptar los documentos; para usar la aplicación vas a tener que confirmarlo por separado. Podés leer los
+        - link "Términos" [ref=f26e20] [cursor=pointer]:
+          - /url: /terminos
+        - text: y la
+        - link "Política de privacidad" [ref=f26e21] [cursor=pointer]:
+          - /url: /privacidad
+        - text: .
+    - complementary [ref=f26e22]:
+      - generic [ref=f26e24]:
+        - heading "Cada peso, en su lugar." [level=2] [ref=f26e25]
+        - paragraph [ref=f26e26]: Lo que entra, lo que sale y lo que te queda.
+  - status [ref=f26e27]:
+    - paragraph [ref=f26e28]: Actualización lista. Guardá lo que estés haciendo y elegí cuándo aplicarla.
+    - button "Actualizar" [ref=f26e29] [cursor=pointer]

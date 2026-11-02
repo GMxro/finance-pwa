@@ -61,9 +61,7 @@ export function LedgerList({
       <div className="ui-ledger__head" aria-hidden="true">
         <span />
         <span>Movimiento</span>
-        <span>Categoría</span>
-        <span>Fecha</span>
-        <span className="ui-ledger__head-amount">Monto</span>
+        <span>Monto</span>
         <span />
       </div>
       {[...groups].map(([day, dayItems]) => (
@@ -86,7 +84,7 @@ export function LedgerList({
               <div className="ui-ledger__icon">
                 <CategoryIcon iconKey={categoryIcon(item.categoryId)} size="sm" />
               </div>
-               <div className="ui-ledger__main">
+              <div className="ui-ledger__main">
                 <span className="ui-ledger__title">{item.note || categoryName(item.categoryId)}</span>
                 <span className="ui-ledger__sub">
                   {categoryName(item.categoryId)}
@@ -94,8 +92,6 @@ export function LedgerList({
                   {item.pending && <span className="ui-ledger__pending" aria-label="Pendiente de sincronización">Pendiente</span>}
                 </span>
               </div>
-              <div className="ui-ledger__category">{categoryName(item.categoryId)}</div>
-              <div className="ui-ledger__date">{formatDate(item.occurredOn)}</div>
               <div className="ui-ledger__amount">
                 <Money
                   amountMinor={item.amountMinor}

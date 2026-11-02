@@ -50,14 +50,15 @@
   --weight-display: 450;
   --weight-label: 500;
 
-  --text-display: clamp(2.5rem, 2rem + 2.4vw, 3.5rem); /* 40 → 56 */
-  --text-h1: clamp(1.9rem, 1.6rem + 1.1vw, 2.5rem);    /* 30 → 40 */
-  --text-h2: 1.75rem;                                   /* 28 */
-  --text-h3: 1.25rem;                                   /* 20 */
-  --text-body: 1rem;                                    /* 16 */
-  --text-sm: 0.875rem;                                  /* 14 */
-  --text-caption: 0.8125rem;                            /* 13 */
-  --text-micro: 0.75rem;                                /* 12 */
+  /* Tipografía unificada mobile: 24 / 16 / 14 / 12 */
+  --text-page-title: 1.5rem;      /* 24px */
+  --text-section-title: 1rem;      /* 16px */
+  --text-body: 0.875rem;           /* 14px */
+  --text-caption: 0.75rem;         /* 12px */
+  --text-micro: 0.6875rem;         /* 11px */
+
+  /* Inputs SIEMPRE 16px para evitar zoom iOS */
+  --text-input: 1rem;              /* 16px */
 
   --leading-display: 1.02;
   --leading-title: 1.12;
@@ -69,26 +70,37 @@
   --tracking-body: -0.006em;
   --tracking-caption: 0.01em;
 
-  /* ---- Space ---- */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-20: 5rem;
+  /* ---- Space: escala 4/8/12/16 ---- */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* Aliases semánticos */
+  --gap-field: var(--space-3);      /* 12px entre campos */
+  --gap-section: var(--space-5);    /* 20px entre secciones */
+  --gap-inline: var(--space-2);     /* 8px inline */
+  --gap-stack: var(--space-3);      /* 12px stack */
+  --page-padding: var(--space-4);   /* 16px padding pantalla */
+  --page-padding-bottom: var(--space-6); /* 24px bottom padding */
 
   /* ---- Geometry ---- */
-  --radius-card: 24px;
-  --radius-panel: 32px;
+  --radius-card: 20px;
+  --radius-panel: 24px;
   --radius-pill: 999px;
-  --control-height: 48px;
-  --control-height-sm: 40px;
-  --control-height-lg: 52px;
+  --radius-field: 12px;
+
+  /* ---- Control Heights (tokens únicos) ---- */
+  --control-h-sm: 32px;   /* botón chico */
+  --control-h-md: 40px;   /* botón estándar */
+  --control-h-lg: 44px;   /* input/select, botón grande */
+  --control-h-xl: 56px;   /* fila lista, bottom nav */
 
   /* ---- Motion ---- */
   --dur-fast: 160ms;
@@ -103,11 +115,18 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  --bottom-nav-height: 68px;
+  --bottom-nav-height: 56px;  /* reducido de 68px */
+
+  /* ---- Modal / Sheet ---- */
+  --sheet-max-height: 92dvh;           /* nunca vh */
+  --sheet-header-h: 56px;
+  --sheet-footer-h: 56px;
+  --sheet-radius: 24px;
 }
 
 @media (max-width: 640px) {
   :root {
-    --page-gutter: 20px;
+    --page-gutter: var(--page-padding);  /* 16px */
+    --page-padding-bottom: var(--space-5); /* 20px */
   }
 }

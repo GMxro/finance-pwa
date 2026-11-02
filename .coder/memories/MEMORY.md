@@ -5,3 +5,6 @@
 - [Security Boundaries](security-boundaries.md) — Origin validation, rate limits, body limits, and authentication patterns
 - [User Preferences](user-preferences.md) — User's expectations for audit depth, evidence-based reporting, and fix verification
 - [Planned Features Cuotas Recurrencias](planned-features-cuotas-recurrencias.md) — Roadmap aprobado: cuotas, recurrencias, compromisos y calendario, con decisiones clave y pendientes
+- [Modal Nuevo Movimiento — Bugs](modal-nuevo-movimiento-bugs.md) — Inventario de bugs del modal: 7+ resueltos (commits 35cab8f, 477c0ad, 4832e23, 3f7927a, 67a8639, 39a456f, 7673501) + verificación Playwright; M1/M2/M3/B1/B2 pendientes
+- [Implementation Workflow](implementation-workflow.md) — User prefers to discuss and plan before implementing changes
+- [Mobile UI Restructure](mobile-ui-restructure.md) — Spec and progress for complete mobile UI layer restructure (tokens → primitives → screens), no visual design changes

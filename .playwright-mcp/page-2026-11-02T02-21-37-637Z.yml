@@ -1,0 +1,36 @@
+- generic [ref=f16e10]:
+  - generic [ref=f16e12]:
+    - banner [ref=f16e13]:
+      - generic [ref=f16e14]:
+        - generic [ref=f16e15]: Ingresos y gastos
+        - heading "Movimientos" [level=1] [ref=f16e16]
+      - button "Nuevo movimiento" [ref=f16e18] [cursor=pointer]
+    - generic [ref=f16e22]:
+      - generic [ref=f16e23]:
+        - button "Mes anterior" [ref=f16e24] [cursor=pointer]
+        - generic [ref=f16e27]: Noviembre de 2026
+        - button "Mes siguiente" [disabled] [ref=f16e28]
+      - button "Filtros" [ref=f16e31] [cursor=pointer]
+    - generic [ref=f16e36]:
+      - generic [ref=f16e37]: Buscar movimientos
+      - searchbox "Buscar movimientos" [ref=f16e39]
+    - region "01/11/2026" [ref=f16e133]:
+      - heading "01/11/2026" [level=3] [ref=f16e134]
+      - button "Compras Compras Efectivo $ 500,00" [active] [ref=f16e135] [cursor=pointer]:
+        - generic [ref=f16e141]:
+          - generic [ref=f16e142]: Compras
+          - generic [ref=f16e143]:
+            - text: Compras
+            - generic [aria-hidden] [ref=f16e144]: ·
+            - text: Efectivo
+        - generic [ref=f16e146]:
+          - generic [aria-hidden] [ref=f16e147]: −
+          - text: $ 500,00
+  - navigation "Navegación principal" [ref=f16e47]:
+    - link "Inicio" [ref=f16e48] [cursor=pointer]:
+      - /url: /
+    - link "Movimientos" [ref=f16e53] [cursor=pointer]:
+      - /url: /movimientos
+    - link "Estadísticas" [ref=f16e56] [cursor=pointer]:
+      - /url: /estadisticas
+    - button "Más" [ref=f16e60] [cursor=pointer]

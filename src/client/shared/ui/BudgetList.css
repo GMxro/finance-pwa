@@ -4,40 +4,37 @@
 }
 
 .ui-budget {
-  padding: var(--space-4) 0;
+  padding: var(--gap-field) 0;
+  min-height: var(--control-h-xl);
 }
 
 .ui-budget + .ui-budget {
   border-top: 1px solid var(--color-line);
 }
 
-.ui-budgets--compact .ui-budget {
-  padding: var(--space-3) 0;
-}
-
 .ui-budget__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  gap: var(--gap-field);
+  margin-bottom: var(--gap-field);
 }
 
 .ui-budget__identity {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--gap-field);
   min-width: 0;
 }
 
 .ui-budget__select {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-  min-height: 44px;
+  gap: var(--gap-field);
+  min-height: var(--control-h-lg);
   min-width: 0;
   text-align: left;
-  border-radius: 12px;
+  border-radius: var(--radius-field);
 }
 
 .ui-budget__select:hover .ui-budget__name {
@@ -47,9 +44,9 @@
 .ui-budget__name {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--gap-inline);
   min-width: 0;
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
   font-weight: var(--weight-label);
   white-space: nowrap;
   overflow: hidden;
@@ -59,7 +56,7 @@
 .ui-budget__amounts {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: var(--space-1);
   flex: 0 1 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -68,7 +65,7 @@
 }
 
 .ui-budget__limit {
-  font-size: var(--text-micro);
+  font-size: var(--text-caption);
   color: var(--color-stone);
   display: inline-flex;
   gap: 3px;
@@ -78,9 +75,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-  font-size: var(--text-micro);
+  gap: var(--gap-inline);
+  margin-top: var(--gap-inline);
+  font-size: var(--text-caption);
   color: var(--color-stone);
 }
 
@@ -100,13 +97,13 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
+  gap: var(--gap-field);
+  padding: var(--space-3) 0;
 }
 
 .ui-budgets__empty {
   color: var(--color-stone);
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
 }
 
 @media (max-width: 640px) {

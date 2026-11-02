@@ -2,8 +2,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-4);
-  padding: clamp(var(--space-6), 4vw, var(--space-10));
+  gap: var(--gap-field);
+  padding: var(--space-6);
   background: var(--color-paper);
   border-radius: var(--radius-card);
 }
@@ -24,7 +24,7 @@
 }
 
 .ui-empty__title {
-  font-size: var(--text-h3);
+  font-size: var(--text-section-title);
   font-weight: var(--weight-label);
   letter-spacing: -0.015em;
 }
@@ -32,5 +32,5 @@
 .ui-empty__message {
   margin-top: var(--space-2);
   color: var(--color-stone);
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
 }

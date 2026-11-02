@@ -1,0 +1,98 @@
+- generic [ref=f16e1]:
+  - generic [ref=f16e10]:
+    - generic [ref=f16e12]:
+      - banner [ref=f16e13]:
+        - generic [ref=f16e14]:
+          - generic [ref=f16e15]: Ingresos y gastos
+          - heading "Movimientos" [level=1] [ref=f16e16]
+        - button "Nuevo movimiento" [ref=f16e18] [cursor=pointer]
+      - generic [ref=f16e22]:
+        - generic [ref=f16e23]:
+          - button "Mes anterior" [ref=f16e24] [cursor=pointer]
+          - generic [ref=f16e27]: Noviembre de 2026
+          - button "Mes siguiente" [disabled] [ref=f16e28]
+        - button "Filtros" [ref=f16e31] [cursor=pointer]
+      - generic [ref=f16e36]:
+        - generic [ref=f16e37]: Buscar movimientos
+        - searchbox "Buscar movimientos" [ref=f16e39]
+      - region "01/11/2026" [ref=f16e133]:
+        - heading "01/11/2026" [level=3] [ref=f16e134]
+        - button "Compras Compras Efectivo $ 500,00" [active] [ref=f16e135] [cursor=pointer]:
+          - generic [ref=f16e141]:
+            - generic [ref=f16e142]: Compras
+            - generic [ref=f16e143]:
+              - text: Compras
+              - generic [aria-hidden] [ref=f16e144]: ·
+              - text: Efectivo
+          - generic [ref=f16e146]:
+            - generic [aria-hidden] [ref=f16e147]: −
+            - text: $ 500,00
+    - navigation "Navegación principal" [ref=f16e47]:
+      - link "Inicio" [ref=f16e48] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f16e53] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f16e56] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f16e60] [cursor=pointer]
+  - dialog [ref=f16e148]:
+    - banner [ref=f16e149]:
+      - generic [ref=f16e150]:
+        - heading "Editar movimiento" [level=2] [ref=f16e151]
+        - paragraph [ref=f16e152]: Los importes se guardan en la moneda del movimiento.
+      - button "Cerrar" [ref=f16e153] [cursor=pointer]
+    - generic [ref=f16e160]:
+      - group "Tipo" [ref=f16e161]:
+        - button "Ingreso" [ref=f16e162] [cursor=pointer]
+        - button "Gasto" [pressed] [ref=f16e163] [cursor=pointer]
+      - generic [ref=f16e164]:
+        - generic [ref=f16e165]:
+          - generic [ref=f16e166]:
+            - generic [ref=f16e167]: Fecha *
+            - textbox "Fecha" [ref=f16e169]: 01/11/2026
+          - textbox: 2026-11-01
+        - button "Hoy" [ref=f16e170] [cursor=pointer]
+        - button "Ayer" [ref=f16e172] [cursor=pointer]
+      - generic [ref=f16e175]:
+        - generic [ref=f16e176]: Importe *
+        - generic [ref=f16e177]:
+          - generic [aria-hidden] [ref=f16e178]: $
+          - textbox "Importe" [ref=f16e179]:
+            - /placeholder: 0,00
+            - text: "500"
+      - generic [ref=f16e180]:
+        - group "Moneda" [ref=f16e181]:
+          - button "ARS" [pressed] [ref=f16e182] [cursor=pointer]
+          - button "USD" [ref=f16e183] [cursor=pointer]
+        - button "Repetir" [ref=f16e184] [cursor=pointer]
+      - generic [ref=f16e192]:
+        - generic [ref=f16e193]: Cuenta
+        - combobox "Cuenta" [ref=f16e195] [cursor=pointer]:
+          - option "Efectivo" [selected]
+          - option "Sueldo"
+          - option "Otros ingresos"
+      - generic [ref=f16e196]:
+        - generic [ref=f16e197]: Descripción
+        - textbox "Descripción" [ref=f16e199]:
+          - /placeholder: "Ej: Supermercado"
+      - generic [ref=f16e200]:
+        - generic [ref=f16e201]: Notas (opcional)
+        - textbox "Notas (opcional)" [ref=f16e203]:
+          - /placeholder: Observación breve
+      - generic [ref=f16e204]:
+        - generic [ref=f16e205]: Categoría
+        - combobox "Categoría" [ref=f16e207] [cursor=pointer]:
+          - option "Alimentación"
+          - option "Transporte"
+          - option "Vivienda"
+          - option "Servicios"
+          - option "Salud"
+          - option "Entretenimiento"
+          - option "Compras" [selected]
+          - option "Educación"
+          - option "Otros gastos"
+          - option "Crear categoría"
+    - contentinfo [ref=f16e208]:
+      - button "Eliminar" [ref=f16e209] [cursor=pointer]
+      - button "Cancelar" [ref=f16e211] [cursor=pointer]
+      - button "Guardar" [ref=f16e213] [cursor=pointer]

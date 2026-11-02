@@ -1,34 +1,55 @@
 import React, { useId } from 'react';
 import './SegmentedControl.css';
 
-interface Option {
+export interface SegmentedOption {
   value: string;
   label: string;
 }
 
-interface SegmentedControlProps {
+export interface SegmentedControlProps {
   value: string;
   onChange: (value: string) => void;
-  options: Option[];
-  label: string;
-  tone?: 'light' | 'onInk';
+  options: SegmentedOption[];
+  label?: string;
+  id?: string;
+  disabled?: boolean;
   className?: string;
+  'aria-label'?: string;
+  'aria-invalid'?: 'true' | 'false';
+  'aria-describedby'?: string;
 }
 
-export function SegmentedControl({ value, onChange, options, label, tone = 'light', className = '' }: SegmentedControlProps) {
-  const id = useId();
+export function SegmentedControl({
+  value,
+  onChange,
+  options,
+  label,
+  id,
+  disabled,
+  className = '',
+  'aria-label': ariaLabel,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy
+}: SegmentedControlProps) {
+  const generatedId = useId();
+  const controlId = id || generatedId;
+
   return (
-    <div className={`ui-segment ui-segment--${tone} ${className}`} role="group" aria-label={label}>
+    <div className={`ui-segment ${className}`} role="group" aria-label={ariaLabel || label}>
       {options.map(opt => {
         const active = opt.value === value;
         return (
           <button
             key={opt.value}
             type="button"
-            id={`${id}-${opt.value}`}
-            className={`ui-segment__item ${active ? 'is-active' : ''}`}
+            id={`${controlId}-${opt.value}`}
+            className={`ui-segment__item ${active ? 'is-active' : ''} ${disabled ? 'is-disabled' : ''}`}
             aria-pressed={active}
-            onClick={() => onChange(opt.value)}
+            aria-disabled={disabled}
+            aria-invalid={ariaInvalid}
+            aria-describedby={ariaDescribedBy}
+            onClick={() => !disabled && onChange(opt.value)}
+            disabled={disabled}
           >
             {opt.label}
           </button>

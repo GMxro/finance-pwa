@@ -4,7 +4,7 @@ import { api } from '@shared/api/client';
 import { useAuth } from '../../app/providers';
 import type { BudgetWithSpent } from '@contracts/budget';
 import type { CategoryResponse } from '@contracts/category';
-import { type CurrencyCode } from '@domain/money';
+import type { CurrencyCode } from '@domain/money';
 import { todayLocalISO } from '@domain/date';
 import { useCurrencyInput } from '@shared/hooks/useCurrencyInput';
 import { Page, PageHeader, Stack, Inline, Grid } from '@shared/ui/Layout';
@@ -52,8 +52,6 @@ export function BudgetsPage() {
   });
   const setLimitMinor = limitInput.setValueMinor;
 
-  // El límite se sincroniza explícitamente al abrir el modal (create/edit).
-  // No re-formatear aquí para no pisar el cursor del input.
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -214,7 +212,7 @@ export function BudgetsPage() {
       )}
 
       {items.length > 0 && (
-        <Panel tone="paper" radius="panel" padding="lg">
+        <Panel tone="paper" radius="panel" padding="none">
           <BudgetList
             items={items}
             categoryName={categoryName}

@@ -51,6 +51,8 @@ review_after: 2027-05-01
 - **Date defaults**: Always use `todayLocalISO()` / `currentMonthISO()` from `domain/date.ts`. Never `new Date().toISOString().slice()`.
 - **Sync listener**: Global `online`/`focus` listener in `providers.tsx`, not per-page. Deduplicate by `userId`.
 - **Modal backdrop**: Close only when `event.target === event.currentTarget` (click on overlay), never on clicks inside content (F-08).
+- **Modal useEffect stabilization**: Store unstable parent callbacks (`onClose`, etc.) in a ref and keep the effect's dependency array to `[open]` only. The cleanup must NOT call `.focus()` on `previousActiveElement` on every re-run — restore focus only when the modal actually closes. Otherwise each keystroke (which re-renders the parent and recreates the callback) steals focus out of the modal. Pattern applied in `Modal.tsx` (commit 35cab8f).
+- **Autofocus explícito**: No depender de `autoFocusFirstEmpty` heurístico sobre inputs genéricos; usar `data-autofocus` en el campo objetivo (Importe) y excluir inputs ocultos (`type="date"` con `opacity:0`, `tabIndex={-1}`) del selector de foco y del tab trap.
 - **Modal busy guard**: Modals accept a `busy` prop; while busy, Escape, overlay click, and close button are disabled (F-24 second pass). Parent sets `busy` during async save/delete.
 - **Session bootstrap**: Set `user`/`session` in auth context **only after** bootstrap succeeds; on failure keep unauthenticated and surface error (F-03).
 - **Legal acceptance**: After `acceptLegalDocuments` succeeds, update in-memory `legalAcceptance` state; don't require re-fetch to reflect acceptance (F-04).
@@ -68,7 +70,8 @@ review_after: 2027-05-01
 
 ## Migration & Deployment
 
-- **Migrations**: Sequential (0001, 0002, 0004, 0005). No 0003 in repo — verify remote state before deploy.
+- **Migrations**: Sequential (0001, 0002, 0004, 0005, 0008). No 0003 in repo — verify remote state before deploy.
+- **Accounts model (2026-11-02)**: `accounts.kind` ∈ {cash, bank, credit_card, investment} (no wallet/other, no currency on account, `description` nullable). `transactions.account_id` is NOT NULL. `transactions.source_type` ∈ {manual, installment, recurring, initial}, default manual. Initial balance is an auto-created transaction on account creation (income if importe > 0, expense by abs if < 0, none if 0), excluded from period income/expense totals via `excludeInitialSql()` in `src/worker/application/transactions/transaction-filters.ts`; it still counts in balances. Transfers never count in period totals (separate table). Use the helper in every aggregation of income/expense. Migrations 0001/0002 were rewritten in place (no backward compat; DB assumed empty): recreate DB to apply (local: rm `.wrangler/state/v3/d1` + migrate; remote: new DB or drop+re-migrate) — do not touch remote without asking.
 - **Dexie schema**: Current v3. `upgrade` drops all tables — destructive for any pre-v3 clients. Plan version bump + migration if needed.
 - **MIN_APP_VERSION**: Must be set in `wrangler.jsonc` to block stale clients.
 - **Build**: `prebuild` deletes `dist/`. Use isolated `outDir` for Cloudflare build verification before cleaning.

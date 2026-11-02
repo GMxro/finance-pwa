@@ -1,18 +1,18 @@
 .ui-danger {
   border-top: 1px solid var(--color-line);
-  padding-top: var(--space-5);
+  padding-top: var(--gap-section);
 }
 
 .ui-danger__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--gap-field);
 }
 
 .ui-danger__title {
   font-family: var(--font-ui);
-  font-size: var(--text-body);
+  font-size: var(--text-section-title);
   font-weight: var(--weight-label);
   color: var(--color-ink);
 }
@@ -20,7 +20,7 @@
 .ui-danger__description {
   margin-top: var(--space-2);
   max-width: 62ch;
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
   color: var(--color-stone);
 }
 
@@ -34,20 +34,20 @@
 }
 
 .ui-danger__panel {
-  margin-top: var(--space-4);
+  margin-top: var(--gap-field);
   padding: var(--space-4);
   border: 1px solid var(--color-danger-line);
   border-radius: var(--radius-card);
   background: var(--color-danger-soft);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--gap-field);
 }
 
 .ui-danger__actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--space-2);
+  gap: var(--gap-inline);
 }
 
 @media (max-width: 560px) {

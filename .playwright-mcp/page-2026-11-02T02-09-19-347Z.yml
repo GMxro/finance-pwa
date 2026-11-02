@@ -1,0 +1,104 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e9]:
+    - complementary "Navegación principal" [ref=f2e10]:
+      - generic [ref=f2e11]: Finanzas
+      - navigation [ref=f2e13]:
+        - link "Inicio" [ref=f2e14] [cursor=pointer]:
+          - /url: /
+        - link "Movimientos" [ref=f2e20] [cursor=pointer]:
+          - /url: /movimientos
+        - link "Cuentas" [ref=f2e24] [cursor=pointer]:
+          - /url: /cuentas
+        - link "Presupuestos" [ref=f2e30] [cursor=pointer]:
+          - /url: /presupuestos
+        - link "Estadísticas" [ref=f2e37] [cursor=pointer]:
+          - /url: /estadisticas
+        - link "Ajustes" [ref=f2e42] [cursor=pointer]:
+          - /url: /ajustes
+      - generic [ref=f2e48]:
+        - link "Nuevo movimiento" [ref=f2e49] [cursor=pointer]:
+          - /url: /movimientos?new=expense
+        - button "Al día. Sincronizar ahora" [ref=f2e53] [cursor=pointer]:
+          - generic [ref=f2e54]: Al día
+        - generic [ref=f2e56]:
+          - generic [aria-hidden] [ref=f2e57]: G
+          - generic [ref=f2e58]:
+            - generic [ref=f2e59]: Gonzalo Marinaro
+            - generic [ref=f2e60]: gonzalogomezmarinaro@gmail.com
+    - generic [ref=f2e63]:
+      - banner [ref=f2e64]:
+        - generic [ref=f2e65]:
+          - generic [ref=f2e66]: Ingresos y gastos
+          - heading "Movimientos" [level=1] [ref=f2e67]
+        - button "Nuevo movimiento" [ref=f2e69] [cursor=pointer]
+      - generic [ref=f2e73]:
+        - generic [ref=f2e74]:
+          - button "Mes anterior" [ref=f2e75] [cursor=pointer]
+          - generic [ref=f2e78]: Noviembre de 2026
+          - button "Mes siguiente" [disabled] [ref=f2e79]
+        - button "Filtros" [ref=f2e82] [cursor=pointer]
+      - generic [ref=f2e87]:
+        - generic [ref=f2e88]: Buscar movimientos
+        - searchbox "Buscar movimientos" [ref=f2e90]
+      - generic [ref=f2e95]:
+        - heading "Sin movimientos" [level=3] [ref=f2e96]
+        - paragraph [ref=f2e97]: Todavía no registraste movimientos este mes.
+  - dialog [ref=f2e98]:
+    - banner [ref=f2e99]:
+      - generic [ref=f2e100]:
+        - heading "Nuevo movimiento" [level=2] [ref=f2e101]
+        - paragraph [ref=f2e102]: Los importes se guardan en la moneda del movimiento.
+      - button "Cerrar" [ref=f2e103] [cursor=pointer]
+    - generic [ref=f2e110]:
+      - group "Tipo" [ref=f2e111]:
+        - button "Ingreso" [ref=f2e112] [cursor=pointer]
+        - button "Gasto" [pressed] [ref=f2e113] [cursor=pointer]
+      - generic [ref=f2e114]:
+        - generic [ref=f2e115]:
+          - generic [ref=f2e116]:
+            - generic [ref=f2e117]: Fecha *
+            - textbox "Fecha" [ref=f2e119]: 01/11/2026
+          - textbox: 2026-11-01
+        - button "Hoy" [ref=f2e120] [cursor=pointer]
+        - button "Ayer" [ref=f2e122] [cursor=pointer]
+      - generic [ref=f2e125]:
+        - generic [ref=f2e126]: Importe *
+        - generic [ref=f2e127]:
+          - generic [aria-hidden] [ref=f2e128]: $
+          - textbox "Importe" [ref=f2e129]:
+            - /placeholder: 0,00
+      - generic [ref=f2e130]:
+        - group "Moneda" [ref=f2e131]:
+          - button "ARS" [pressed] [ref=f2e132] [cursor=pointer]
+          - button "USD" [ref=f2e133] [cursor=pointer]
+        - button "Repetir" [ref=f2e134] [cursor=pointer]
+      - generic [ref=f2e142]:
+        - generic [ref=f2e143]: Cuenta
+        - combobox "Cuenta" [ref=f2e145] [cursor=pointer]:
+          - option "Efectivo" [selected]
+          - option "Sueldo"
+          - option "Otros ingresos"
+      - generic [ref=f2e146]:
+        - generic [ref=f2e147]: Descripción
+        - textbox "Descripción" [ref=f2e149]:
+          - /placeholder: "Ej: Supermercado"
+      - generic [ref=f2e150]:
+        - generic [ref=f2e151]: Notas (opcional)
+        - textbox "Notas (opcional)" [ref=f2e153]:
+          - /placeholder: Observación breve
+      - generic [ref=f2e154]:
+        - generic [ref=f2e155]: Categoría
+        - combobox "Categoría" [ref=f2e157] [cursor=pointer]:
+          - option "Alimentación" [selected]
+          - option "Transporte"
+          - option "Vivienda"
+          - option "Servicios"
+          - option "Salud"
+          - option "Entretenimiento"
+          - option "Compras"
+          - option "Educación"
+          - option "Otros gastos"
+          - option "Crear categoría"
+    - contentinfo [ref=f2e158]:
+      - button "Cancelar" [ref=f2e159] [cursor=pointer]
+      - button "Crear" [ref=f2e161] [cursor=pointer]

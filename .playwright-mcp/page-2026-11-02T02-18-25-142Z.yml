@@ -1,0 +1,14 @@
+- main [ref=f12e9]:
+  - generic [ref=f12e12]:
+    - generic [ref=f12e13]:
+      - paragraph [ref=f12e14]: Paso 2 de 2
+      - heading "Todo listo." [level=1] [ref=f12e41]
+      - paragraph [ref=f12e16]: Vas a arrancar con moneda peso argentino y categorías comunes ya creadas.
+    - status [ref=f12e46]:
+      - generic [ref=f12e47]: Origen no permitido
+    - button "Comenzar" [ref=f12e42] [cursor=pointer]
+    - button "Volver" [ref=f12e43] [cursor=pointer]
+  - complementary [ref=f12e36]:
+    - generic [ref=f12e38]:
+      - heading "Listo para empezar." [level=2] [ref=f12e45]
+      - paragraph [ref=f12e40]: Tu cuenta queda configurada con categorías iniciales para ingresos y gastos. Podés editarlas cuando quieras.

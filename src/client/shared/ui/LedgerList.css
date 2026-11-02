@@ -4,17 +4,13 @@
 
 .ui-ledger__head {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1.7fr) minmax(0, 0.9fr) 96px 120px 96px;
+  grid-template-columns: 32px minmax(0, 1fr) 120px 96px;
   align-items: center;
-  gap: var(--space-3);
-  padding: 0 var(--space-4) var(--space-3);
+  gap: var(--gap-inline);
+  padding: 0 var(--space-4) var(--space-2);
   color: var(--color-stone);
   font-size: var(--text-micro);
   letter-spacing: var(--tracking-caption);
-}
-
-.ui-ledger__head-amount {
-  text-align: right;
 }
 
 .ui-ledger__group + .ui-ledger__group {
@@ -22,7 +18,7 @@
 }
 
 .ui-ledger__day {
-  padding: var(--space-3) var(--space-4) var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-1);
   color: var(--color-stone-strong);
   font-family: var(--font-ui);
   font-size: var(--text-caption);
@@ -31,11 +27,11 @@
 
 .ui-ledger__row {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1.7fr) minmax(0, 0.9fr) 96px 120px 96px;
+  grid-template-columns: 32px minmax(0, 1fr) 120px 96px;
   align-items: center;
-  gap: var(--space-3);
-  min-height: 72px;
-  padding: var(--space-3) var(--space-4);
+  gap: var(--gap-inline);
+  min-height: var(--control-h-xl);
+  padding: var(--space-2) var(--space-4);
   border-top: 1px solid var(--color-line);
 }
 
@@ -71,7 +67,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
   font-weight: var(--weight-label);
   line-height: 1.3;
   overflow: hidden;
@@ -83,7 +79,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--text-micro);
+  font-size: var(--text-caption);
   color: var(--color-stone);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -94,13 +90,9 @@
   color: var(--color-stone-light);
 }
 
-.ui-ledger__category,
-.ui-ledger__date {
-  font-size: var(--text-caption);
+.ui-ledger__pending {
   color: var(--color-stone);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: var(--weight-label);
 }
 
 .ui-ledger__amount {
@@ -119,15 +111,15 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
-  padding: var(--space-2) 0;
+  padding: var(--space-3) 0;
 }
 
 .ui-ledger__empty {
   color: var(--color-stone);
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
 }
 
-@media (max-width: 820px) {
+@media (max-width: 640px) {
   .ui-ledger__head {
     display: none;
   }
@@ -136,8 +128,8 @@
     grid-template-columns: 32px minmax(0, 1fr) auto;
     grid-template-areas: 'icon main amount';
     gap: var(--space-2);
-    padding: var(--space-3) var(--space-4);
-    min-height: 64px;
+    padding: var(--space-2) var(--space-4);
+    min-height: var(--control-h-xl);
   }
 
   .ui-ledger__day {
@@ -148,10 +140,6 @@
   .ui-ledger__main { grid-area: main; }
   .ui-ledger__amount { grid-area: amount; }
   .ui-ledger__actions {
-    display: none;
-  }
-  .ui-ledger__category,
-  .ui-ledger__date {
     display: none;
   }
 }

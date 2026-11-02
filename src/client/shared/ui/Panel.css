@@ -45,11 +45,12 @@
 .ui-panel--radius-none { border-radius: 0; }
 
 .ui-panel--pad-none { padding: 0; }
-.ui-panel--pad-sm { padding: var(--space-4); }
-.ui-panel--pad-md { padding: var(--space-6); }
-.ui-panel--pad-lg { padding: clamp(var(--space-6), 3vw, var(--space-8)); }
+.ui-panel--pad-sm { padding: var(--space-3); }
+.ui-panel--pad-md { padding: var(--space-4); }
+.ui-panel--pad-lg { padding: var(--space-5); }
 
 @media (max-width: 640px) {
-  .ui-panel--pad-md { padding: var(--space-5); }
-  .ui-panel--pad-lg { padding: var(--space-6); }
+  .ui-panel--pad-sm { padding: var(--space-3); }
+  .ui-panel--pad-md { padding: var(--space-4); }
+  .ui-panel--pad-lg { padding: var(--space-4); }
 }

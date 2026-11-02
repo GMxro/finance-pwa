@@ -12,6 +12,7 @@ import { Panel } from '@shared/ui/Panel';
 import { Button, IconButton } from '@shared/ui/Button';
 import { Input } from '@shared/ui/Input';
 import { Select } from '@shared/ui/Select';
+import { SegmentedControl, SegmentedOption } from '@shared/ui/SegmentedControl';
 import { Modal } from '@shared/ui/Modal';
 import { Notice } from '@shared/ui/Notice';
 import { EmptyState } from '@shared/ui/EmptyState';
@@ -33,6 +34,13 @@ const KIND_ICONS: Record<AccountKind, React.ElementType> = {
   credit_card: CreditCard,
   investment: TrendingUp
 };
+
+const KIND_OPTIONS: SegmentedOption[] = [
+  { value: 'cash', label: 'Efectivo' },
+  { value: 'bank', label: 'Banco' },
+  { value: 'credit_card', label: 'Tarjeta' },
+  { value: 'investment', label: 'Inversión' }
+];
 
 interface AccountForm {
   name: string;
@@ -84,7 +92,6 @@ export function AccountsPage() {
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferForm, setTransferForm] = useState<TransferForm>(() => emptyTransferForm(defaultCurrency));
 
-  // Hooks para inputs de moneda con formateo ARS en vivo
   const fromAmountInput = useCurrencyInput({
     currency: transferForm.currency,
     initialValue: transferForm.amountMinor,
@@ -127,7 +134,6 @@ export function AccountsPage() {
     setArchiveTarget(account);
   };
 
-  // Actualizar hooks cuando cambia la moneda
   useEffect(() => {
     setFromAmountMinor(transferForm.amountMinor);
   }, [transferForm.currency, transferForm.amountMinor, setFromAmountMinor]);
@@ -387,7 +393,7 @@ export function AccountsPage() {
   };
 
   const renderBalances = (balances: AccountBalance[]) => {
-    if (balances.length === 0) return <Text variant="small" tone="stone">Sin movimientos</Text>;
+    if (balances.length === 0) return <Text variant="caption" tone="stone">Sin movimientos</Text>;
     return (
       <Inline gap="md" className="accounts-balances">
         {balances.map(balance => (
@@ -420,7 +426,7 @@ export function AccountsPage() {
       )}
 
       {totals.length > 0 && (
-        <Panel tone="paper" radius="panel" padding="lg">
+        <Panel tone="paper" radius="panel" padding="md">
           <Text variant="caption" tone="stone">Total entre cuentas</Text>
           <Inline gap="lg" className="accounts-totals">
             {totals.map(([currency, amount]) => (
@@ -455,7 +461,7 @@ export function AccountsPage() {
                     title={
                       <Inline gap="sm">
                         <span>{account.name}</span>
-                        {account.isDefault && <span className="accounts-badge">Predeterminada</span>}
+                        {account.isDefault && <span className="ui-row__badge">Predeterminada</span>}
                       </Inline>
                     }
                     subtitle={KIND_LABELS[account.kind]}
@@ -463,16 +469,16 @@ export function AccountsPage() {
                     trailing={
                       <Inline gap="xs" className="accounts-row-actions">
                         {!account.isDefault && (
-                        <Button variant="ghost" size="sm" onClick={() => void makeDefault(account)} disabled={saving}>
-                          Predeterminar
-                        </Button>
-                      )}
-                      <IconButton label={`Editar ${account.name}`} onClick={() => openEditAccount(account)} disabled={saving}>
-                        <Pencil size={16} />
-                      </IconButton>
-                      <IconButton label={`Archivar ${account.name}`} onClick={() => void requestArchive(account)} disabled={saving}>
-                        <Archive size={16} />
-                      </IconButton>
+                          <Button variant="ghost" size="sm" onClick={() => void makeDefault(account)} disabled={saving}>
+                            Predeterminar
+                          </Button>
+                        )}
+                        <IconButton label={`Editar ${account.name}`} onClick={() => openEditAccount(account)} disabled={saving}>
+                          <Pencil size={16} />
+                        </IconButton>
+                        <IconButton label={`Archivar ${account.name}`} onClick={() => void requestArchive(account)} disabled={saving}>
+                          <Archive size={16} />
+                        </IconButton>
                       </Inline>
                     }
                   />
@@ -512,7 +518,7 @@ export function AccountsPage() {
       <Section title="Transferencias">
         {transfers.length === 0 ? (
           <Panel tone="paper" radius="panel" padding="lg">
-            <Text variant="small" tone="stone">
+            <Text variant="body" tone="stone">
               Todavía no registraste transferencias. Mové plata entre tus cuentas sin que cuente como gasto.
             </Text>
           </Panel>
@@ -557,7 +563,7 @@ export function AccountsPage() {
          onClose={() => setAccountModal(null)}
          busy={saving}
          title={accountModal?.mode === 'edit' ? 'Editar cuenta' : 'Nueva cuenta'}
-        description="Las cuentas agrupan tu plata: efectivo, banco, billeteras."
+         description="Las cuentas agrupan tu plata: efectivo, banco, billeteras."
         footer={
           <>
             <Button variant="secondary" onClick={() => setAccountModal(null)} disabled={saving}>Cancelar</Button>
@@ -578,16 +584,11 @@ export function AccountsPage() {
               maxLength={60}
               required
             />
-            <Select
+            <SegmentedControl
               label="Tipo"
               value={accountForm.kind}
               onChange={value => setAccountForm(form => ({ ...form, kind: value as AccountKind }))}
-              options={[
-                { value: 'cash', label: 'Efectivo' },
-                { value: 'bank', label: 'Banco' },
-                { value: 'credit_card', label: 'Tarjeta de crédito' },
-                { value: 'investment', label: 'Inversión' }
-              ]}
+              options={KIND_OPTIONS}
             />
             <Input
               label="Descripción (opcional)"
@@ -598,16 +599,16 @@ export function AccountsPage() {
             />
             {accountModal?.mode === 'create' && (
               <>
-                <div className="currency-input">
-                  <Input
-                    label="Importe inicial"
-                    value={initialAmountInput.displayValue}
-                    onChange={initialAmountInput.onChangeString}
-                    onBlur={initialAmountInput.onBlur}
-                    placeholder="0"
-                    inputMode="numeric"
-                  />
-                </div>
+                <Input
+                  label="Importe inicial (opcional)"
+                  value={initialAmountInput.displayValue}
+                  onChange={initialAmountInput.onChangeString}
+                  onBlur={initialAmountInput.onBlur}
+                  onFocus={initialAmountInput.onFocus}
+                  placeholder="0"
+                  inputMode="decimal"
+                  prefix="$"
+                />
                 <Select
                   label="Moneda del importe inicial"
                   value={accountForm.initialCurrency}
@@ -628,7 +629,7 @@ export function AccountsPage() {
          onClose={() => setTransferOpen(false)}
          busy={saving}
          title="Transferir entre cuentas"
-        description="Sale de una cuenta y entra en otra. No es gasto ni ingreso."
+         description="Sale de una cuenta y entra en otra. No es gasto ni ingreso."
         footer={
           <>
             <Button variant="secondary" onClick={() => setTransferOpen(false)} disabled={saving}>Cancelar</Button>
@@ -700,7 +701,7 @@ export function AccountsPage() {
             {transferForm.crossCurrency && (
               <Grid columns={2} gap="md">
                 <div style={{ flex: 1 }}>
-<Input
+                  <Input
                     label="Monto que entra"
                     value={toAmountInput.displayValue}
                     onChange={toAmountInput.onChangeString}
@@ -750,7 +751,7 @@ export function AccountsPage() {
          onClose={() => setArchiveTarget(null)}
          busy={saving}
          title="Archivar cuenta"
-        description={archiveTarget ? (archiveHasCommitments ? "Estás a punto de archivar una cuenta que tiene compromisos financieros pendientes. ¿Estás seguro de que querés continuar?" : `“${archiveTarget.name}” deja de aparecer al cargar movimientos. Su historial se conserva.`) : undefined}
+         description={archiveTarget ? (archiveHasCommitments ? "Estás a punto de archivar una cuenta que tiene compromisos financieros pendientes. ¿Estás seguro de que querés continuar?" : `“${archiveTarget.name}” deja de aparecer al cargar movimientos. Su historial se conserva.`) : undefined}
         footer={
           <>
             <Button variant="secondary" onClick={() => setArchiveTarget(null)} disabled={saving}>Cancelar</Button>
@@ -758,7 +759,7 @@ export function AccountsPage() {
           </>
         }
       >
-        <Text variant="small" tone="stone">Podés archivarla igual: los movimientos viejos no se tocan.</Text>
+        <Text variant="body" tone="stone">Podés archivarla igual: los movimientos viejos no se tocan.</Text>
       </Modal>
 
       <Modal
@@ -766,7 +767,7 @@ export function AccountsPage() {
          onClose={() => setDeleteTarget(null)}
          busy={saving}
          title="Eliminar transferencia"
-        description={deleteTarget ? `${deleteTarget.fromAccountName} → ${deleteTarget.toAccountName}` : undefined}
+         description={deleteTarget ? `${deleteTarget.fromAccountName} → ${deleteTarget.toAccountName}` : undefined}
         footer={
           <>
             <Button variant="secondary" onClick={() => setDeleteTarget(null)} disabled={saving}>Cancelar</Button>
@@ -774,7 +775,7 @@ export function AccountsPage() {
           </>
         }
       >
-        <Text variant="small" tone="stone">Los saldos de las dos cuentas vuelven atrás.</Text>
+        <Text variant="body" tone="stone">Los saldos de las dos cuentas vuelven atrás.</Text>
       </Modal>
     </Page>
   );

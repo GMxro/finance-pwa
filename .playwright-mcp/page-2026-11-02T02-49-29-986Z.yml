@@ -1,0 +1,103 @@
+- generic [ref=f21e1]:
+  - generic [ref=f21e10]:
+    - generic [ref=f21e12]:
+      - banner [ref=f21e13]:
+        - generic [ref=f21e14]:
+          - generic [ref=f21e15]: Ingresos y gastos
+          - heading "Movimientos" [level=1] [ref=f21e16]
+        - button "Nuevo movimiento" [ref=f21e18] [cursor=pointer]
+      - generic [ref=f21e22]:
+        - generic [ref=f21e23]:
+          - button "Mes anterior" [ref=f21e24] [cursor=pointer]
+          - generic [ref=f21e27]: Noviembre de 2026
+          - button "Mes siguiente" [disabled] [ref=f21e28]
+        - button "Filtros" [ref=f21e31] [cursor=pointer]
+      - generic [ref=f21e36]:
+        - generic [ref=f21e37]: Buscar movimientos
+        - searchbox "Buscar movimientos" [ref=f21e39]
+      - region "01/11/2026" [ref=f21e42]:
+        - heading "01/11/2026" [level=3] [ref=f21e43]
+        - button "Compras Compras Efectivo $ 500,00" [ref=f21e44] [cursor=pointer]:
+          - generic [ref=f21e50]:
+            - generic [ref=f21e51]: Compras
+            - generic [ref=f21e52]:
+              - text: Compras
+              - generic [aria-hidden] [ref=f21e53]: ·
+              - text: Efectivo
+          - generic [ref=f21e55]:
+            - generic [aria-hidden] [ref=f21e56]: −
+            - text: $ 500,00
+    - navigation "Navegación principal" [ref=f21e57]:
+      - link "Inicio" [ref=f21e58] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f21e63] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f21e66] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f21e70] [cursor=pointer]
+  - dialog [ref=f21e76]:
+    - banner [ref=f21e77]:
+      - generic [ref=f21e78]:
+        - heading "Nuevo movimiento" [level=2] [ref=f21e79]
+        - paragraph [ref=f21e80]: Los importes se guardan en la moneda del movimiento.
+      - button "Cerrar" [ref=f21e81] [cursor=pointer]
+    - generic [ref=f21e88]:
+      - group "Tipo" [ref=f21e89]:
+        - button "Ingreso" [ref=f21e90] [cursor=pointer]
+        - button "Gasto" [pressed] [ref=f21e91] [cursor=pointer]
+      - generic [ref=f21e92]:
+        - generic [ref=f21e93]:
+          - generic [ref=f21e94]:
+            - generic [ref=f21e95]: Fecha *
+            - textbox "Fecha" [ref=f21e97]: 01/11/2026
+          - textbox: 2026-11-01
+        - button "Hoy" [ref=f21e98] [cursor=pointer]
+        - button "Ayer" [ref=f21e100] [cursor=pointer]
+      - generic [ref=f21e103]:
+        - generic [ref=f21e104]: Importe *
+        - generic [ref=f21e105]:
+          - generic [aria-hidden] [ref=f21e106]: $
+          - textbox "Importe" [ref=f21e107]:
+            - /placeholder: 0,00
+      - generic [ref=f21e108]:
+        - group "Moneda" [ref=f21e109]:
+          - button "ARS" [pressed] [ref=f21e110] [cursor=pointer]
+          - button "USD" [ref=f21e111] [cursor=pointer]
+        - button "Repetir" [active] [ref=f21e112] [cursor=pointer]
+      - generic [ref=f21e120]:
+        - generic [ref=f21e121]: Cuenta
+        - combobox "Cuenta" [ref=f21e123] [cursor=pointer]:
+          - option "Efectivo" [selected]
+          - option "Sueldo"
+          - option "Otros ingresos"
+      - generic [ref=f21e124]:
+        - generic [ref=f21e125]: Descripción
+        - textbox "Descripción" [ref=f21e127]:
+          - /placeholder: "Ej: Supermercado"
+      - generic [ref=f21e128]:
+        - generic [ref=f21e129]: Notas (opcional)
+        - textbox "Notas (opcional)" [ref=f21e131]:
+          - /placeholder: Observación breve
+      - generic [ref=f21e132]:
+        - generic [ref=f21e133]: Categoría
+        - combobox "Categoría" [ref=f21e135] [cursor=pointer]:
+          - option "Alimentación" [selected]
+          - option "Transporte"
+          - option "Vivienda"
+          - option "Servicios"
+          - option "Salud"
+          - option "Entretenimiento"
+          - option "Compras"
+          - option "Educación"
+          - option "Otros gastos"
+          - option "Crear categoría"
+    - contentinfo [ref=f21e136]:
+      - button "Cancelar" [ref=f21e137] [cursor=pointer]
+      - button "Crear" [ref=f21e139] [cursor=pointer]
+  - dialog [ref=f21e141]:
+    - banner [ref=f21e142]:
+      - heading "Selecciona el tipo de transacción" [level=2] [ref=f21e144]
+      - button "Cerrar" [ref=f21e145] [cursor=pointer]
+    - generic [ref=f21e150]:
+      - button "Cuota" [ref=f21e151] [cursor=pointer]
+      - button "Repetir" [ref=f21e153] [cursor=pointer]

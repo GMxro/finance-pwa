@@ -22,9 +22,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--gap-field);
   color: var(--color-stone);
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
 }
 
 @keyframes ui-spin {

@@ -13,7 +13,7 @@ import { Panel } from '@shared/ui/Panel';
 import { Text } from '@shared/ui/Text';
 import { Money } from '@shared/ui/Money';
 import { MonthStepper } from '@shared/ui/MonthStepper';
-import { SegmentedControl } from '@shared/ui/SegmentedControl';
+import { SegmentedControl, SegmentedOption } from '@shared/ui/SegmentedControl';
 import { CategoryIcon } from '@shared/ui/CategoryIcon';
 import { Progress } from '@shared/ui/Progress';
 import { Notice } from '@shared/ui/Notice';
@@ -48,7 +48,7 @@ function ComparisonRow({ label, change }: { label: string; change: number | null
   const Icon = change === null || change === 0 ? Minus : change > 0 ? ArrowUpRight : ArrowDownRight;
   return (
     <div className="stats-compare__row">
-      <Text variant="small" tone="stone">{label}</Text>
+      <Text variant="body" tone="stone">{label}</Text>
       <span className={`stats-change ${change === null || change === 0 ? 'stats-change--flat' : ''}`}>
         <Icon size={15} aria-hidden="true" />
         {change === null ? 'Sin datos' : `${Math.abs(change)}%`}
@@ -56,6 +56,11 @@ function ComparisonRow({ label, change }: { label: string; change: number | null
     </div>
   );
 }
+
+const currencyOptions: SegmentedOption[] = [
+  { value: 'ARS', label: 'ARS' },
+  { value: 'USD', label: 'USD' }
+];
 
 export function StatisticsPage() {
   const { user, defaultCurrency } = useAuth();
@@ -164,7 +169,6 @@ export function StatisticsPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Análisis del mes"
         title="Estadísticas"
         actions={<MonthStepper month={month} onChange={setMonth} />}
       />
@@ -173,7 +177,7 @@ export function StatisticsPage() {
         <SegmentedControl
           value={currency}
           onChange={v => setCurrency(v as CurrencyCode)}
-          options={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]}
+          options={currencyOptions}
           label="Moneda de las estadísticas"
         />
         <Text variant="caption" tone="stone">Comparado con {getPeriodLabel(previousMonth)}</Text>
@@ -200,11 +204,11 @@ export function StatisticsPage() {
           <Grid layout="split" gap="lg">
             <Panel tone="paper" radius="panel" padding="lg">
               <Stack gap="lg">
-                <Text variant="subtitle">Ingresos vs. gastos</Text>
+                <Text variant="section-title">Ingresos vs. gastos</Text>
                 <div className="stats-bars">
                   <div className="stats-bar">
                     <div className="stats-bar__head">
-                      <Text variant="small" tone="stone">Ingresos</Text>
+                      <Text variant="caption" tone="stone">Ingresos</Text>
                       <Money amountMinor={summary.incomeMinor} currency={currency} size="sm" />
                     </div>
                     <div className="stats-bar__track" aria-hidden="true">
@@ -213,7 +217,7 @@ export function StatisticsPage() {
                   </div>
                   <div className="stats-bar">
                     <div className="stats-bar__head">
-                      <Text variant="small" tone="stone">Gastos</Text>
+                      <Text variant="caption" tone="stone">Gastos</Text>
                       <Money amountMinor={summary.expenseMinor} currency={currency} size="sm" />
                     </div>
                     <div className="stats-bar__track" aria-hidden="true">
@@ -226,7 +230,7 @@ export function StatisticsPage() {
 
             <Panel tone="paper" radius="panel" padding="lg">
               <Stack gap="lg">
-                <Text variant="subtitle">Comparación vs. mes anterior</Text>
+                <Text variant="section-title">Comparación vs. mes anterior</Text>
                 <div className="stats-compare">
                   <ComparisonRow label="Gastos" change={expenseChange} />
                   <ComparisonRow label="Ingresos" change={incomeChange} />
@@ -243,9 +247,9 @@ export function StatisticsPage() {
           <Grid columns={2} gap="lg">
             <Panel tone="paper" radius="panel" padding="lg">
               <Stack gap="md">
-                <Text variant="subtitle">Top 3 categorías de gasto</Text>
+                <Text variant="section-title">Top 3 categorías de gasto</Text>
                 {topCategories.length === 0 ? (
-                  <Text variant="small" tone="stone">Sin gastos registrados este mes.</Text>
+                  <Text variant="body" tone="stone">Sin gastos registrados este mes.</Text>
                 ) : (
                   <ul className="stats-top">
                     {topCategories.map(category => {
@@ -274,10 +278,10 @@ export function StatisticsPage() {
 
             <Panel tone="paper" radius="panel" padding="lg">
               <Stack gap="sm">
-                <Text variant="subtitle">Gasto diario promedio</Text>
+                <Text variant="section-title">Gasto diario promedio</Text>
                 <div className="stats-average">
                   <Money amountMinor={dailyAverageMinor} currency={currency} size="lg" />
-                  <Text variant="small" tone="stone">por día</Text>
+                  <Text variant="body" tone="stone">por día</Text>
                 </div>
                 <Text variant="caption" tone="stone">
                   {isCurrentMonth

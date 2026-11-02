@@ -9,8 +9,8 @@
 }
 
 .ui-month__button {
-  width: 44px;
-  height: 44px;
+  width: var(--control-h-lg);
+  height: var(--control-h-lg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -27,7 +27,7 @@
 .ui-month__label {
   min-width: 150px;
   text-align: center;
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
   font-weight: var(--weight-label);
   color: var(--color-ink);
   white-space: nowrap;
