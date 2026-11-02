@@ -379,7 +379,8 @@ export function TransactionsPage() {
   };
 
   const handleSubmit = async () => {
-    if (!user || !editingTx) return;
+    if (saving) return;
+    if (!user || !editingTx) { setFormError("No se pudo identificar la cuenta o el movimiento."); return; }
     const validationError = validate();
     if (validationError) {
       setFormError(validationError);
@@ -635,7 +636,7 @@ export function TransactionsPage() {
               </Button>
             )}
             <Button variant="secondary" onClick={closeModal} disabled={saving}>Cancelar</Button>
-            <Button type="submit" form="tx-form" loading={saving}>{editingTx?.id ? 'Guardar' : 'Crear'}</Button>
+            <Button type="submit" form="tx-form" loading={saving} onClick={() => void handleSubmit()}>{editingTx?.id ? "Guardar" : "Crear"}</Button>
           </>
         }
       >
