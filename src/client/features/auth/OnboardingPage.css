@@ -22,7 +22,7 @@
 }
 
 .ui-onboarding__label {
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
   font-weight: var(--weight-label);
   color: var(--color-ink);
 }
@@ -30,5 +30,5 @@
 .ui-onboarding__text {
   margin-top: var(--space-2);
   color: var(--color-stone);
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
 }

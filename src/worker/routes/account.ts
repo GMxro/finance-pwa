@@ -6,7 +6,7 @@ import { NotFoundError, ValidationError } from '../middleware/error-handler';
 import type { Env } from '@env';
 import type { UserPublic } from '@contracts/auth';
 import { currencyCodeSchema } from '@contracts/transaction';
-import { ARGENTINA_TZ } from '@domain/date';
+import { ARGENTINA_TZ, todayLocalISO } from '@domain/date';
 import { deleteAccount, getAccountDeletionStatus } from '../application/account/delete-account';
 import { deletionStatusRateLimit } from '../middleware/rate-limit';
 
@@ -57,6 +57,92 @@ accountRoutes.patch('/preferences', async (c) => {
 });
 
 // Export user data as CSV
+
+// Importes sin símbolo ni separador de miles (Excel es-AR usa coma decimal).
+const exportAmountFormatter = new Intl.NumberFormat('es-AR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  useGrouping: false
+});
+
+const exportDateTimeFormatter = new Intl.DateTimeFormat('es-AR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+  timeZone: ARGENTINA_TZ
+});
+
+const EXPORT_KIND_LABELS: Record<string, string> = {
+  income: 'Ingreso',
+  expense: 'Gasto'
+};
+
+function formatExportKind(kind: string): string {
+  return EXPORT_KIND_LABELS[kind] ?? kind;
+}
+
+function formatExportAmount(amountMinor: number): string {
+  return exportAmountFormatter.format(amountMinor / 100);
+}
+
+function formatExportDate(isoDate: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  if (!match) return isoDate;
+  const [, year, month, day] = match;
+  if (!year || !month || !day) return isoDate;
+  return `${day}/${month}/${year}`;
+}
+
+function formatExportDateTime(timestamp: number | string): string {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return '';
+  const parts = exportDateTimeFormatter.formatToParts(date);
+  const part = (type: string): string => parts.find((item) => item.type === type)?.value ?? '';
+  return `${part('day')}/${part('month')}/${part('year')} ${part('hour')}:${part('minute')}`;
+}
+
+function formatExportPeriod(periodMonth: string): string {
+  const match = /^(\d{4})-(\d{2})$/.exec(periodMonth);
+  if (!match) return periodMonth;
+  const [, year, month] = match;
+  if (!year || !month) return periodMonth;
+  return `${month}/${year}`;
+}
+
+type TransactionExportRow = {
+  id: string;
+  kind: string;
+  amount_minor: number;
+  currency_code: string;
+  category_id: string;
+  occurred_on: string;
+  note: string | null;
+  created_at: number;
+};
+
+type CategoryExportRow = {
+  id: string;
+  kind: string;
+  name: string;
+  slug: string;
+  icon_key: string;
+  color_token: string;
+  sort_order: number;
+  is_default: number;
+  archived_at: number | null;
+};
+
+type BudgetExportRow = {
+  id: string;
+  category_id: string;
+  period_month: string;
+  currency_code: string;
+  limit_minor: number;
+};
+
 accountRoutes.get('/export', async (c) => {
   const userId = getUserId(c);
   
@@ -74,12 +160,19 @@ accountRoutes.get('/export', async (c) => {
       FROM budgets WHERE user_id = ? ORDER BY period_month DESC
     `).bind(userId).all()
   ]);
-  
+
+  const transactionRows = transactions.results as unknown as TransactionExportRow[];
+  const categoryRows = categories.results as unknown as CategoryExportRow[];
+  const budgetRows = budgets.results as unknown as BudgetExportRow[];
+
+  const categoryNames = new Map<string, string>(categoryRows.map((cat) => [cat.id, cat.name]));
+  const categoryName = (categoryId: string): string => categoryNames.get(categoryId) ?? categoryId;
+
   const lines = [
     'Movimientos',
-    'ID,Tipo,Importe,Moneda,Categoría,Fecha,Nota,Creado'
+    'ID;Tipo;Importe;Moneda;Categoría;Fecha;Nota;Creado'
   ];
-  
+
   function escapeCsvField(value: string | number | null | undefined): string {
     if (value === null || value === undefined) return '';
     const str = String(value);
@@ -89,51 +182,50 @@ accountRoutes.get('/export', async (c) => {
       : str;
     // Escape double quotes by doubling them
     const escaped = safe.replace(/"/g, '""');
-    // Wrap in double quotes if contains comma, double quote, newline, or starts with formula prefix
-    if (escaped.includes(',') || escaped.includes('"') || escaped.includes('\n') || escaped.includes('\r') || safe.startsWith("'")) {
+    // Wrap in double quotes if it contains the delimiter, quotes, newlines, or the formula prefix
+    if (escaped.includes(';') || escaped.includes(',') || escaped.includes('"') || escaped.includes('\n') || escaped.includes('\r') || safe.startsWith("'")) {
       return `"${escaped}"`;
     }
     return escaped;
   }
-  
-  for (const tx of transactions.results as any[]) {
-    const amount = tx.amount_minor / 100;
+
+  for (const tx of transactionRows) {
     lines.push([
       escapeCsvField(tx.id),
-      escapeCsvField(tx.kind),
-      escapeCsvField(amount.toFixed(2)),
+      escapeCsvField(formatExportKind(tx.kind)),
+      escapeCsvField(formatExportAmount(tx.amount_minor)),
       escapeCsvField(tx.currency_code),
-      escapeCsvField(tx.category_id),
-      escapeCsvField(tx.occurred_on),
+      escapeCsvField(categoryName(tx.category_id)),
+      escapeCsvField(formatExportDate(tx.occurred_on)),
       escapeCsvField(tx.note),
-      escapeCsvField(new Date(tx.created_at).toISOString())
-    ].join(','));
+      escapeCsvField(formatExportDateTime(tx.created_at))
+    ].join(';'));
   }
-  
-  lines.push('', 'Categorías', 'ID,Tipo,Nombre,Slug,Icono,Color,Orden,Por defecto,Archivada');
-  for (const cat of categories.results as any[]) {
+
+  lines.push('', 'Categorías', 'ID;Tipo;Nombre;Slug;Icono;Color;Orden;Por defecto;Archivada');
+  for (const cat of categoryRows) {
     lines.push([
       escapeCsvField(cat.id),
-      escapeCsvField(cat.kind),
+      escapeCsvField(formatExportKind(cat.kind)),
       escapeCsvField(cat.name),
       escapeCsvField(cat.slug),
       escapeCsvField(cat.icon_key),
       escapeCsvField(cat.color_token),
       escapeCsvField(cat.sort_order),
       escapeCsvField(cat.is_default ? 'Sí' : 'No'),
-      escapeCsvField(cat.archived_at ? new Date(cat.archived_at).toISOString() : '')
-    ].join(','));
+      escapeCsvField(cat.archived_at ? formatExportDateTime(cat.archived_at) : '')
+    ].join(';'));
   }
-  
-  lines.push('', 'Presupuestos', 'ID,Categoría,Período,Moneda,Límite');
-  for (const bud of budgets.results as any[]) {
+
+  lines.push('', 'Presupuestos', 'ID;Categoría;Período;Moneda;Límite');
+  for (const bud of budgetRows) {
     lines.push([
       escapeCsvField(bud.id),
-      escapeCsvField(bud.category_id),
-      escapeCsvField(bud.period_month),
+      escapeCsvField(categoryName(bud.category_id)),
+      escapeCsvField(formatExportPeriod(bud.period_month)),
       escapeCsvField(bud.currency_code),
-      escapeCsvField((bud.limit_minor / 100).toFixed(2))
-    ].join(','));
+      escapeCsvField(formatExportAmount(bud.limit_minor))
+    ].join(';'));
   }
   
   const csv = lines.join('\n');
@@ -143,7 +235,7 @@ accountRoutes.get('/export', async (c) => {
   return new Response(bom + csv, {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="finanzas-${new Date().toISOString().split('T')[0]}.csv"`,
+      'Content-Disposition': `attachment; filename="finanzas-${todayLocalISO()}.csv"`,
       'Cache-Control': 'no-store'
     }
   });

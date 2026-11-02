@@ -21,7 +21,7 @@
 
 .ui-auth__mobile-brand {
   display: none;
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
   font-weight: var(--weight-label);
   letter-spacing: -0.02em;
 }
@@ -143,7 +143,7 @@
   .ui-auth__art-text {
     margin-top: var(--space-2);
     color: var(--color-on-ink-muted);
-    font-size: var(--text-sm);
+    font-size: var(--text-caption);
     line-height: 1.45;
   }
 
@@ -160,7 +160,7 @@
 
 .ui-auth-title {
   font-family: var(--font-display);
-  font-size: var(--text-h1);
+  font-size: var(--text-page-title);
   line-height: 1.05;
   letter-spacing: -0.025em;
   font-weight: var(--weight-display);
@@ -168,7 +168,7 @@
 }
 
 .ui-auth-title--login {
-  font-size: var(--text-h2);
+  font-size: var(--text-section-title);
   line-height: 1.15;
   font-weight: var(--weight-regular);
 }
@@ -206,9 +206,11 @@
   text-underline-offset: 0.16em;
 }
 
-.ui-auth-legal a:hover {
-  color: var(--color-ink-soft);
-  text-decoration-thickness: 2px;
+@media (hover: hover) and (pointer: fine) {
+  .ui-auth-legal a:hover {
+    color: var(--color-ink-soft);
+    text-decoration-thickness: 2px;
+  }
 }
 
 .ui-auth-legal a:focus-visible {

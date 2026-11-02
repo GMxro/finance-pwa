@@ -23,6 +23,11 @@
   animation: ui-modal-in var(--dur-base) var(--ease-out);
 }
 
+.ui-modal:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
 .ui-modal--sm {
   max-width: 440px;
 }

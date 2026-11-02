@@ -67,8 +67,10 @@
   text-decoration: none;
 }
 
-.overview-amount-link:hover {
-  text-decoration: none;
+@media (hover: hover) and (pointer: fine) {
+  .overview-amount-link:hover {
+    text-decoration: none;
+  }
 }
 
 .overview-net .ui-money,
@@ -110,8 +112,10 @@
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
-.overview-hero__eye:hover {
-  background: rgba(255, 255, 255, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .overview-hero__eye:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .overview-hero__eye:focus-visible {

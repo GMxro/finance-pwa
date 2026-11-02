@@ -19,20 +19,20 @@
 
 .app-update-notice p {
   margin: 0;
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
   line-height: var(--leading-body);
 }
 
 .app-update-notice button {
   flex: none;
-  min-height: var(--control-height-sm);
+  min-height: var(--control-h-md);
   padding: 0 var(--space-4);
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--color-ink);
   color: var(--color-on-ink);
   font: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
   font-weight: var(--weight-label);
   cursor: pointer;
 }
@@ -64,26 +64,26 @@
 
 .app-update-gate h1 {
   margin: 0 0 var(--space-3);
-  font-size: var(--text-lg);
-  line-height: var(--leading-heading);
+  font-size: var(--text-section-title);
+  line-height: var(--leading-title);
 }
 
 .app-update-gate p {
   margin: 0 0 var(--space-4);
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
   line-height: var(--leading-body);
 }
 
 .app-update-gate button {
   width: 100%;
-  min-height: var(--control-height-sm);
+  min-height: var(--control-h-lg);
   padding: 0 var(--space-4);
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--color-ink);
   color: var(--color-on-ink);
   font: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
   font-weight: var(--weight-label);
   cursor: pointer;
 }

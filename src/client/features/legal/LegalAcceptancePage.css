@@ -9,7 +9,7 @@
   align-items: start;
   gap: var(--space-3);
   color: var(--color-ink);
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
   line-height: 1.5;
 }
 
@@ -36,7 +36,7 @@
 .legal-acceptance__summary h2 {
   margin: 0 0 var(--space-2);
   color: var(--color-ink);
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
 }
 
 .legal-acceptance__summary ul {
@@ -45,7 +45,7 @@
   margin: 0;
   padding-left: 1.25rem;
   color: var(--color-stone);
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
   line-height: 1.5;
 }
 

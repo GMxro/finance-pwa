@@ -16,6 +16,7 @@ export interface LedgerItem {
   note?: string | null;
   categoryId: string;
   accountName?: string;
+  sourceType?: string;
   pending?: boolean;
 }
 
@@ -67,54 +68,81 @@ export function LedgerList({
       {[...groups].map(([day, dayItems]) => (
         <section className="ui-ledger__group" key={day} aria-label={formatDate(day)}>
           <h3 className="ui-ledger__day">{formatDate(day)}</h3>
-          {dayItems.map(item => (
-            <div
-              className={`ui-ledger__row ${onEdit ? 'is-clickable' : ''}`}
-              key={item.id}
-              onClick={onEdit ? () => onEdit(item) : undefined}
-              role={onEdit ? 'button' : undefined}
-              tabIndex={onEdit ? 0 : undefined}
-              onKeyDown={onEdit ? event => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  onEdit(item);
-                }
-              } : undefined}
-            >
-              <div className="ui-ledger__icon">
-                <CategoryIcon iconKey={categoryIcon(item.categoryId)} size="sm" />
-              </div>
-              <div className="ui-ledger__main">
-                <span className="ui-ledger__title">{item.note || categoryName(item.categoryId)}</span>
-                <span className="ui-ledger__sub">
-                  {categoryName(item.categoryId)}
-                  {item.accountName && <><span className="ui-ledger__dot" aria-hidden="true">·</span>{item.accountName}</>}
-                  {item.pending && <span className="ui-ledger__pending" aria-label="Pendiente de sincronización">Pendiente</span>}
+          {dayItems.map(item => {
+            const isOpening = item.sourceType === 'initial';
+            const title = isOpening ? 'Saldo inicial' : item.note || categoryName(item.categoryId);
+            const content = (
+              <>
+                <span className="ui-ledger__icon">
+                  <CategoryIcon iconKey={categoryIcon(item.categoryId)} size="sm" />
                 </span>
-              </div>
-              <div className="ui-ledger__amount">
-                <Money
-                  amountMinor={item.amountMinor}
-                  currency={item.currency}
-                  sign={item.kind === 'income' ? 'plus' : 'minus'}
-                  size="sm"
-                  censored={censored}
-                />
-              </div>
-              <div className="ui-ledger__actions" onClick={event => event.stopPropagation()}>
-                {onEdit && (
-                  <IconButton label="Editar movimiento" size="sm" onClick={() => onEdit(item)}>
-                    <Pencil size={16} />
-                  </IconButton>
+                <span className="ui-ledger__main">
+                  <span className="ui-ledger__title">
+                    <span className="ui-ledger__title-text">{title}</span>
+                    {isOpening && <span className="ui-ledger__badge">Apertura</span>}
+                  </span>
+                  <span className="ui-ledger__sub">
+                    {isOpening ? (
+                      item.accountName ?? ''
+                    ) : (
+                      <>
+                        {categoryName(item.categoryId)}
+                        {item.accountName && <><span className="ui-ledger__dot" aria-hidden="true">·</span>{item.accountName}</>}
+                      </>
+                    )}
+                    {item.pending && <span className="ui-ledger__pending" aria-label="Pendiente de sincronización">Pendiente</span>}
+                  </span>
+                </span>
+                <span className="ui-ledger__amount">
+                  <Money
+                    amountMinor={item.amountMinor}
+                    currency={item.currency}
+                    sign={item.kind === 'income' ? 'plus' : 'minus'}
+                    size="sm"
+                    censored={censored}
+                  />
+                </span>
+              </>
+            );
+
+            if (isOpening) {
+              return (
+                <div className="ui-ledger__row ui-ledger__row--opening" key={item.id}>
+                  <div className="ui-ledger__open">{content}</div>
+                  <div className="ui-ledger__actions" aria-hidden="true" />
+                </div>
+              );
+            }
+
+            return (
+              <div className={`ui-ledger__row ${onEdit ? 'is-clickable' : ''}`} key={item.id}>
+                {onEdit ? (
+                  <button
+                    type="button"
+                    className="ui-ledger__open is-clickable"
+                    aria-label={`Abrir ${title}`}
+                    onClick={() => onEdit(item)}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div className="ui-ledger__open">{content}</div>
                 )}
-                {onDelete && (
-                  <IconButton label="Eliminar movimiento" size="sm" tone="danger" onClick={() => onDelete(item)}>
-                    <Trash2 size={16} />
-                  </IconButton>
-                )}
+                <div className="ui-ledger__actions">
+                  {onEdit && (
+                    <IconButton label="Editar movimiento" size="sm" onClick={() => onEdit(item)}>
+                      <Pencil size={16} />
+                    </IconButton>
+                  )}
+                  {onDelete && (
+                    <IconButton label="Eliminar movimiento" size="sm" tone="danger" onClick={() => onDelete(item)}>
+                      <Trash2 size={16} />
+                    </IconButton>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </section>
       ))}
     </div>

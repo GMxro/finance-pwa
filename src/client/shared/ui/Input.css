@@ -70,7 +70,7 @@
 }
 
 .ui-field__input--with-prefix {
-  padding-left: 28px;
+  padding-left: var(--prefix-w, 28px);
 }
 
 .ui-field__input--error {

@@ -4,6 +4,7 @@ import type { BudgetCreate, BudgetUpdate, BudgetWithSpent } from '@contracts/bud
 import { subtractAmounts } from '@domain/money';
 import { ValidationError } from '../../middleware/error-handler';
 import { excludeInitialSql } from '../transactions/transaction-filters';
+import { todayLocalISO } from '@domain/date';
 
 function safeAggregate(value: unknown): number {
   const amount = Number(value ?? 0);
@@ -56,6 +57,7 @@ export async function listBudgets(
   userId: string,
   periodMonth: string
 ): Promise<BudgetWithSpent[]> {
+  const today = todayLocalISO();
   const result = await aggregateQuery(env.DB.prepare(`
     SELECT b.id, b.user_id, b.category_id, b.period_month, b.currency_code, b.limit_minor, b.version, b.created_at, b.updated_at,
            COALESCE(SUM(CASE WHEN t.kind = 'expense' THEN t.amount_minor ELSE 0 END), 0) as spent_minor
@@ -67,10 +69,11 @@ export async function listBudgets(
       AND t.kind = 'expense'
       AND t.deleted_at IS NULL
       AND ${excludeInitialSql('t')}
+      AND t.occurred_on <= ?
     WHERE b.user_id = ? AND b.period_month = ?
     GROUP BY b.id
     ORDER BY b.created_at
-  `).bind(userId, periodMonth).all());
+  `).bind(today, userId, periodMonth).all());
   
   return (result.results as any[]).map(mapBudget);
 }
@@ -160,6 +163,7 @@ export async function getBudgetWithSpent(
   userId: string,
   budgetId: string
 ): Promise<BudgetWithSpent | null> {
+  const today = todayLocalISO();
   const row = await aggregateQuery(env.DB.prepare(`
     SELECT b.*, 
            COALESCE(SUM(CASE WHEN t.kind = 'expense' THEN t.amount_minor ELSE 0 END), 0) as spent_minor
@@ -171,9 +175,10 @@ export async function getBudgetWithSpent(
       AND t.kind = 'expense'
       AND t.deleted_at IS NULL
       AND ${excludeInitialSql('t')}
+      AND t.occurred_on <= ?
     WHERE b.id = ? AND b.user_id = ?
     GROUP BY b.id
-  `).bind(budgetId, userId).first<{ 
+  `).bind(today, budgetId, userId).first<{
     id: string; user_id: string; category_id: string; period_month: string; 
     currency_code: 'ARS' | 'USD'; limit_minor: number; version: number; 
     created_at: number; updated_at: number; spent_minor: number 

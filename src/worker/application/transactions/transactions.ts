@@ -6,6 +6,7 @@ import { excludeInitialSql } from './transaction-filters';
 import { ValidationError } from '../../middleware/error-handler';
 import { currencyFlowBindings, currencyFlowTotalSql } from '../financial-limit';
 import { MAX_MINOR_UNITS } from '@domain/money';
+import { todayLocalISO } from '@domain/date';
 
 export class InvalidTransactionCategoryError extends ValidationError {
   constructor() {
@@ -328,38 +329,39 @@ export async function getMonthlySummary(
     byCategory: Array<{ categoryId: string; kind: 'income' | 'expense'; amountMinor: number }>;
     transactionCount: number;
   }> = [];
-  
+  const today = todayLocalISO();
+
   for (const curr of currencies) {
     const incomeResult = await env.DB.prepare(`
       SELECT COALESCE(SUM(amount_minor), 0) as total
       FROM transactions
       WHERE user_id = ? AND currency_code = ? AND kind = 'income'
-        AND occurred_on LIKE ? AND deleted_at IS NULL
+        AND occurred_on LIKE ? AND occurred_on <= ? AND deleted_at IS NULL
         AND ${excludeInitialSql()}
-    `).bind(userId, curr, `${periodMonth}%`).first<{ total: number }>();
+    `).bind(userId, curr, `${periodMonth}%`, today).first<{ total: number }>();
     
     const expenseResult = await env.DB.prepare(`
       SELECT COALESCE(SUM(amount_minor), 0) as total
       FROM transactions
       WHERE user_id = ? AND currency_code = ? AND kind = 'expense'
-        AND occurred_on LIKE ? AND deleted_at IS NULL
+        AND occurred_on LIKE ? AND occurred_on <= ? AND deleted_at IS NULL
         AND ${excludeInitialSql()}
-    `).bind(userId, curr, `${periodMonth}%`).first<{ total: number }>();
+    `).bind(userId, curr, `${periodMonth}%`, today).first<{ total: number }>();
     
     const categoryResult = await env.DB.prepare(`
       SELECT category_id, kind, COALESCE(SUM(amount_minor), 0) as total
       FROM transactions
-      WHERE user_id = ? AND currency_code = ? AND occurred_on LIKE ? AND deleted_at IS NULL
+      WHERE user_id = ? AND currency_code = ? AND occurred_on LIKE ? AND occurred_on <= ? AND deleted_at IS NULL
         AND ${excludeInitialSql()}
       GROUP BY category_id, kind
-    `).bind(userId, curr, `${periodMonth}%`).all<{ category_id: string; kind: 'income' | 'expense'; total: number }>();
+    `).bind(userId, curr, `${periodMonth}%`, today).all<{ category_id: string; kind: 'income' | 'expense'; total: number }>();
     
     const countResult = await env.DB.prepare(`
       SELECT COUNT(*) as count
       FROM transactions
-      WHERE user_id = ? AND currency_code = ? AND occurred_on LIKE ? AND deleted_at IS NULL
+      WHERE user_id = ? AND currency_code = ? AND occurred_on LIKE ? AND occurred_on <= ? AND deleted_at IS NULL
         AND ${excludeInitialSql()}
-    `).bind(userId, curr, `${periodMonth}%`).first<{ count: number }>();
+    `).bind(userId, curr, `${periodMonth}%`, today).first<{ count: number }>();
     
     const incomeMinor = Number(incomeResult?.total ?? 0);
     const expenseMinor = Number(expenseResult?.total ?? 0);

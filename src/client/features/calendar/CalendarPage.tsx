@@ -1,70 +1,290 @@
 // Pages: Calendar
 import { useEffect, useState } from 'react';
-import { Page, PageHeader, Panel, Text, Money, MonthStepper, EmptyState } from '@shared/ui';
-import { api } from '@shared/api/client';
-import { todayLocalISO } from '@domain/date';
+import type { CurrencyCode } from '@domain/money';
+import { formatLocalDate, todayLocalISO } from '@domain/date';
+import { api, formatApiError } from '@shared/api/client';
+import {
+  Page,
+  PageHeader,
+  Panel,
+  Section,
+  MonthStepper,
+  LoadingSpinner,
+  Notice,
+  EmptyState,
+  Text,
+  Money,
+  ListRow
+} from '@shared/ui';
+import './CalendarPage.css';
+
+interface CurrencyTotals {
+  incomeMinor: number;
+  expenseMinor: number;
+}
+
+interface CalendarTransaction {
+  id: string;
+  kind: 'income' | 'expense';
+  amountMinor: number;
+  currency: CurrencyCode;
+  note?: string;
+  occurredOn: string;
+}
+
+interface CalendarCommitment {
+  date: string;
+  kind: 'income' | 'expense';
+  amountMinor: number;
+  currency: CurrencyCode;
+  label: string;
+  source: 'installment' | 'recurring';
+  sourceId: string | null;
+  isFuture: boolean;
+}
+
+interface CalendarDay {
+  date: string;
+  transactions: CalendarTransaction[];
+  commitments: CalendarCommitment[];
+  byCurrency: Record<string, CurrencyTotals>;
+  isFuture: boolean;
+}
+
+const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
+const CURRENCY_ORDER: CurrencyCode[] = ['ARS', 'USD'];
+
+function monthDayCount(month: string): number {
+  const [year, monthNumber] = month.split('-').map(Number);
+  if (!year || !monthNumber) return 0;
+  return new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+}
+
+function firstWeekdayOffset(month: string): number {
+  const [year, monthNumber] = month.split('-').map(Number);
+  if (!year || !monthNumber) return 0;
+  const sundayBased = new Date(Date.UTC(year, monthNumber - 1, 1)).getUTCDay();
+  return (sundayBased + 6) % 7;
+}
+
+function initialSelection(month: string, today: string): string {
+  return today.slice(0, 7) === month ? today : `${month}-01`;
+}
+
+function dayAriaLabel(day: CalendarDay): string {
+  const parts = [formatLocalDate(day.date)];
+  if (day.transactions.length > 0) {
+    parts.push(`${day.transactions.length} ${day.transactions.length === 1 ? 'movimiento' : 'movimientos'}`);
+  }
+  if (day.commitments.length > 0) {
+    parts.push(`${day.commitments.length} ${day.commitments.length === 1 ? 'previsto' : 'previstos'}`);
+  }
+  return parts.join(', ');
+}
 
 export function CalendarPage() {
   const today = todayLocalISO();
   const [month, setMonth] = useState(today.slice(0, 7));
-  const [days, setDays] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [days, setDays] = useState<CalendarDay[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
     setLoading(true);
-    api.getCalendarMonth(month).then((res) => {
-      if (mounted && res.data) {
-        setDays(res.data as any[]);
-        setSelected(res.data[0]?.date ?? null);
-      }
-    }).finally(() => setLoading(false));
-    return () => { mounted = false; };
-  }, [month]);
+    setError(null);
+    setDays([]);
+    setSelected(null);
 
-  const selectedDay = days.find(d => d.date === selected);
+    api.getCalendarMonth(month)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.error || !res.data) {
+          setError(formatApiError(res.error, 'No pudimos cargar el calendario.'));
+          return;
+        }
+        setDays(res.data as CalendarDay[]);
+        setSelected(initialSelection(month, todayLocalISO()));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [month, reloadToken]);
+
+  const selectedDay = days.find((day) => day.date === selected) ?? null;
+  const offset = firstWeekdayOffset(month);
+  const calendarCells = Math.ceil((offset + monthDayCount(month)) / 7) * 7;
 
   return (
-    <Page>
-      <PageHeader title="Calendario" description="Movimientos e ingresos/gastos previstos por día" />
-      <Panel>
+    <Page className="calendar-page">
+      <PageHeader title="Calendario" />
+
+      <Panel padding="sm" className="calendar-toolbar">
         <MonthStepper month={month} onChange={setMonth} />
       </Panel>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
-        <Panel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem' }}>
-            {days.map((d) => (
-              <button key={d.date} onClick={() => setSelected(d.date)} style={{ border: d.date === selected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)', borderRadius: '8px', padding: '0.5rem', background: d.isFuture ? 'var(--color-surface-subtle)' : 'transparent', textAlign: 'left' }}>
-                <Text variant="small">{d.date.slice(8)}</Text>
-                <div><Money amountMinor={d.incomeMinor} currency="ARS" /></div>
-                <div><Money amountMinor={d.expenseMinor} currency="ARS" /></div>
-              </button>
+
+      {error && (
+        <div className="calendar-notice">
+          <Notice action={{ label: 'Reintentar', onClick: () => setReloadToken((value) => value + 1) }}>
+            {error}
+          </Notice>
+        </div>
+      )}
+
+      {!error && (
+        <div className="calendar-layout">
+          <Panel padding="none" className="calendar-card">
+            <div className="calendar-weekdays" aria-hidden="true">
+              {WEEKDAYS.map((weekday) => <span key={weekday}>{weekday}</span>)}
+            </div>
+            <div className="calendar-grid" role="group" aria-label="Calendario mensual" aria-busy={loading}>
+              {loading ? (
+                <>
+                  {Array.from({ length: offset }).map((_, index) => (
+                    <span key={`blank-${index}`} className="calendar-day calendar-day--blank" aria-hidden="true" />
+                  ))}
+                  {Array.from({ length: calendarCells - offset }).map((_, index) => (
+                    <span key={`skeleton-${index}`} className="calendar-day calendar-day--skeleton" aria-hidden="true" />
+                  ))}
+                </>
+              ) : (
+                days.map((day) => {
+                  const hasActivity = day.transactions.length > 0 || day.commitments.length > 0;
+                  const isSelected = day.date === selected;
+                  const classes = ['calendar-day'];
+                  if (isSelected) classes.push('is-selected');
+                  if (day.isFuture) classes.push('is-future');
+                  if (day.date === today) classes.push('is-today');
+                  if (hasActivity) classes.push('has-activity');
+                  return (
+                    <button
+                      key={day.date}
+                      type="button"
+                      className={classes.join(' ')}
+                      onClick={() => setSelected(day.date)}
+                      aria-pressed={isSelected}
+                      aria-label={dayAriaLabel(day)}
+                    >
+                      <span className="calendar-day__number" aria-hidden="true">{Number(day.date.slice(8))}</span>
+                      {hasActivity && <span className="calendar-day__dot" aria-hidden="true" />}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </Panel>
+
+          <Panel className="calendar-detail">
+            <div aria-busy={loading}>
+              {loading ? (
+                <div className="calendar-detail__loading">
+                  <LoadingSpinner size="sm" />
+                </div>
+              ) : selectedDay ? (
+                <CalendarDayDetail day={selectedDay} />
+              ) : (
+                <EmptyState title="Sin datos" message="No hay información para este mes." />
+              )}
+            </div>
+          </Panel>
+        </div>
+      )}
+    </Page>
+  );
+}
+
+function CalendarDayDetail({ day }: { day: CalendarDay }) {
+  const currencies = CURRENCY_ORDER.filter((currency) => {
+    const totals = day.byCurrency[currency];
+    return totals !== undefined && totals.incomeMinor + totals.expenseMinor > 0;
+  });
+  const hasActivity = day.transactions.length > 0 || day.commitments.length > 0;
+
+  return (
+    <div className="calendar-detail__body">
+      <div className="calendar-detail__head">
+        <Text variant="subtitle">{formatLocalDate(day.date)}</Text>
+        {day.isFuture && <Text variant="caption" tone="stone">Día futuro</Text>}
+      </div>
+
+      {currencies.length > 0 && (
+        <div className="calendar-totals">
+          {currencies.map((currency) => {
+            const totals = day.byCurrency[currency];
+            if (!totals) return null;
+            return (
+              <div key={currency} className="calendar-total">
+                <Text variant="caption" tone="stone">{currency}</Text>
+                <div className="calendar-total__line">
+                  <Text variant="small">Ingresos</Text>
+                  <Money amountMinor={totals.incomeMinor} currency={currency} size="sm" />
+                </div>
+                <div className="calendar-total__line">
+                  <Text variant="small">Gastos</Text>
+                  <Money amountMinor={totals.expenseMinor} currency={currency} size="sm" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {day.transactions.length > 0 && (
+        <Section title="Movimientos">
+          <div className="calendar-rows">
+            {day.transactions.map((transaction) => (
+              <ListRow
+                key={transaction.id}
+                title={transaction.note || 'Sin descripción'}
+                subtitle={transaction.kind === 'income' ? 'Ingreso' : 'Gasto'}
+                trailing={
+                  <Money
+                    amountMinor={transaction.amountMinor}
+                    currency={transaction.currency}
+                    sign={transaction.kind === 'income' ? 'plus' : 'minus'}
+                    size="sm"
+                  />
+                }
+              />
             ))}
           </div>
-        </Panel>
-        <Panel>
-          {selectedDay ? (
-            <div>
-              <Text variant="subtitle">{selectedDay.date}</Text>
-              <Text variant="small">Transacciones</Text>
-              {(selectedDay.transactions || []).map((t: any) => (
-                <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
-                  <Text>{t.note || '-'}</Text>
-                  <Money amountMinor={t.amountMinor} currency={t.currency} />
-                </div>
-              ))}
-              <Text variant="small">Previstos</Text>
-              {(selectedDay.commitments || []).map((c: any, i: number) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem', opacity: 0.7 }}>
-                  <Text>{c.label}</Text>
-                  <Money amountMinor={c.amountMinor} currency={c.currency} />
-                </div>
-              ))}
-            </div>
-          ) : <EmptyState title="Sin datos" message="No hay movimientos para este mes." />}
-        </Panel>
-      </div>
-    </Page>
+        </Section>
+      )}
+
+      {day.commitments.length > 0 && (
+        <Section title="Previstos">
+          <div className="calendar-rows">
+            {day.commitments.map((commitment) => (
+              <ListRow
+                key={`${commitment.sourceId ?? commitment.label}-${commitment.date}`}
+                title={commitment.label}
+                subtitle={commitment.kind === 'income' ? 'Ingreso' : 'Gasto'}
+                trailing={
+                  <>
+                    {commitment.isFuture && <span className="ui-row__badge">Previsto</span>}
+                    <Money
+                      amountMinor={commitment.amountMinor}
+                      currency={commitment.currency}
+                      sign={commitment.kind === 'income' ? 'plus' : 'minus'}
+                      size="sm"
+                    />
+                  </>
+                }
+              />
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {!hasActivity && (
+        <EmptyState title="Sin movimientos" message="No hay movimientos ni previstos para este día." />
+      )}
+    </div>
   );
 }

@@ -35,19 +35,41 @@
   border-top: 1px solid var(--color-line);
 }
 
-.ui-ledger__row.is-clickable {
+.ui-ledger__open {
+  grid-column: 1 / 4;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 120px;
+  align-items: center;
+  gap: inherit;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+.ui-ledger__open.is-clickable {
   cursor: pointer;
 }
 
-.ui-ledger__row:hover {
-  background: var(--color-inset);
+.ui-ledger__row--opening,
+.ui-ledger__row--opening .ui-ledger__open {
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ui-ledger__row.is-clickable:hover {
+    background: var(--color-inset);
+  }
 }
 
 .ui-ledger__row.is-clickable:active {
   background: var(--color-inset-strong);
 }
 
-.ui-ledger__row:focus-visible {
+.ui-ledger__open:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: -2px;
 }
@@ -67,18 +89,34 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-size: var(--text-body);
   font-weight: var(--weight-label);
   line-height: 1.3;
+}
+
+.ui-ledger__title-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.ui-ledger__sub {
-  display: flex;
+.ui-ledger__badge {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-inset);
+  color: var(--color-stone);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ui-ledger__sub {
+  display: block;
   font-size: var(--text-caption);
   color: var(--color-stone);
   overflow: hidden;
@@ -87,10 +125,12 @@
 }
 
 .ui-ledger__dot {
+  margin: 0 6px;
   color: var(--color-stone-light);
 }
 
 .ui-ledger__pending {
+  margin-left: 6px;
   color: var(--color-stone);
   font-weight: var(--weight-label);
 }
@@ -126,19 +166,20 @@
 
   .ui-ledger__row {
     grid-template-columns: 32px minmax(0, 1fr) auto;
-    grid-template-areas: 'icon main amount';
     gap: var(--space-2);
     padding: var(--space-2) var(--space-4);
     min-height: var(--control-h-xl);
+  }
+
+  .ui-ledger__open {
+    grid-column: 1 / 3;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
   }
 
   .ui-ledger__day {
     padding: var(--space-3) var(--space-4) var(--space-1);
   }
 
-  .ui-ledger__icon { grid-area: icon; }
-  .ui-ledger__main { grid-area: main; }
-  .ui-ledger__amount { grid-area: amount; }
   .ui-ledger__actions {
     display: none;
   }

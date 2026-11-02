@@ -20,8 +20,10 @@
     opacity var(--dur-fast) var(--ease-out);
 }
 
-.ui-btn:hover {
-  text-decoration: none;
+@media (hover: hover) and (pointer: fine) {
+  .ui-btn:hover {
+    text-decoration: none;
+  }
 }
 
 .ui-btn:disabled {
@@ -40,9 +42,11 @@
   border-color: var(--color-ink);
 }
 
-.ui-btn--primary:hover:not(:disabled) {
-  background: var(--color-ink-soft);
-  border-color: var(--color-ink-soft);
+@media (hover: hover) and (pointer: fine) {
+  .ui-btn--primary:hover:not(:disabled) {
+    background: var(--color-ink-soft);
+    border-color: var(--color-ink-soft);
+  }
 }
 
 .ui-btn--secondary {
@@ -51,9 +55,11 @@
   border-color: var(--color-line-strong);
 }
 
-.ui-btn--secondary:hover:not(:disabled) {
-  background: var(--color-inset);
-  border-color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-btn--secondary:hover:not(:disabled) {
+    background: var(--color-inset);
+    border-color: var(--color-ink);
+  }
 }
 
 .ui-btn--ghost {
@@ -61,8 +67,10 @@
   color: var(--color-ink);
 }
 
-.ui-btn--ghost:hover:not(:disabled) {
-  background: var(--color-inset);
+@media (hover: hover) and (pointer: fine) {
+  .ui-btn--ghost:hover:not(:disabled) {
+    background: var(--color-inset);
+  }
 }
 
 .ui-btn--onInk {
@@ -71,9 +79,11 @@
   border-color: var(--color-accent-on-ink);
 }
 
-.ui-btn--onInk:hover:not(:disabled) {
-  background: var(--color-accent-on-ink-hover);
-  border-color: var(--color-accent-on-ink-hover);
+@media (hover: hover) and (pointer: fine) {
+  .ui-btn--onInk:hover:not(:disabled) {
+    background: var(--color-accent-on-ink-hover);
+    border-color: var(--color-accent-on-ink-hover);
+  }
 }
 
 .ui-btn--danger {
@@ -82,9 +92,11 @@
   border-color: var(--color-danger);
 }
 
-.ui-btn--danger:hover:not(:disabled) {
-  background: var(--color-danger-hover);
-  border-color: var(--color-danger-hover);
+@media (hover: hover) and (pointer: fine) {
+  .ui-btn--danger:hover:not(:disabled) {
+    background: var(--color-danger-hover);
+    border-color: var(--color-danger-hover);
+  }
 }
 
 .ui-btn__icon {
@@ -120,9 +132,11 @@
   background: transparent;
 }
 
-.ui-panel--ink .ui-btn--secondary:hover:not(:disabled),
-.ui-panel--ink .ui-btn--ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
+@media (hover: hover) and (pointer: fine) {
+  .ui-panel--ink .ui-btn--secondary:hover:not(:disabled),
+  .ui-panel--ink .ui-btn--ghost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+  }
 }
 
 .ui-panel--ink .ui-btn:focus-visible {
@@ -142,9 +156,11 @@
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
-.ui-icon-btn:hover:not(:disabled) {
-  background: var(--color-inset);
-  color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-icon-btn:hover:not(:disabled) {
+    background: var(--color-inset);
+    color: var(--color-ink);
+  }
 }
 
 .ui-icon-btn--sm {
@@ -152,18 +168,22 @@
   height: var(--control-h-md);
 }
 
-.ui-icon-btn--danger:hover:not(:disabled) {
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
+@media (hover: hover) and (pointer: fine) {
+  .ui-icon-btn--danger:hover:not(:disabled) {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+  }
 }
 
 .ui-icon-btn--onInk {
   color: var(--color-on-ink-muted);
 }
 
-.ui-icon-btn--onInk:hover:not(:disabled) {
-  color: var(--color-ink);
-  background: var(--color-accent-on-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-icon-btn--onInk:hover:not(:disabled) {
+    color: var(--color-ink);
+    background: var(--color-accent-on-ink);
+  }
 }
 
 .ui-icon-btn:disabled {

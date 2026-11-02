@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Filter, WifiOff, CloudOff, Repeat } from 'lucide-react';
+import { Plus, Filter, WifiOff, CloudOff } from 'lucide-react';
 import { useAuth } from '../../app/providers';
 import { api } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
 import type { AccountWithBalances } from '@contracts/account';
 import type { CurrencyCode } from '@domain/money';
+import type { RecurringFrequency } from '@domain/recurring';
 import { isValidMonth, todayLocalISO } from '@domain/date';
 import { mergeWithCache, cacheServerRows, readCached, savePendingCreate } from '@local-data/transaction-store';
 import { Page, PageHeader, Grid, Stack, Inline } from '@shared/ui/Layout';
@@ -24,9 +25,29 @@ import { Text } from '@shared/ui/Text';
 import { CATEGORY_ICON_OPTIONS } from '@shared/ui/category-options';
 import { useCurrencyInput } from '@shared/hooks/useCurrencyInput';
 import { slugify } from '@shared/format/slug';
+import { FREQUENCY_LABELS } from '@shared/format/frequency';
+import { focusFirstInvalid, hasFieldErrors, type FieldErrors } from '@shared/form/validation';
 import '../../app/styles/transactions.css';
 
 type TransactionKind = 'income' | 'expense';
+type EntryMode = 'manual' | 'installment' | 'recurring';
+
+const RECURRING_FREQUENCY_OPTIONS: SegmentedOption[] = (Object.keys(FREQUENCY_LABELS) as RecurringFrequency[])
+  .filter(frequency => frequency !== 'never')
+  .map(frequency => ({ value: frequency, label: FREQUENCY_LABELS[frequency] }));
+
+const VALID_RECURRING_FREQUENCIES = new Set(RECURRING_FREQUENCY_OPTIONS.map(option => option.value));
+
+const REPETITION_OPTIONS: SegmentedOption[] = [
+  { value: 'manual', label: 'Único' },
+  { value: 'installment', label: 'Cuotas' },
+  { value: 'recurring', label: 'Recurrente' }
+];
+
+const WEEKDAY_OPTIONS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((label, index) => ({
+  label,
+  bit: 1 << index
+}));
 
 interface TxFormData {
   amountMinor: number | null;
@@ -78,25 +99,38 @@ export function TransactionsPage() {
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [formData, setFormData] = useState<TxFormData>(() => emptyForm('expense', defaultCurrency));
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [accountsReady, setAccountsReady] = useState(false);
+  const [categoriesReady, setCategoriesReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newCategoryOpen, setNewCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryIcon, setNewCategoryIcon] = useState('tag');
   const [newCategoryError, setNewCategoryError] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
-  const [entryMode, setEntryMode] = useState<'manual' | 'installment' | 'recurring'>('manual');
+  const [entryMode, setEntryMode] = useState<EntryMode>('manual');
   const lastAccountByKind = useRef<Record<TransactionKind, string>>({ income: '', expense: '' });
   const [description, setDescription] = useState('');
   const [notes, setNotes] = useState('');
   const [showNotes, setShowNotes] = useState(false);
-  const [repeatModalOpen, setRepeatModalOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
-  const [repeatStep, setRepeatStep] = useState<'choose' | 'installment'>('choose');
   const [installmentsCount, setInstallmentsCount] = useState('2');
   const [firstDueOn, setFirstDueOn] = useState(todayLocalISO());
-  const [recurringFrequency, setRecurringFrequency] = useState('monthly');
+  const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>('monthly');
   const [recurringDaysOfWeek, setRecurringDaysOfWeek] = useState<number>(1 << new Date().getDay());
   const [recurringEndOn, setRecurringEndOn] = useState('');
+
+  const clearFieldError = (field: string) => {
+    setFieldErrors(previous => (previous[field] ? { ...previous, [field]: undefined } : previous));
+  };
+
+  const resetRecurrenceFields = useCallback(() => {
+    setInstallmentsCount('2');
+    setFirstDueOn(todayLocalISO());
+    setRecurringFrequency('monthly');
+    setRecurringDaysOfWeek(1 << new Date().getDay());
+    setRecurringEndOn('');
+  }, []);
 
   // Hook para input de moneda con formateo ARS en vivo
   const amountInput = useCurrencyInput({
@@ -105,9 +139,34 @@ export function TransactionsPage() {
     allowEmpty: true,
     onChange: (valueMinor) => {
       setFormData(f => ({ ...f, amountMinor: valueMinor }));
+      if (valueMinor !== null && valueMinor > 0) clearFieldError('amount');
     }
   });
   const setAmountMinor = amountInput.setValueMinor;
+
+  const openDatePicker = useCallback(() => {
+    const input = dateInputRef.current;
+    if (!input) return;
+    try {
+      input.showPicker();
+    } catch {
+      input.click();
+    }
+  }, []);
+
+  const changeEntryMode = (value: string) => {
+    const mode = value as EntryMode;
+    if (mode === entryMode) return;
+    setEntryMode(mode);
+    resetRecurrenceFields();
+    setFieldErrors(previous => ({
+      ...previous,
+      installmentsCount: undefined,
+      firstDueOn: undefined,
+      recurringFrequency: undefined,
+      recurringEndOn: undefined
+    }));
+  };
 
   const loadData = useCallback(async (append = false, nextPage = page) => {
     if (!user) return;
@@ -173,11 +232,13 @@ export function TransactionsPage() {
   const loadCategories = useCallback(async () => {
     const response = await api.listCategories(true);
     if (!response.error) setCategories(response.data || []);
+    setCategoriesReady(true);
   }, []);
 
   const loadAccounts = useCallback(async () => {
     const response = await api.listAccounts();
     if (!response.error) setAccounts(response.data || []);
+    setAccountsReady(true);
   }, []);
 
   useEffect(() => { void loadAccounts(); }, [loadAccounts]);
@@ -227,6 +288,7 @@ export function TransactionsPage() {
   const closeModal = useCallback(() => {
     if (deleteTarget) return;
     setEditingTx(null);
+    setFieldErrors({});
     resetNewCategory();
   }, [resetNewCategory, deleteTarget]);
 
@@ -239,17 +301,12 @@ export function TransactionsPage() {
     setFormData(newForm);
     setAmountMinor(null);
     setFormError(null);
+    setFieldErrors({});
     setEntryMode('manual');
     setDescription('');
     setNotes('');
     setShowNotes(false);
-    setRepeatModalOpen(false);
-    setRepeatStep('choose');
-    setInstallmentsCount('2');
-    setFirstDueOn(todayLocalISO());
-    setRecurringFrequency('monthly');
-    setRecurringDaysOfWeek(1 << new Date().getDay());
-    setRecurringEndOn('');
+    resetRecurrenceFields();
     resetNewCategory();
     setEditingTx({ kind });
   };
@@ -273,6 +330,7 @@ export function TransactionsPage() {
     setShowNotes(false);
     setEntryMode('manual');
     setFormError(null);
+    setFieldErrors({});
     resetNewCategory();
     setEditingTx(tx);
   }, [transactions, setAmountMinor]);
@@ -307,6 +365,7 @@ export function TransactionsPage() {
       if (created) {
         setCategories(prev => [...prev, created]);
         setFormData(f => (f.kind === kind ? { ...f, categoryId: created.id } : f));
+        clearFieldError('categoryId');
       }
       resetNewCategory();
     } catch (e: any) {
@@ -329,24 +388,49 @@ export function TransactionsPage() {
 
   useEffect(() => {
     const mode = searchParams.get('new');
-    if (mode === 'expense' || mode === 'income') {
-      const remembered = lastAccountByKind.current[mode as TransactionKind];
-      const defaultAccount = accounts.find(a => a.isDefault) ?? accounts[0];
-      const accountId = remembered || defaultAccount?.id || '';
-      const newForm = {
-        ...emptyForm(mode, defaultCurrency),
-        categoryId: categories.find(c => c.kind === mode && !c.archivedAt)?.id ?? '',
-        accountId
-      };
-      setFormData(newForm);
-      setAmountMinor(null);
-      setEntryMode('manual');
-      setEditingTx({ kind: mode });
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.delete('new');
-      setSearchParams(nextParams, { replace: true });
-    }
-  }, [searchParams, setSearchParams, categories, setAmountMinor, defaultCurrency]);
+    if (mode !== 'expense' && mode !== 'income') return;
+    // Esperamos a que cuentas y categorías estén disponibles para preseleccionar
+    // antes de limpiar el parámetro. Si falló la carga, seguimos igual para no
+    // bloquear el deep link.
+    if (!accountsReady || !categoriesReady) return;
+
+    const kind = mode as TransactionKind;
+    const remembered = lastAccountByKind.current[kind];
+    const defaultAccount = accounts.find(a => a.isDefault) ?? accounts[0];
+    const accountId = remembered || defaultAccount?.id || '';
+    const firstCategory = categories.find(c => c.kind === kind && !c.archivedAt);
+
+    setFormData({
+      ...emptyForm(kind, defaultCurrency),
+      categoryId: firstCategory?.id ?? '',
+      accountId
+    });
+    setAmountMinor(null);
+    setFormError(null);
+    setFieldErrors({});
+    setEntryMode('manual');
+    setDescription('');
+    setNotes('');
+    setShowNotes(false);
+    resetRecurrenceFields();
+    resetNewCategory();
+    setEditingTx({ kind });
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('new');
+    setSearchParams(nextParams, { replace: true });
+  }, [
+    searchParams,
+    setSearchParams,
+    accounts,
+    accountsReady,
+    categories,
+    categoriesReady,
+    setAmountMinor,
+    defaultCurrency,
+    resetNewCategory,
+    resetRecurrenceFields
+  ]);
 
   useEffect(() => {
     const transactionId = searchParams.get('edit');
@@ -368,24 +452,48 @@ export function TransactionsPage() {
     setSearchParams(nextParams, { replace: true });
   }, [searchParams, transactions, loading, accountsById, setSearchParams, startEdit, editingTx]);
 
-  const validate = () => {
+  const validate = (): FieldErrors => {
+    const errors: FieldErrors = {};
+
     if (formData.amountMinor === null || formData.amountMinor === undefined || formData.amountMinor <= 0) {
-      return 'El importe debe ser mayor a cero.';
+      errors.amount = 'Ingresá un importe mayor a cero.';
     }
-    if (!formData.categoryId) return 'Elegí una categoría.';
-    if (!formData.occurredOn) return 'Elegí una fecha.';
-    if (accounts.length > 0 && !formData.accountId) return 'Elegí una cuenta.';
-    return null;
+    if (!formData.accountId) errors.accountId = 'Elegí una cuenta.';
+    if (!formData.categoryId) errors.categoryId = 'Elegí una categoría.';
+    if (!formData.occurredOn) errors.occurredOn = 'Elegí una fecha.';
+
+    if (entryMode === 'installment') {
+      const count = Number(installmentsCount);
+      if (!Number.isInteger(count) || count < 2 || count > 999) {
+        errors.installmentsCount = 'Ingresá una cantidad entre 2 y 999.';
+      }
+      if (!firstDueOn) errors.firstDueOn = 'Elegí el primer vencimiento.';
+    }
+
+    if (entryMode === 'recurring') {
+      if (!VALID_RECURRING_FREQUENCIES.has(recurringFrequency)) {
+        errors.recurringFrequency = 'Elegí una frecuencia válida.';
+      } else if (recurringFrequency === 'weekly_days' && recurringDaysOfWeek === 0) {
+        errors.recurringFrequency = 'Elegí al menos un día de repetición.';
+      }
+      if (recurringEndOn && recurringEndOn < todayLocalISO()) {
+        errors.recurringEndOn = 'La fecha de fin no puede ser anterior a hoy.';
+      }
+    }
+
+    return errors;
   };
 
   const handleSubmit = async () => {
     if (saving) return;
     if (!user || !editingTx) { setFormError("No se pudo identificar la cuenta o el movimiento."); return; }
-    const validationError = validate();
-    if (validationError) {
-      setFormError(validationError);
+    const errors = validate();
+    if (hasFieldErrors(errors)) {
+      setFieldErrors(errors);
+      focusFirstInvalid('tx-form');
       return;
     }
+    setFieldErrors({});
     const amountMinor = formData.amountMinor!;
     setSaving(true);
     setFormError(null);
@@ -499,6 +607,7 @@ export function TransactionsPage() {
     note: tx.note,
     categoryId: tx.categoryId,
     accountName: tx.accountId ? accountsById.get(tx.accountId) : undefined,
+    sourceType: tx.sourceType,
     pending: tx.synced === false
   }));
   const visibleItems = search.trim()
@@ -668,17 +777,20 @@ export function TransactionsPage() {
                 const accountId = remembered || defaultAccount?.id || '';
                 resetNewCategory();
                 setFormData(f => ({ ...f, kind, categoryId: first?.id ?? '', accountId }));
+                if (accountId) clearFieldError('accountId');
+                if (first?.id) clearFieldError('categoryId');
               }}
               options={kindOptions}
             />
 
             {/* 2. Fecha + Hoy/Ayer en una línea */}
             <div className="tx-date-row">
-              <div style={{ flex: '1 1 auto', minWidth: 130 }}>
+              <div className="tx-date-field">
                 <Input
                   label="Fecha"
                   type="text"
                   inputMode="numeric"
+                  error={fieldErrors.occurredOn}
                   value={(() => {
                     if (!formData.occurredOn) return '';
                     const [y, m, d] = formData.occurredOn.split('-');
@@ -686,22 +798,35 @@ export function TransactionsPage() {
                     return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
                   })()}
                   readOnly
-                  onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
+                  aria-haspopup="dialog"
+                  onClick={openDatePicker}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    openDatePicker();
+                  }}
                   required
                 />
                 <input
                   ref={dateInputRef}
-                   type="date"
-                   tabIndex={-1}
-                   value={formData.occurredOn}
-                  onChange={(e) => setFormData(f => ({ ...f, occurredOn: e.target.value }))}
-                  style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
+                  className="tx-date-native"
+                  type="date"
+                  tabIndex={-1}
+                  value={formData.occurredOn}
+                  onChange={(event) => {
+                    setFormData(f => ({ ...f, occurredOn: event.target.value }));
+                    if (event.target.value) clearFieldError('occurredOn');
+                  }}
                 />
               </div>
-              <Button type="button" variant={formData.occurredOn === todayLocalISO() ? 'primary' : 'secondary'} size="sm" onClick={() => setFormData(f => ({ ...f, occurredOn: todayLocalISO() }))}>Hoy</Button>
+              <Button type="button" variant={formData.occurredOn === todayLocalISO() ? 'primary' : 'secondary'} size="sm" onClick={() => {
+                setFormData(f => ({ ...f, occurredOn: todayLocalISO() }));
+                clearFieldError('occurredOn');
+              }}>Hoy</Button>
               <Button type="button" variant={(() => { const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1); return formData.occurredOn === d.toISOString().slice(0, 10); })() ? 'primary' : 'secondary'} size="sm" onClick={() => {
                 const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1);
                 setFormData(f => ({ ...f, occurredOn: d.toISOString().slice(0, 10) }));
+                clearFieldError('occurredOn');
               }}>Ayer</Button>
             </div>
 
@@ -714,10 +839,11 @@ export function TransactionsPage() {
                 onBlur={amountInput.onBlur}
                 onFocus={amountInput.onFocus}
                 placeholder="0,00"
-                prefix="$"
-                 required
-                 data-autofocus
-                 inputMode="decimal"
+                prefix={formData.currency === 'USD' ? 'US$' : '$'}
+                error={fieldErrors.amount}
+                required
+                data-autofocus
+                inputMode="decimal"
                 pattern="[0-9.,]*"
                 autoComplete="off"
                 autoCorrect="off"
@@ -736,10 +862,19 @@ export function TransactionsPage() {
                 options={currencyOptions}
                 className="tx-currency-segment"
               />
-              <Button type="button" variant="secondary" onClick={() => { setRepeatStep('choose'); setRepeatModalOpen(true); }} leftIcon={<Repeat size={16} />}>
-                Repetir
-              </Button>
             </div>
+
+            {!editingTx?.id && (
+              <div className="tx-repeat">
+                <span className="ui-field__label">Repetición</span>
+                <SegmentedControl
+                  aria-label="Repetición"
+                  value={entryMode}
+                  onChange={changeEntryMode}
+                  options={REPETITION_OPTIONS}
+                />
+              </div>
+            )}
 
             {entryMode === 'installment' && (
               <Grid columns={2} gap="md">
@@ -747,11 +882,21 @@ export function TransactionsPage() {
                    label="Cantidad de cuotas"
                    type="number"
                    value={installmentsCount}
-                   onChange={v => setInstallmentsCount(v)}
+                   error={fieldErrors.installmentsCount}
+                   onChange={v => {
+                     setInstallmentsCount(v);
+                     const count = Number(v);
+                     if (Number.isInteger(count) && count >= 2 && count <= 999) clearFieldError('installmentsCount');
+                   }}
                    onBlur={() => {
                      const n = Number(installmentsCount);
-                     if (isNaN(n) || n < 2) setInstallmentsCount('2');
-                     else if (n > 999) setInstallmentsCount('999');
+                     if (isNaN(n) || n < 2) {
+                       setInstallmentsCount('2');
+                       clearFieldError('installmentsCount');
+                     } else if (n > 999) {
+                       setInstallmentsCount('999');
+                       clearFieldError('installmentsCount');
+                     }
                    }}
                    min={2}
                    max={999}
@@ -760,7 +905,11 @@ export function TransactionsPage() {
                   label="Primer vencimiento"
                   type="date"
                   value={firstDueOn}
-                  onChange={v => setFirstDueOn(v)}
+                  error={fieldErrors.firstDueOn}
+                  onChange={v => {
+                    setFirstDueOn(v);
+                    if (v) clearFieldError('firstDueOn');
+                  }}
                 />
               </Grid>
             )}
@@ -771,44 +920,46 @@ export function TransactionsPage() {
                   <Select
                     label="Frecuencia"
                     value={recurringFrequency}
-                    onChange={v => setRecurringFrequency(v)}
-                    options={[
-                      { value: 'never', label: 'Nunca' },
-                      { value: 'daily', label: 'Cada día' },
-                      { value: 'weekly_days', label: 'Días de la semana' },
-                      { value: 'weekend', label: 'Fin de semana' },
-                      { value: 'weekly', label: 'Cada semana' },
-                      { value: 'biweekly', label: 'Cada dos semanas' },
-                      { value: 'four_weekly', label: 'Cada cuatro semanas' },
-                      { value: 'monthly', label: 'Cada mes' },
-                      { value: 'month_end', label: 'Fin de mes' },
-                      { value: 'bimonthly', label: 'Cada dos meses' },
-                      { value: 'trimonthly', label: 'Cada tres meses' },
-                      { value: 'fourmonthly', label: 'Cada cuatro meses' },
-                      { value: 'sixmonthly', label: 'Cada seis meses' },
-                      { value: 'yearly', label: 'Cada año' }
-                    ]}
+                    error={fieldErrors.recurringFrequency}
+                    onChange={v => {
+                      setRecurringFrequency(v as RecurringFrequency);
+                      clearFieldError('recurringFrequency');
+                    }}
+                    options={RECURRING_FREQUENCY_OPTIONS}
                   />
                   <Input
                     label="Fecha de fin (opcional)"
                     type="date"
                     value={recurringEndOn}
-                    onChange={v => setRecurringEndOn(v)}
+                    error={fieldErrors.recurringEndOn}
+                    onChange={v => {
+                      setRecurringEndOn(v);
+                      if (!v || v >= todayLocalISO()) clearFieldError('recurringEndOn');
+                    }}
                   />
                 </Grid>
                 {recurringFrequency === 'weekly_days' && (
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((label, idx) => {
-                      const bit = 1 << idx;
-                      const checked = (recurringDaysOfWeek & bit) !== 0;
-                      return (
-                        <label key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <input type="checkbox" checked={checked} onChange={() => setRecurringDaysOfWeek(prev => checked ? prev & ~bit : prev | bit)} />
-                          {label}
-                        </label>
-                      );
-                    })}
-                  </div>
+                  <fieldset className="tx-weekdays">
+                    <legend className="tx-weekdays__legend">Días de repetición</legend>
+                    <div className="tx-weekdays__options">
+                      {WEEKDAY_OPTIONS.map(({ label, bit }) => {
+                        const checked = (recurringDaysOfWeek & bit) !== 0;
+                        return (
+                          <label key={label} className="tx-weekday">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setRecurringDaysOfWeek(prev => (checked ? prev & ~bit : prev | bit));
+                                clearFieldError('recurringFrequency');
+                              }}
+                            />
+                            {label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
                 )}
               </>
             )}
@@ -817,9 +968,11 @@ export function TransactionsPage() {
             <Select
               label="Cuenta"
               value={formData.accountId}
+              error={fieldErrors.accountId}
               onChange={v => {
                 setFormData(f => ({ ...f, accountId: v }));
                 lastAccountByKind.current[formData.kind] = v;
+                if (v) clearFieldError('accountId');
               }}
               options={accountOptions}
             />
@@ -852,6 +1005,7 @@ export function TransactionsPage() {
             <Select
               label="Categoría"
               value={formData.categoryId}
+              error={fieldErrors.categoryId}
               onChange={v => {
                 if (v === '__new__') {
                   setNewCategoryOpen(true);
@@ -860,6 +1014,7 @@ export function TransactionsPage() {
                   return;
                 }
                 setFormData(f => ({ ...f, categoryId: v }));
+                if (v) clearFieldError('categoryId');
               }}
               options={[
                 ...categories
@@ -903,44 +1058,6 @@ export function TransactionsPage() {
           </Stack>
         </form>
       </Modal>
-
-      <Modal
-       open={repeatModalOpen}
-       onClose={() => setRepeatModalOpen(false)}
-       title="Selecciona el tipo de transacción"
-     >
-       <Stack gap="md">
-         {repeatStep === 'choose' ? (
-           <>
-             <Button onClick={() => setRepeatStep('installment')}>Cuota</Button>
-             <Button onClick={() => { setEntryMode('recurring'); setRepeatModalOpen(false); }}>Repetir</Button>
-           </>
-         ) : (
-           <>
-              <Input
-                label="Cantidad de cuotas"
-                type="number"
-                value={installmentsCount}
-                onChange={v => setInstallmentsCount(v)}
-                onBlur={() => {
-                  const n = Number(installmentsCount);
-                  if (isNaN(n) || n < 2) setInstallmentsCount('2');
-                  else if (n > 999) setInstallmentsCount('999');
-                }}
-                min={2}
-                max={999}
-              />
-             <Input
-               label="Primer vencimiento"
-               type="date"
-               value={firstDueOn}
-               onChange={v => setFirstDueOn(v)}
-             />
-             <Button onClick={() => { setEntryMode('installment'); setRepeatModalOpen(false); }}>Confirmar</Button>
-           </>
-         )}
-       </Stack>
-     </Modal>
 
       <Modal
          open={deleteTarget !== null}

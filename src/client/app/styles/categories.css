@@ -5,6 +5,6 @@
 
 .categories-confirm {
   color: var(--color-stone);
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
   padding-bottom: var(--space-2);
 }

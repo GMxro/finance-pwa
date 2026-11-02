@@ -20,8 +20,10 @@
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
-.ui-select-trigger:hover:not(.ui-select-trigger--disabled) {
-  border-color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-select-trigger:hover:not(.ui-select-trigger--disabled) {
+    border-color: var(--color-ink);
+  }
 }
 
 .ui-select-trigger:focus-visible {
@@ -86,8 +88,10 @@
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
-.ui-field .ui-segment__item:hover {
-  color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-field .ui-segment__item:hover {
+    color: var(--color-ink);
+  }
 }
 
 .ui-field .ui-segment__item.is-active {
@@ -154,9 +158,11 @@
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
-.ui-select-sheet__close:hover {
-  background: var(--color-inset);
-  color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-select-sheet__close:hover {
+    background: var(--color-inset);
+    color: var(--color-ink);
+  }
 }
 
 .ui-select-sheet__search {
@@ -192,8 +198,10 @@
   transition: background-color var(--dur-fast) var(--ease-out);
 }
 
-.ui-select-sheet__item:hover {
-  background: var(--color-inset);
+@media (hover: hover) and (pointer: fine) {
+  .ui-select-sheet__item:hover {
+    background: var(--color-inset);
+  }
 }
 
 .ui-select-sheet__item.is-selected {
@@ -201,8 +209,10 @@
   color: var(--color-on-ink);
 }
 
-.ui-select-sheet__item.is-selected:hover {
-  background: var(--color-ink-soft);
+@media (hover: hover) and (pointer: fine) {
+  .ui-select-sheet__item.is-selected:hover {
+    background: var(--color-ink-soft);
+  }
 }
 
 .ui-select-sheet__check {

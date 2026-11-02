@@ -22,14 +22,14 @@
 }
 
 .ui-error-card h1 {
-  font-size: var(--text-h1);
+  font-size: var(--text-page-title);
   font-weight: var(--weight-display);
 }
 
 .ui-error-text {
   margin-top: var(--space-3);
   color: var(--color-stone);
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
 }
 
 .ui-error-actions {

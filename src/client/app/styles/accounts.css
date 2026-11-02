@@ -61,6 +61,45 @@
 }
 
 @media (max-width: 720px) {
+  .accounts-list .ui-row {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "lead main actions"
+      "lead meta meta";
+    column-gap: var(--gap-inline);
+    row-gap: 2px;
+    align-items: center;
+  }
+
+  .accounts-list .ui-row__leading {
+    grid-area: lead;
+    align-self: start;
+    margin-top: 6px;
+  }
+
+  .accounts-list .ui-row__main {
+    grid-area: main;
+    min-width: 0;
+  }
+
+  .accounts-list .ui-row__meta {
+    grid-area: meta;
+    justify-content: flex-start;
+    max-width: none;
+    margin-top: 2px;
+  }
+
+  .accounts-list .ui-row__trailing {
+    grid-area: actions;
+    align-self: start;
+  }
+
+  .accounts-list .accounts-default-badge,
+  .accounts-list .accounts-default-action {
+    display: none;
+  }
+
   .accounts-balances {
     justify-content: flex-start;
   }

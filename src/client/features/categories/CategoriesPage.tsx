@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, Pencil, Archive, RotateCcw } from 'lucide-react';
 import { api } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
+import { focusFirstInvalid, hasFieldErrors, type FieldErrors } from '@shared/form/validation';
 import { Page, PageHeader, Section, Stack, Grid } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
 import { Button, IconButton } from '@shared/ui/Button';
@@ -43,6 +44,7 @@ export function CategoriesPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<CategoryForm>(emptyForm());
   const [slugTouched, setSlugTouched] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -72,6 +74,7 @@ export function CategoriesPage() {
   const openCreate = (kind: 'income' | 'expense') => {
     setForm(emptyForm(kind));
     setSlugTouched(false);
+    setFieldErrors({});
     setFormError(null);
     setCreating(true);
   };
@@ -85,6 +88,7 @@ export function CategoriesPage() {
       sortOrder: String(category.sortOrder)
     });
     setSlugTouched(true);
+    setFieldErrors({});
     setFormError(null);
     setEditing(category);
   };
@@ -92,19 +96,30 @@ export function CategoriesPage() {
   const closeModal = () => {
     setCreating(false);
     setEditing(null);
+    setFieldErrors({});
     setFormError(null);
   };
 
   const handleSubmit = async () => {
+    const nextErrors: FieldErrors = {};
     if (!form.name.trim()) {
-      setFormError('Poné un nombre.');
-      return;
+      nextErrors.name = 'Poné un nombre.';
     }
     const slug = form.slug || slugify(form.name);
-    if (!/^[a-z0-9-]+$/.test(slug)) {
-      setFormError('El identificador solo puede tener minúsculas, números y guiones.');
+    if (!editing) {
+      if (!form.slug.trim()) {
+        nextErrors.slug = 'Poné un identificador.';
+      } else if (!/^[a-z0-9-]+$/.test(slug)) {
+        nextErrors.slug = 'El identificador solo puede tener minúsculas, números y guiones.';
+      }
+    }
+    if (hasFieldErrors(nextErrors)) {
+      setFieldErrors(nextErrors);
+      setFormError(null);
+      focusFirstInvalid('category-form');
       return;
     }
+    setFieldErrors({});
 
     setSaving(true);
     setFormError(null);
@@ -261,7 +276,7 @@ export function CategoriesPage() {
           </>
         }
       >
-        <form id="category-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }}>
+        <form id="category-form" noValidate onSubmit={e => { e.preventDefault(); void handleSubmit(); }}>
           <Stack gap="md">
             {formError && <Notice tone="strong">{formError}</Notice>}
             {!editing && (
@@ -282,7 +297,9 @@ export function CategoriesPage() {
               value={form.name}
               onChange={v => {
                 setForm(f => ({ ...f, name: v, slug: !slugTouched && !editing ? slugify(v) : f.slug }));
+                setFieldErrors(errors => ({ ...errors, name: undefined, slug: undefined }));
               }}
+              error={fieldErrors.name}
               placeholder="Ej.: Alimentación"
               maxLength={50}
               required
@@ -294,7 +311,9 @@ export function CategoriesPage() {
                 onChange={v => {
                   setSlugTouched(true);
                   setForm(f => ({ ...f, slug: slugify(v) }));
+                  setFieldErrors(errors => (errors.slug ? { ...errors, slug: undefined } : errors));
                 }}
+                error={fieldErrors.slug}
                 placeholder="alimentacion"
                 helperText="Se usa internamente. Minúsculas, números y guiones."
                 maxLength={50}

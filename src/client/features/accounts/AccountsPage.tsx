@@ -7,6 +7,7 @@ import type { TransferResponse } from '@contracts/transfer';
 import { formatAmount, type CurrencyCode } from '@domain/money';
 import { todayLocalISO } from '@domain/date';
 import { useCurrencyInput } from '@shared/hooks/useCurrencyInput';
+import { focusFirstInvalid, hasFieldErrors, type FieldErrors } from '@shared/form/validation';
 import { Page, PageHeader, Section, Stack, Grid, Inline } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
 import { Button, IconButton } from '@shared/ui/Button';
@@ -86,34 +87,55 @@ export function AccountsPage() {
 
   const [accountModal, setAccountModal] = useState<{ mode: 'create' | 'edit'; account?: AccountWithBalances } | null>(null);
   const [accountForm, setAccountForm] = useState<AccountForm>({ name: '', description: '', kind: 'cash', initialAmountMinor: null, initialCurrency: defaultCurrency });
+  const [accountFieldErrors, setAccountFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferForm, setTransferForm] = useState<TransferForm>(() => emptyTransferForm(defaultCurrency));
+  const [transferFieldErrors, setTransferFieldErrors] = useState<FieldErrors>({});
 
   const fromAmountInput = useCurrencyInput({
     currency: transferForm.currency,
     initialValue: transferForm.amountMinor,
     allowEmpty: true,
-    onChange: (valueMinor) => setTransferForm(f => ({ ...f, amountMinor: valueMinor }))
+    onChange: (valueMinor) => {
+      setTransferForm(f => ({ ...f, amountMinor: valueMinor }));
+      setTransferFieldErrors(errors => (errors.amountMinor ? { ...errors, amountMinor: undefined } : errors));
+    }
   });
 
   const toAmountInput = useCurrencyInput({
     currency: transferForm.toCurrency,
     initialValue: transferForm.toAmountMinor,
     allowEmpty: true,
-    onChange: (valueMinor) => setTransferForm(f => ({ ...f, toAmountMinor: valueMinor }))
+    onChange: (valueMinor) => {
+      setTransferForm(f => ({ ...f, toAmountMinor: valueMinor }));
+      setTransferFieldErrors(errors => (errors.toAmountMinor ? { ...errors, toAmountMinor: undefined } : errors));
+    }
   });
 
   const initialAmountInput = useCurrencyInput({
     currency: accountForm.initialCurrency,
     initialValue: accountForm.initialAmountMinor,
     allowEmpty: true,
-    onChange: (valueMinor) => setAccountForm(f => ({ ...f, initialAmountMinor: valueMinor }))
+    onChange: (valueMinor) => {
+      setAccountForm(f => ({ ...f, initialAmountMinor: valueMinor }));
+      setAccountFieldErrors(errors => (errors.initialAmountMinor ? { ...errors, initialAmountMinor: undefined } : errors));
+    }
   });
   const setFromAmountMinor = fromAmountInput.setValueMinor;
   const setToAmountMinor = toAmountInput.setValueMinor;
+
+  function updateAccountField<K extends keyof AccountForm>(key: K, value: AccountForm[K]) {
+    setAccountForm(form => ({ ...form, [key]: value }));
+    setAccountFieldErrors(errors => (errors[key] ? { ...errors, [key]: undefined } : errors));
+  }
+
+  function updateTransferField<K extends keyof TransferForm>(key: K, value: TransferForm[K]) {
+    setTransferForm(form => ({ ...form, [key]: value }));
+    setTransferFieldErrors(errors => (errors[key] ? { ...errors, [key]: undefined } : errors));
+  }
 
   const [archiveTarget, setArchiveTarget] = useState<AccountWithBalances | null>(null);
   const [archiveHasCommitments, setArchiveHasCommitments] = useState(false);
@@ -217,21 +239,40 @@ export function AccountsPage() {
 
   const openCreateAccount = () => {
     setAccountForm({ name: '', description: '', kind: 'cash', initialAmountMinor: null, initialCurrency: defaultCurrency });
+    setAccountFieldErrors({});
     setFormError(null);
     setAccountModal({ mode: 'create' });
   };
 
   const openEditAccount = (account: AccountWithBalances) => {
     setAccountForm({ name: account.name, description: account.description ?? '', kind: account.kind, initialAmountMinor: null, initialCurrency: defaultCurrency });
+    setAccountFieldErrors({});
     setFormError(null);
     setAccountModal({ mode: 'edit', account });
   };
 
   const saveAccount = async () => {
-    if (!accountForm.name.trim()) {
-      setFormError('Poné un nombre.');
+    const nextErrors: FieldErrors = {};
+    const trimmedName = accountForm.name.trim();
+    if (!trimmedName) {
+      nextErrors.name = 'Poné un nombre.';
+    } else if (trimmedName.length > 60) {
+      nextErrors.name = 'El nombre no puede superar los 60 caracteres.';
+    }
+    if (
+      accountModal?.mode === 'create' &&
+      accountForm.initialAmountMinor !== null &&
+      accountForm.initialAmountMinor <= 0
+    ) {
+      nextErrors.initialAmountMinor = 'El importe inicial debe ser mayor a cero.';
+    }
+    if (hasFieldErrors(nextErrors)) {
+      setAccountFieldErrors(nextErrors);
+      setFormError(null);
+      focusFirstInvalid('account-form');
       return;
     }
+    setAccountFieldErrors({});
     setSaving(true);
     setFormError(null);
     try {
@@ -313,6 +354,7 @@ export function AccountsPage() {
       fromAccountId: from?.id ?? '',
       toAccountId: to?.id ?? '',
     });
+    setTransferFieldErrors({});
     setFormError(null);
     setFromAmountMinor(null);
     setToAmountMinor(null);
@@ -322,35 +364,38 @@ export function AccountsPage() {
   const saveTransfer = async () => {
     const from = activeAccounts.find(a => a.id === transferForm.fromAccountId);
     const to = activeAccounts.find(a => a.id === transferForm.toAccountId);
+    const nextErrors: FieldErrors = {};
 
-    if (!from || !to) {
-      setFormError('Elegí las dos cuentas.');
-      return;
-    }
-    if (from.id === to.id) {
-      setFormError('Elegí dos cuentas distintas.');
-      return;
-    }
+    if (!from) nextErrors.fromAccountId = 'Elegí la cuenta de origen.';
+    if (!to) nextErrors.toAccountId = 'Elegí la cuenta de destino.';
+    else if (from?.id === to.id) nextErrors.toAccountId = 'Elegí dos cuentas distintas.';
 
     const fromAmountMinor = transferForm.amountMinor;
     if (fromAmountMinor === null || fromAmountMinor <= 0) {
-      setFormError('El importe debe ser mayor a cero.');
+      nextErrors.amountMinor = 'El importe debe ser mayor a cero.';
+    }
+
+    if (transferForm.crossCurrency) {
+      if (transferForm.toCurrency === transferForm.currency) {
+        nextErrors.toCurrency = 'En la misma moneda el monto que entra debe ser igual al que sale. Desactivá la opción o elegí otra moneda.';
+      } else if (transferForm.toAmountMinor === null || transferForm.toAmountMinor <= 0) {
+        nextErrors.toAmountMinor = 'El importe de destino debe ser mayor a cero.';
+      }
+    }
+
+    if (hasFieldErrors(nextErrors)) {
+      setTransferFieldErrors(nextErrors);
+      setFormError(null);
+      focusFirstInvalid('transfer-form');
       return;
     }
 
-    let toAmountMinor: number | undefined;
-    if (transferForm.crossCurrency) {
-      if (transferForm.toCurrency === transferForm.currency) {
-        setFormError('En la misma moneda el monto que entra debe ser igual al que sale. Desactivá la opción o elegí otra moneda.');
-        return;
-      }
-      const toAmount = transferForm.toAmountMinor;
-      if (toAmount === null || toAmount <= 0) {
-        setFormError('El importe de destino debe ser mayor a cero.');
-        return;
-      }
-      toAmountMinor = toAmount;
-    }
+    if (!from || !to || fromAmountMinor === null) return;
+    setTransferFieldErrors({});
+
+    const toAmountMinor = transferForm.crossCurrency
+      ? transferForm.toAmountMinor ?? undefined
+      : undefined;
 
     setSaving(true);
     setFormError(null);
@@ -461,7 +506,7 @@ export function AccountsPage() {
                     title={
                       <Inline gap="sm">
                         <span>{account.name}</span>
-                        {account.isDefault && <span className="ui-row__badge">Predeterminada</span>}
+                        {account.isDefault && <span className="ui-row__badge accounts-default-badge">Predeterminada</span>}
                       </Inline>
                     }
                     subtitle={KIND_LABELS[account.kind]}
@@ -469,7 +514,7 @@ export function AccountsPage() {
                     trailing={
                       <Inline gap="xs" className="accounts-row-actions">
                         {!account.isDefault && (
-                          <Button variant="ghost" size="sm" onClick={() => void makeDefault(account)} disabled={saving}>
+                          <Button variant="ghost" size="sm" className="accounts-default-action" onClick={() => void makeDefault(account)} disabled={saving}>
                             Predeterminar
                           </Button>
                         )}
@@ -566,6 +611,16 @@ export function AccountsPage() {
          description="Las cuentas agrupan tu plata: efectivo, banco, billeteras."
         footer={
           <>
+            {accountModal?.mode === 'edit' && accountModal.account && !accountModal.account.isDefault && (
+              <Button
+                variant="ghost"
+                className="accounts-default-modal-action"
+                onClick={() => void makeDefault(accountModal.account!)}
+                disabled={saving}
+              >
+                Predeterminar
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setAccountModal(null)} disabled={saving}>Cancelar</Button>
             <Button type="submit" form="account-form" loading={saving}>
               {accountModal?.mode === 'edit' ? 'Guardar' : 'Crear'}
@@ -573,13 +628,14 @@ export function AccountsPage() {
           </>
         }
       >
-        <form id="account-form" onSubmit={event => { event.preventDefault(); void saveAccount(); }}>
+        <form id="account-form" noValidate onSubmit={event => { event.preventDefault(); void saveAccount(); }}>
           <Stack gap="md">
             {formError && <Notice tone="strong">{formError}</Notice>}
             <Input
               label="Nombre"
               value={accountForm.name}
-              onChange={value => setAccountForm(form => ({ ...form, name: value }))}
+              onChange={value => updateAccountField('name', value)}
+              error={accountFieldErrors.name}
               placeholder="Ej.: Banco Nación"
               maxLength={60}
               required
@@ -587,13 +643,13 @@ export function AccountsPage() {
             <SegmentedControl
               label="Tipo"
               value={accountForm.kind}
-              onChange={value => setAccountForm(form => ({ ...form, kind: value as AccountKind }))}
+              onChange={value => updateAccountField('kind', value as AccountKind)}
               options={KIND_OPTIONS}
             />
             <Input
               label="Descripción (opcional)"
               value={accountForm.description}
-              onChange={value => setAccountForm(form => ({ ...form, description: value }))}
+              onChange={value => updateAccountField('description', value)}
               placeholder="Ej.: Cuenta sueldo"
               maxLength={200}
             />
@@ -607,12 +663,13 @@ export function AccountsPage() {
                   onFocus={initialAmountInput.onFocus}
                   placeholder="0"
                   inputMode="decimal"
-                  prefix="$"
+                  prefix={accountForm.initialCurrency === 'USD' ? 'US$' : '$'}
+                  error={accountFieldErrors.initialAmountMinor}
                 />
                 <Select
                   label="Moneda del importe inicial"
                   value={accountForm.initialCurrency}
-                  onChange={value => setAccountForm(form => ({ ...form, initialCurrency: value as CurrencyCode }))}
+                  onChange={value => updateAccountField('initialCurrency', value as CurrencyCode)}
                   options={[
                     { value: 'ARS', label: 'ARS' },
                     { value: 'USD', label: 'USD' }
@@ -637,27 +694,32 @@ export function AccountsPage() {
           </>
         }
       >
-        <form id="transfer-form" onSubmit={event => { event.preventDefault(); void saveTransfer(); }}>
+        <form id="transfer-form" noValidate onSubmit={event => { event.preventDefault(); void saveTransfer(); }}>
           <Stack gap="md">
             {formError && <Notice tone="strong">{formError}</Notice>}
             <Grid columns={2} gap="md">
               <Select
                 label="Desde"
                 value={transferForm.fromAccountId}
-                onChange={value => setTransferForm(form => ({
-                  ...form,
-                  fromAccountId: value,
-                  toAccountId: form.toAccountId === value
-                    ? activeAccounts.find(a => a.id !== value)?.id ?? ''
-                    : form.toAccountId
-                }))}
+                onChange={value => {
+                  setTransferForm(form => ({
+                    ...form,
+                    fromAccountId: value,
+                    toAccountId: form.toAccountId === value
+                      ? activeAccounts.find(a => a.id !== value)?.id ?? ''
+                      : form.toAccountId
+                  }));
+                  setTransferFieldErrors(errors => ({ ...errors, fromAccountId: undefined, toAccountId: undefined }));
+                }}
+                error={transferFieldErrors.fromAccountId}
                 options={activeAccounts.map(a => ({ value: a.id, label: a.name }))}
                 required
               />
               <Select
                 label="Hacia"
                 value={transferForm.toAccountId}
-                onChange={value => setTransferForm(form => ({ ...form, toAccountId: value }))}
+                onChange={value => updateTransferField('toAccountId', value)}
+                error={transferFieldErrors.toAccountId}
                 options={activeAccounts
                   .filter(a => a.id !== transferForm.fromAccountId)
                   .map(a => ({ value: a.id, label: a.name }))}
@@ -674,6 +736,7 @@ export function AccountsPage() {
                   onFocus={fromAmountInput.onFocus}
                   placeholder="0,00"
                   prefix={transferForm.currency === 'USD' ? 'US$' : '$'}
+                  error={transferFieldErrors.amountMinor}
                   required
                   inputMode="decimal"
                   pattern="[0-9.,]*"
@@ -686,7 +749,7 @@ export function AccountsPage() {
               <Select
                 label="Moneda"
                 value={transferForm.currency}
-                onChange={value => setTransferForm(form => ({ ...form, currency: value as CurrencyCode }))}
+                onChange={value => updateTransferField('currency', value as CurrencyCode)}
                 options={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]}
               />
             </Grid>
@@ -709,6 +772,7 @@ export function AccountsPage() {
                     onFocus={toAmountInput.onFocus}
                     placeholder="0,00"
                     prefix={transferForm.toCurrency === 'USD' ? 'US$' : '$'}
+                    error={transferFieldErrors.toAmountMinor}
                     required
                     inputMode="decimal"
                     pattern="[0-9.,]*"
@@ -721,7 +785,8 @@ export function AccountsPage() {
                 <Select
                   label="Moneda destino"
                   value={transferForm.toCurrency}
-                  onChange={value => setTransferForm(form => ({ ...form, toCurrency: value as CurrencyCode }))}
+                  onChange={value => updateTransferField('toCurrency', value as CurrencyCode)}
+                  error={transferFieldErrors.toCurrency}
                   options={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]}
                 />
               </Grid>
@@ -731,13 +796,13 @@ export function AccountsPage() {
                 label="Fecha"
                 type="date"
                 value={transferForm.occurredOn}
-                onChange={value => setTransferForm(form => ({ ...form, occurredOn: value }))}
+                onChange={value => updateTransferField('occurredOn', value)}
                 required
               />
               <Input
                 label="Nota (opcional)"
                 value={transferForm.note}
-                onChange={value => setTransferForm(form => ({ ...form, note: value }))}
+                onChange={value => updateTransferField('note', value)}
                 maxLength={120}
                 placeholder="Ej.: pago tarjeta"
               />

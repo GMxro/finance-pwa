@@ -37,20 +37,24 @@
   border-radius: var(--radius-field);
 }
 
-.ui-budget__select:hover .ui-budget__name {
-  color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-budget__select:hover .ui-budget__name {
+    color: var(--color-ink);
+  }
 }
 
 .ui-budget__name {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-inline);
+  display: block;
   min-width: 0;
   font-size: var(--text-body);
   font-weight: var(--weight-label);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.ui-budget__name > * + * {
+  margin-left: var(--gap-inline);
 }
 
 .ui-budget__amounts {

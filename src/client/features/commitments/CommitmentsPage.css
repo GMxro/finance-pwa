@@ -1,0 +1,151 @@
+/* Page: Commitments */
+.commitments-page > .ui-notice {
+  margin-bottom: var(--gap-section);
+}
+
+.commitments-loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-10) 0;
+}
+
+.commitments-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-field);
+}
+
+.commitments-summary__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--gap-inline);
+  flex-wrap: wrap;
+}
+
+.commitments-summary__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap-field);
+}
+
+.commitments-summary__currency {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.commitments-summary__currency-label {
+  letter-spacing: 0.06em;
+}
+
+.commitments-summary__figures {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap-field);
+}
+
+.commitments-figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.commitments-figure .ui-text {
+  overflow-wrap: anywhere;
+}
+
+.commitments-toolbar {
+  margin-bottom: var(--gap-field);
+}
+
+.commitments-tabs {
+  max-width: 100%;
+}
+
+.commitments-list {
+  padding: var(--space-2) var(--space-4);
+}
+
+.commitments-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+.commitments-row-meta .ui-row__badge {
+  font-size: var(--text-caption);
+}
+
+.commitments-list .ui-row__trailing .ui-btn {
+  min-height: var(--control-h-lg);
+}
+
+@media (min-width: 480px) {
+  .commitments-summary__figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 720px) {
+  .commitments-summary__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--gap-section);
+  }
+
+  .commitments-summary__currency + .commitments-summary__currency {
+    border-left: 1px solid var(--color-line);
+    padding-left: var(--gap-section);
+  }
+}
+
+@media (max-width: 719px) {
+  .commitments-summary__currency + .commitments-summary__currency {
+    border-top: 1px solid var(--color-line);
+    padding-top: var(--gap-field);
+  }
+}
+
+@media (max-width: 640px) {
+  .commitments-tabs {
+    width: 100%;
+  }
+
+  .commitments-tabs .ui-segment__item {
+    flex: 1 1 0;
+    padding: 0 var(--space-2);
+  }
+
+  .commitments-list {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .commitments-list .ui-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'main meta'
+      'actions actions';
+    align-items: start;
+    column-gap: var(--gap-inline);
+    row-gap: var(--space-1);
+    padding: var(--space-3) 0;
+  }
+
+  .commitments-list .ui-row__main {
+    grid-area: main;
+  }
+
+  .commitments-list .ui-row__meta {
+    grid-area: meta;
+    justify-self: end;
+  }
+
+  .commitments-list .ui-row__trailing {
+    grid-area: actions;
+    justify-self: end;
+  }
+}

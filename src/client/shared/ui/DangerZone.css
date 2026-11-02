@@ -29,8 +29,10 @@
   flex-shrink: 0;
 }
 
-.ui-danger__trigger:hover:not(:disabled) {
-  background: var(--color-danger-soft);
+@media (hover: hover) and (pointer: fine) {
+  .ui-danger__trigger:hover:not(:disabled) {
+    background: var(--color-danger-soft);
+  }
 }
 
 .ui-danger__panel {

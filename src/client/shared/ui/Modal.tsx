@@ -3,6 +3,14 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import './Modal.css';
 
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]):not([type="date"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+const EDITABLE_SELECTOR =
+  'input:not([type="hidden"]):not([type="radio"]):not([type="date"]):not([readonly]):not([disabled]), select:not([disabled]), textarea:not([disabled])';
+
+const SELECTABLE_INPUT_TYPES = new Set(['text', 'search', 'tel', 'url', 'password']);
+
 function blurActiveField() {
   const active = document.activeElement;
   if (active instanceof HTMLElement) active.blur();
@@ -18,6 +26,52 @@ function isEditableField(element: Element | null) {
   );
 }
 
+function isVisible(element: HTMLElement) {
+  return element.getClientRects().length > 0;
+}
+
+function visibleFocusables(root: HTMLElement | null) {
+  if (!root) return [];
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    element =>
+      !element.hasAttribute('disabled') &&
+      element.getAttribute('aria-hidden') !== 'true' &&
+      isVisible(element)
+  );
+}
+
+function focusElement(element: HTMLElement | null | undefined) {
+  if (!element) return false;
+  element.focus();
+  return document.activeElement === element;
+}
+
+function focusEditableField(element: HTMLElement | null | undefined) {
+  if (!focusElement(element)) return false;
+  if (element instanceof HTMLInputElement && SELECTABLE_INPUT_TYPES.has(element.type) && element.value) {
+    element.select();
+  }
+  return true;
+}
+
+function firstVisibleEditable(root: HTMLElement | null) {
+  if (!root) return null;
+  return Array.from(root.querySelectorAll<HTMLElement>(EDITABLE_SELECTOR)).find(isVisible) ?? null;
+}
+
+function focusFirstInside(content: HTMLElement) {
+  const body = content.querySelector<HTMLElement>('.ui-modal__body');
+  const footer = content.querySelector<HTMLElement>('.ui-modal__footer');
+  const close = content.querySelector<HTMLElement>('.ui-modal__close');
+
+  return (
+    focusElement(visibleFocusables(body)[0]) ||
+    focusElement(visibleFocusables(footer)[0]) ||
+    focusElement(close) ||
+    focusElement(content)
+  );
+}
+
 export interface ModalProps {
   open: boolean;
   onClose: () => void;
@@ -26,7 +80,7 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md';
-  /** Si true, solo autofocus la primera vez que se abre el modal y el primer campo está vacío */
+  /** Si true, enfoca el primer campo editable (o una acción segura del diálogo) la primera vez que se abre */
   autoFocusFirstEmpty?: boolean;
   /** Si true, impide cerrar el modal (Escape, overlay, botón X) mientras hay una operación en curso */
   busy?: boolean;
@@ -55,19 +109,19 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     document.body.style.overflow = 'hidden';
 
     if (autoFocusRef.current && !hasAutoFocused.current) {
-      const content = contentRef.current?.querySelector<HTMLElement>('.ui-modal__body');
-      const firstInput = content?.querySelector<HTMLElement>(
-        '[data-autofocus], input:not([type="hidden"]):not([type="radio"]):not([type="date"]), select, textarea'
-      );
+      window.setTimeout(() => {
+        const body = bodyRef.current;
+        const content = contentRef.current;
+        if (!body || !content || hasAutoFocused.current) return;
 
-      const shouldFocus = firstInput &&
-        (firstInput.tagName === 'INPUT' || firstInput.tagName === 'TEXTAREA') &&
-        ('value' in firstInput && (!firstInput.value || firstInput.value === '0' || firstInput.value === '0,00'));
+        const preferred = body.querySelector<HTMLElement>('[data-autofocus]');
+        const focused =
+          focusEditableField(preferred) ||
+          focusEditableField(firstVisibleEditable(body)) ||
+          focusFirstInside(content);
 
-      if (shouldFocus) {
-        window.setTimeout(() => (firstInput as HTMLElement).focus(), 0);
-      }
-      hasAutoFocused.current = true;
+        if (focused) hasAutoFocused.current = true;
+      }, 0);
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -79,13 +133,21 @@ export function Modal({ open, onClose, title, description, children, footer, siz
       }
       if (event.key !== 'Tab' || !contentRef.current) return;
 
-      const focusable = Array.from(
-        contentRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]):not([type="date"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => el.offsetParent !== null);
+      const content = contentRef.current;
+      const focusable = visibleFocusables(content);
 
-      if (focusable.length === 0) return;
+      if (!content.contains(document.activeElement)) {
+        event.preventDefault();
+        (focusable[0] ?? content).focus();
+        return;
+      }
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        content.focus();
+        return;
+      }
+
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       if (!first || !last) return;
@@ -101,6 +163,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
+      hasAutoFocused.current = false;
       document.body.style.overflow = originalOverflow;
       document.removeEventListener('keydown', handleKeyDown);
       if (!open) return;

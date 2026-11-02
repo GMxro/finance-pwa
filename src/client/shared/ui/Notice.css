@@ -14,8 +14,10 @@
   color: var(--color-on-ink);
 }
 
-.ui-notice--strong .ui-notice__close:hover {
-  background: rgba(255, 255, 255, 0.12);
+@media (hover: hover) and (pointer: fine) {
+  .ui-notice--strong .ui-notice__close:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
 }
 
 .ui-notice__content {
@@ -43,6 +45,8 @@
   flex-shrink: 0;
 }
 
-.ui-notice__close:hover {
-  background: rgba(17, 17, 17, 0.06);
+@media (hover: hover) and (pointer: fine) {
+  .ui-notice__close:hover {
+    background: rgba(17, 17, 17, 0.06);
+  }
 }

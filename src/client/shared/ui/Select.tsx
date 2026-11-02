@@ -2,7 +2,6 @@ import React, { useId, useRef, useEffect, useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { SegmentedControl } from './SegmentedControl';
-import { Button } from './Button';
 import { Input } from './Input';
 import './Select.css';
 
@@ -22,6 +21,15 @@ export interface SelectProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 
   required?: boolean;
   disabled?: boolean;
   searchable?: boolean;
+}
+
+function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
+  if (!container) return [];
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter(el => el.offsetParent !== null);
 }
 
 function SelectSheet({
@@ -44,16 +52,102 @@ function SelectSheet({
   const [query, setQuery] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+  const searchId = useId();
 
   const filteredOptions = options.filter(opt =>
     opt.label.toLowerCase().includes(query.toLowerCase())
   );
 
   useEffect(() => {
-    if (open && searchable && searchRef.current) {
-      searchRef.current.focus();
-    }
+    if (!open) setQuery('');
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const target = searchable ? searchRef.current : closeRef.current;
+    (target ?? contentRef.current)?.focus();
   }, [open, searchable]);
+
+  // Restaurar el overflow solo si este sheet lo bloqueó (si ya estaba en
+  // 'hidden' es porque hay un Modal abierto y su efecto es el dueño).
+  useEffect(() => {
+    if (!open) return;
+    const body = document.body;
+    const wasLocked = body.style.overflow === 'hidden';
+    const previousOverflow = body.style.overflow;
+    if (!wasLocked) body.style.overflow = 'hidden';
+    return () => {
+      if (!wasLocked) body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  // Si el foco llegó a escaparse del sheet, el primer Tab lo devuelve adentro.
+  useEffect(() => {
+    if (!open) return;
+
+    const handleDocumentKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      if (contentRef.current?.contains(document.activeElement)) return;
+
+      const [first] = getFocusableElements(contentRef.current);
+      if (!first) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      first.focus();
+    };
+
+    document.addEventListener('keydown', handleDocumentKeyDown, true);
+    return () => document.removeEventListener('keydown', handleDocumentKeyDown, true);
+  }, [open]);
+
+  const handleKeyDownCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      // El listener de Escape del Modal padre vive en document y en fase de
+      // burbuja. Cortamos el evento en captura para que solo cierre el sheet.
+      event.preventDefault();
+      event.stopPropagation();
+      event.nativeEvent.stopImmediatePropagation?.();
+      onClose();
+      return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    // El Modal padre escucha Tab en document y, como el sheet vive en un
+    // portal, vería el foco "fuera" y lo devolvería al modal. Cortamos la
+    // propagación para que el trap del sheet sea el único dueño del Tab.
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation?.();
+
+    const focusables = getFocusableElements(contentRef.current);
+    if (focusables.length === 0) {
+      event.preventDefault();
+      contentRef.current?.focus();
+      return;
+    }
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (!first || !last) return;
+
+    const active = document.activeElement;
+    if (!contentRef.current?.contains(active)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+      return;
+    }
+
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   if (!open) return null;
 
@@ -64,12 +158,14 @@ function SelectSheet({
         className="ui-select-sheet"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="select-sheet-title"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onKeyDownCapture={handleKeyDownCapture}
         onClick={e => e.stopPropagation()}
       >
         <header className="ui-select-sheet__header">
-          <h2 id="select-sheet-title" className="ui-select-sheet__title">{title}</h2>
-          <button type="button" className="ui-select-sheet__close" onClick={onClose} aria-label="Cerrar">
+          <h2 id={titleId} className="ui-select-sheet__title">{title}</h2>
+          <button ref={closeRef} type="button" className="ui-select-sheet__close" onClick={onClose} aria-label="Cerrar">
             <X size={20} />
           </button>
         </header>
@@ -77,18 +173,23 @@ function SelectSheet({
           <div className="ui-select-sheet__search">
             <Input
               ref={searchRef}
+              id={searchId}
+              aria-label="Buscar opción"
               placeholder="Buscar..."
               value={query}
               onChange={setQuery}
-              autoFocus
             />
           </div>
         )}
-        <div className="ui-select-sheet__list">
+        {/* Semántica elegida (b): listbox + option. Los botones conservan
+            Tab/Enter/Space y el trap cíclico mantiene el foco adentro. */}
+        <div className="ui-select-sheet__list" role="listbox" aria-labelledby={titleId}>
           {filteredOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
+              role="option"
+              aria-selected={value === opt.value}
               className={`ui-select-sheet__item ${value === opt.value ? 'is-selected' : ''}`}
               onClick={() => {
                 onSelect(opt.value);
@@ -100,7 +201,7 @@ function SelectSheet({
             </button>
           ))}
           {filteredOptions.length === 0 && (
-            <div className="ui-select-sheet__empty">Sin resultados</div>
+            <div className="ui-select-sheet__empty" role="status">Sin resultados</div>
           )}
         </div>
       </div>
@@ -147,13 +248,17 @@ export function Select({
   };
 
   if (isSegmented) {
+    // SegmentedControl expone el grupo con aria-label, pero no acepta
+    // aria-required; el requisito viaja en el nombre accesible del grupo.
+    const segmentedLabel = label && required ? `${label} (obligatorio)` : label;
+
     return (
       <div className={`ui-field ${className}`}>
         {label && (
-          <label className="ui-field__label">
+          <span className="ui-field__label">
             {label}
             {required && <span className="ui-field__required" aria-hidden="true"> *</span>}
-          </label>
+          </span>
         )}
         <SegmentedControl
           id={selectId}
@@ -161,19 +266,12 @@ export function Select({
           onChange={handleSelect}
           options={options}
           disabled={disabled}
+          label={segmentedLabel}
           aria-invalid={error ? 'true' : undefined}
           aria-describedby={error ? errorId : helperText ? helperId : undefined}
         />
         {error && <span id={errorId} className="ui-field__error" role="alert">{error}</span>}
         {helperText && !error && <span id={helperId} className="ui-field__hint">{helperText}</span>}
-        <SelectSheet
-          open={false}
-          onClose={handleCloseSheet}
-          title={label || 'Seleccionar'}
-          options={options}
-          value={value}
-          onSelect={handleSelect}
-        />
       </div>
     );
   }

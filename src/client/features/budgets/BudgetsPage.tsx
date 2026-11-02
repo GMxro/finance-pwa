@@ -7,6 +7,8 @@ import type { CategoryResponse } from '@contracts/category';
 import type { CurrencyCode } from '@domain/money';
 import { todayLocalISO } from '@domain/date';
 import { useCurrencyInput } from '@shared/hooks/useCurrencyInput';
+import { focusFirstInvalid, hasFieldErrors, type FieldErrors } from '@shared/form/validation';
+import { getPeriodLabel } from '@shared/format/formatters';
 import { Page, PageHeader, Stack, Inline, Grid } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
 import { Button } from '@shared/ui/Button';
@@ -39,8 +41,10 @@ export function BudgetsPage() {
   const [editing, setEditing] = useState<BudgetWithSpent | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<BudgetForm>(() => emptyForm('', defaultCurrency));
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<BudgetWithSpent | null>(null);
 
   // Hook para input de moneda con formateo ARS en vivo
@@ -48,7 +52,10 @@ export function BudgetsPage() {
     currency: form.currency,
     initialValue: form.limitMinor,
     allowEmpty: true,
-    onChange: (valueMinor) => setForm(f => ({ ...f, limitMinor: valueMinor }))
+    onChange: (valueMinor) => {
+      setForm(f => ({ ...f, limitMinor: valueMinor }));
+      setFieldErrors(errors => (errors.limitMinor ? { ...errors, limitMinor: undefined } : errors));
+    }
   });
   const setLimitMinor = limitInput.setValueMinor;
 
@@ -101,6 +108,7 @@ export function BudgetsPage() {
   const openCreate = () => {
     setForm(emptyForm(expenseCategories[0]?.id ?? '', defaultCurrency));
     setLimitMinor(null);
+    setFieldErrors({});
     setFormError(null);
     setCreating(true);
   };
@@ -114,6 +122,7 @@ export function BudgetsPage() {
       limitMinor: budget.limitMinor
     });
     setLimitMinor(budget.limitMinor);
+    setFieldErrors({});
     setFormError(null);
     setEditing(budget);
   };
@@ -121,19 +130,27 @@ export function BudgetsPage() {
   const closeModal = () => {
     setCreating(false);
     setEditing(null);
+    setFieldErrors({});
     setFormError(null);
   };
 
   const handleSubmit = async () => {
+    const nextErrors: FieldErrors = {};
     if (!form.categoryId) {
-      setFormError('Elegí una categoría.');
-      return;
+      nextErrors.categoryId = 'Elegí una categoría.';
     }
     const limitMinor = form.limitMinor;
     if (limitMinor === null || limitMinor <= 0) {
-      setFormError('El límite debe ser mayor a cero.');
+      nextErrors.limitMinor = 'El límite debe ser mayor a cero.';
+    }
+    if (hasFieldErrors(nextErrors)) {
+      setFieldErrors(nextErrors);
+      setFormError(null);
+      focusFirstInvalid('budget-form');
       return;
     }
+    setFieldErrors({});
+    const limitMinorValue = limitMinor ?? 0;
 
     setSaving(true);
     setFormError(null);
@@ -142,7 +159,7 @@ export function BudgetsPage() {
         const response = await api.updateBudget(editing.id, {
           categoryId: form.categoryId,
           currency: form.currency,
-          limitMinor,
+          limitMinor: limitMinorValue,
           version: editing.version
         });
         if (response.error) throw new Error(response.error.message);
@@ -152,7 +169,7 @@ export function BudgetsPage() {
           categoryId: form.categoryId,
           periodMonth: month,
           currency: form.currency,
-          limitMinor
+          limitMinor: limitMinorValue
         });
         if (response.error) throw new Error(response.error.message);
       }
@@ -167,6 +184,7 @@ export function BudgetsPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    setDeleting(true);
     try {
       const response = await api.deleteBudget(deleteTarget.id, deleteTarget.version);
       if (response.error) throw new Error(response.error.message);
@@ -175,6 +193,8 @@ export function BudgetsPage() {
     } catch (e: any) {
       setError(e?.message ?? 'No pudimos eliminar el presupuesto.');
       setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -235,13 +255,17 @@ export function BudgetsPage() {
           </>
         }
       >
-        <form id="budget-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }}>
+        <form id="budget-form" noValidate onSubmit={e => { e.preventDefault(); void handleSubmit(); }}>
           <Stack gap="md">
             {formError && <Notice tone="strong">{formError}</Notice>}
             <Select
               label="Categoría"
               value={form.categoryId}
-              onChange={v => setForm(f => ({ ...f, categoryId: v }))}
+              onChange={v => {
+                setForm(f => ({ ...f, categoryId: v }));
+                setFieldErrors(errors => (errors.categoryId ? { ...errors, categoryId: undefined } : errors));
+              }}
+              error={fieldErrors.categoryId}
               options={budgetCategoryOptions.map(c => ({
                 value: c.id,
                 label: c.archivedAt ? `${c.name} (archivada)` : c.kind !== 'expense' ? `${c.name} (tipo anterior)` : c.name
@@ -257,7 +281,8 @@ export function BudgetsPage() {
                 onBlur={limitInput.onBlur}
                 onFocus={limitInput.onFocus}
                 placeholder="0,00"
-                prefix="$"
+                prefix={form.currency === 'USD' ? 'US$' : '$'}
+                error={fieldErrors.limitMinor}
                 required
                 inputMode="decimal"
                 pattern="[0-9.,]*"
@@ -269,11 +294,14 @@ export function BudgetsPage() {
               <Select
                 label="Moneda"
                 value={form.currency}
-                onChange={v => setForm(f => ({ ...f, currency: v as CurrencyCode }))}
+                onChange={v => {
+                  setForm(f => ({ ...f, currency: v as CurrencyCode }));
+                  setFieldErrors(errors => (errors.limitMinor ? { ...errors, limitMinor: undefined } : errors));
+                }}
                 options={[{ value: 'ARS', label: 'ARS' }, { value: 'USD', label: 'USD' }]}
               />
             </Grid>
-            <Text variant="caption" tone="stone" className="budgets-count">Período: {month}</Text>
+            <Text variant="caption" tone="stone" className="budgets-count">Período: {getPeriodLabel(month)}</Text>
           </Stack>
         </form>
       </Modal>
@@ -281,12 +309,13 @@ export function BudgetsPage() {
       <Modal
         open={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
+        busy={deleting}
         title="Eliminar presupuesto"
         size="sm"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Cancelar</Button>
-            <Button variant="danger" onClick={() => void handleDelete()}>Eliminar</Button>
+            <Button variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancelar</Button>
+            <Button variant="danger" onClick={() => void handleDelete()} loading={deleting}>Eliminar</Button>
           </>
         }
       >

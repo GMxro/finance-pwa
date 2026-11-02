@@ -18,8 +18,8 @@ const DEFAULT_CATEGORIES = [
 
 const DEFAULT_ACCOUNTS = [
   { name: 'Efectivo', kind: 'cash', is_default: 1, sort_order: 1 },
-  { name: 'Sueldo', kind: 'bank', is_default: 0, sort_order: 2 },
-  { name: 'Otros ingresos', kind: 'bank', is_default: 0, sort_order: 3 },
+  { name: 'Banco', kind: 'bank', is_default: 0, sort_order: 2 },
+  { name: 'Otra cuenta', kind: 'bank', is_default: 0, sort_order: 3 },
 ];
 
 export async function initializeUserData(env: Env, userId: string): Promise<void> {

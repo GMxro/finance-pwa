@@ -35,8 +35,10 @@
   color: var(--color-danger);
 }
 
-.tx-modal-delete:hover:not(:disabled) {
-  background: var(--color-danger-soft);
+@media (hover: hover) and (pointer: fine) {
+  .tx-modal-delete:hover:not(:disabled) {
+    background: var(--color-danger-soft);
+  }
 }
 
 .tx-new-category {
@@ -86,11 +88,75 @@
   min-width: 0;
 }
 
+.tx-date-field {
+  flex: 1 1 auto;
+  min-width: 130px;
+}
+
+.tx-date-native {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  height: 0;
+  width: 0;
+}
+
 .tx-date-row .ui-btn {
   flex: 0 0 auto;
   min-height: var(--control-h-md);
   padding-left: var(--space-3);
   padding-right: var(--space-3);
+}
+
+.tx-repeat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tx-weekdays {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.tx-weekdays__legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-label);
+  color: var(--color-stone-strong);
+}
+
+.tx-weekdays__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tx-weekday {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-field);
+  background: var(--color-inset);
+  font-size: var(--text-body);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.tx-weekday:focus-within {
+  box-shadow: var(--focus-ring);
+}
+
+.tx-weekday input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--color-ink);
 }
 
 .tx-notes-section {
@@ -103,7 +169,9 @@
   color: var(--color-stone-strong);
 }
 
-.tx-add-note:hover:not(:disabled) {
-  background: var(--color-inset);
-  color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .tx-add-note:hover:not(:disabled) {
+    background: var(--color-inset);
+    color: var(--color-ink);
+  }
 }

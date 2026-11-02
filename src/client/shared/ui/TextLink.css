@@ -2,7 +2,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: var(--text-sm);
+  font-size: var(--text-caption);
   font-weight: var(--weight-label);
   color: var(--color-ink);
   text-decoration: none;
@@ -11,7 +11,9 @@
   transition: border-color var(--dur-fast) var(--ease-out);
 }
 
-.ui-textlink:hover {
-  text-decoration: none;
-  border-color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-textlink:hover {
+    text-decoration: none;
+    border-color: var(--color-ink);
+  }
 }

@@ -31,8 +31,10 @@
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
-.ui-segment__item:hover:not(.is-disabled) {
-  color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-segment__item:hover:not(.is-disabled) {
+    color: var(--color-ink);
+  }
 }
 
 .ui-segment__item.is-active {
@@ -40,8 +42,10 @@
   color: var(--color-on-ink);
 }
 
-.ui-segment__item.is-active:hover:not(.is-disabled) {
-  background: var(--color-ink-soft);
+@media (hover: hover) and (pointer: fine) {
+  .ui-segment__item.is-active:hover:not(.is-disabled) {
+    background: var(--color-ink-soft);
+  }
 }
 
 .ui-segment__item.is-disabled {
@@ -58,8 +62,10 @@
   color: var(--color-on-ink-muted);
 }
 
-.ui-segment--onInk .ui-segment__item:hover:not(.is-disabled) {
-  color: var(--color-on-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-segment--onInk .ui-segment__item:hover:not(.is-disabled) {
+    color: var(--color-on-ink);
+  }
 }
 
 .ui-segment--onInk .ui-segment__item.is-active {
@@ -67,8 +73,10 @@
   color: var(--color-ink);
 }
 
-.ui-segment--onInk .ui-segment__item.is-active:hover:not(.is-disabled) {
-  background: var(--color-accent-on-ink-hover);
+@media (hover: hover) and (pointer: fine) {
+  .ui-segment--onInk .ui-segment__item.is-active:hover:not(.is-disabled) {
+    background: var(--color-accent-on-ink-hover);
+  }
 }
 
 .ui-segment--onInk .ui-segment__item:focus-visible {

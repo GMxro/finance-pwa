@@ -20,8 +20,39 @@
   transition: background-color var(--dur-fast) var(--ease-out);
 }
 
-.ui-row--interactive:hover {
-  background: var(--color-inset);
+.ui-row--split {
+  padding: 0;
+}
+
+.ui-row__surface {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-inline);
+  min-height: var(--control-h-xl);
+  padding: var(--space-2) 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+.ui-row--interactive .ui-row__surface {
+  cursor: pointer;
+}
+
+.ui-row:focus-visible,
+.ui-row__surface:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ui-row--interactive:hover {
+    background: var(--color-inset);
+  }
 }
 
 .ui-row__leading {

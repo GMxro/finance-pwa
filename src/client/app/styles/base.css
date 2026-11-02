@@ -58,8 +58,10 @@ a {
   text-underline-offset: 0.18em;
 }
 
-a:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
 button,

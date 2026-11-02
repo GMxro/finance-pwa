@@ -28,6 +28,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   const inputId = id || generatedId;
   const errorId = `${inputId}-error`;
   const helperId = `${inputId}-helper`;
+  const prefixWidth = prefix ? Math.max(28, 14 + prefix.length * 9) : undefined;
 
   return (
     <div className={`ui-field ${className}`}>
@@ -37,7 +38,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           {required && <span className="ui-field__required" aria-hidden="true"> *</span>}
         </label>
       )}
-      <div className="ui-field__input-wrap">
+      <div
+        className="ui-field__input-wrap"
+        style={prefixWidth !== undefined ? ({ '--prefix-w': `${prefixWidth}px` } as React.CSSProperties) : undefined}
+      >
         {prefix && <span className="ui-field__prefix" aria-hidden="true">{prefix}</span>}
         <input
           ref={ref}

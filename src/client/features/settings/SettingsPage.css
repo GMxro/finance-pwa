@@ -56,8 +56,10 @@
   text-underline-offset: 0.16em;
 }
 
-.settings-link:hover {
-  color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .settings-link:hover {
+    color: var(--color-ink);
+  }
 }
 
 @media (max-width: 640px) {

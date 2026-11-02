@@ -19,9 +19,11 @@
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
-.ui-month__button:hover {
-  background: var(--color-inset);
-  color: var(--color-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ui-month__button:hover {
+    background: var(--color-inset);
+    color: var(--color-ink);
+  }
 }
 
 .ui-month__label {
@@ -53,8 +55,10 @@
   cursor: not-allowed;
 }
 
-.ui-month__button.is-disabled:hover,
-.ui-month__button:disabled:hover {
-  background: transparent;
-  color: var(--color-stone);
+@media (hover: hover) and (pointer: fine) {
+  .ui-month__button.is-disabled:hover,
+  .ui-month__button:disabled:hover {
+    background: transparent;
+    color: var(--color-stone);
+  }
 }
