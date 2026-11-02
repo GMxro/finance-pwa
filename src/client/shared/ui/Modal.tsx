@@ -39,6 +39,17 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   const previousActiveElement = useRef<HTMLElement | null>(null);
   const hasAutoFocused = useRef(false);
 
+  // Guardar valores inestables en refs para que el useEffect principal dependa
+  // solo de `open`. Si onClose/busy cambian en cada render del padre, el efecto
+  // se re-ejecutaba, corriendo la cleanup (previousActiveElement.focus()) en
+  // cada tecla y sacando el foco del modal.
+  const onCloseRef = useRef(onClose);
+  const busyRef = useRef(busy);
+  const autoFocusRef = useRef(autoFocusFirstEmpty);
+  onCloseRef.current = onClose;
+  busyRef.current = busy;
+  autoFocusRef.current = autoFocusFirstEmpty;
+
   useEffect(() => {
     if (!open) return;
 
@@ -47,10 +58,10 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     document.body.style.overflow = 'hidden';
 
     // Solo autofocus la primera vez que se abre, y solo si el primer campo está vacío
-    if (autoFocusFirstEmpty && !hasAutoFocused.current) {
+    if (autoFocusRef.current && !hasAutoFocused.current) {
       const content = contentRef.current?.querySelector<HTMLElement>('.ui-modal__content');
       const firstInput = content?.querySelector<HTMLElement>(
-        'input:not([type="hidden"]):not([type="radio"]), select, textarea'
+        '[data-autofocus], input:not([type="hidden"]):not([type="radio"]):not([type="date"]), select, textarea'
       );
       
       const shouldFocus = firstInput && 
@@ -66,15 +77,15 @@ export function Modal({ open, onClose, title, description, children, footer, siz
      const handleKeyDown = (event: KeyboardEvent) => {
        if (event.key === 'Escape') {
          event.preventDefault();
-         if (busy) return;
-         onClose();
+         if (busyRef.current) return;
+         onCloseRef.current();
          return;
        }
       if (event.key !== 'Tab' || !contentRef.current) return;
 
       const focusable = Array.from(
         contentRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          'button:not([disabled]), [href], input:not([disabled]):not([type="date"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         )
       ).filter(el => el.offsetParent !== null);
 
@@ -96,9 +107,13 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     return () => {
       document.body.style.overflow = originalOverflow;
       document.removeEventListener('keydown', handleKeyDown);
+      // Restaurar foco solo cuando el modal realmente se cierra (cleanup al pasar
+      // open de true a false). Como el efecto depende solo de [open], esta cleanup
+      // no corre en cada render del padre.
+      if (!open) return;
       previousActiveElement.current?.focus();
     };
-  }, [open, onClose, autoFocusFirstEmpty]);
+  }, [open]);
 
   // iOS no redimensiona el layout cuando aparece el teclado: la hoja queda
   // tapada y el botón de guardar no se puede tocar. Publicamos la altura del
@@ -138,12 +153,12 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   // Tocar fuera del modal en mobile: baja el teclado pero no cierra
   const handleOverlayPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return;
-    if (busy) return;
+    if (busyRef.current) return;
     if (event.pointerType === 'touch' && isEditableField(document.activeElement)) {
       blurActiveField();
       return;
     }
-    onClose();
+    onCloseRef.current();
   };
 
   return createPortal(
@@ -162,7 +177,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
             {title && <h2 id={titleId} className="ui-modal__title">{title}</h2>}
             {description && <p id={descriptionId} className="ui-modal__description">{description}</p>}
           </div>
-           <button type="button" className="ui-modal__close" onClick={onClose} disabled={busy} aria-label="Cerrar">
+            <button type="button" className="ui-modal__close" onClick={() => onCloseRef.current()} disabled={busy} aria-label="Cerrar">
             <X size={20} />
           </button>
         </header>

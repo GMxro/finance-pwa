@@ -216,16 +216,16 @@ export function TransactionsPage() {
   const categoryName = (id: string) => categoriesById.get(id)?.name ?? 'Sin categoría';
   const categoryIcon = (id: string) => categoriesById.get(id)?.iconKey ?? 'tag';
 
-  const resetNewCategory = () => {
+  const resetNewCategory = useCallback(() => {
     setNewCategoryOpen(false);
     setNewCategoryName('');
     setNewCategoryError(null);
-  };
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setEditingTx(null);
     resetNewCategory();
-  };
+  }, [resetNewCategory]);
 
   const openCreate = (kind: TransactionKind = 'expense') => {
     const firstCategory = categories.find(c => c.kind === kind && !c.archivedAt);
