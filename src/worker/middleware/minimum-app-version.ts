@@ -23,7 +23,7 @@ export async function minimumAppVersion(c: Context<{ Bindings: Env }>, next: Nex
   const minimum = c.env.MIN_APP_VERSION?.trim();
   if (!minimum) return next();
   if (c.req.method === 'OPTIONS') return next();
-  if (c.req.method === 'GET' && /^\/api\/auth\/callback\/[a-z0-9_-]+$/i.test(c.req.path)) return next();
+  if (c.req.path.startsWith('/api/auth/')) return next();
 
   const minimumVersion = parseVersion(minimum);
   if (!minimumVersion) {
