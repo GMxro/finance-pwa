@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, ArrowRightLeft, Pencil, Archive, Wallet, Landmark, Smartphone, CircleDollarSign, Trash2 } from 'lucide-react';
+import { Plus, ArrowRightLeft, Pencil, Archive, Wallet, Landmark, CreditCard, TrendingUp, Trash2 } from 'lucide-react';
 import { api } from '@shared/api/client';
 import { useAuth } from '../../app/providers';
 import type { AccountBalance, AccountKind, AccountWithBalances } from '@contracts/account';
@@ -23,20 +23,23 @@ import '../../app/styles/accounts.css';
 const KIND_LABELS: Record<AccountKind, string> = {
   cash: 'Efectivo',
   bank: 'Banco',
-  wallet: 'Billetera',
-  other: 'Otra'
+  credit_card: 'Tarjeta de crédito',
+  investment: 'Inversión'
 };
 
 const KIND_ICONS: Record<AccountKind, React.ElementType> = {
   cash: Wallet,
   bank: Landmark,
-  wallet: Smartphone,
-  other: CircleDollarSign
+  credit_card: CreditCard,
+  investment: TrendingUp
 };
 
 interface AccountForm {
   name: string;
+  description: string;
   kind: AccountKind;
+  initialAmountMinor: number | null;
+  initialCurrency: CurrencyCode;
 }
 
 interface TransferForm {
@@ -74,7 +77,7 @@ export function AccountsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [accountModal, setAccountModal] = useState<{ mode: 'create' | 'edit'; account?: AccountWithBalances } | null>(null);
-  const [accountForm, setAccountForm] = useState<AccountForm>({ name: '', kind: 'cash' });
+  const [accountForm, setAccountForm] = useState<AccountForm>({ name: '', description: '', kind: 'cash', initialAmountMinor: null, initialCurrency: defaultCurrency });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -94,6 +97,13 @@ export function AccountsPage() {
     initialValue: transferForm.toAmountMinor,
     allowEmpty: true,
     onChange: (valueMinor) => setTransferForm(f => ({ ...f, toAmountMinor: valueMinor }))
+  });
+
+  const initialAmountInput = useCurrencyInput({
+    currency: accountForm.initialCurrency,
+    initialValue: accountForm.initialAmountMinor,
+    allowEmpty: true,
+    onChange: (valueMinor) => setAccountForm(f => ({ ...f, initialAmountMinor: valueMinor }))
   });
   const setFromAmountMinor = fromAmountInput.setValueMinor;
   const setToAmountMinor = toAmountInput.setValueMinor;
@@ -125,6 +135,10 @@ export function AccountsPage() {
   useEffect(() => {
     setToAmountMinor(transferForm.toAmountMinor);
   }, [transferForm.toCurrency, transferForm.toAmountMinor, setToAmountMinor]);
+
+  useEffect(() => {
+    initialAmountInput.setValueMinor(accountForm.initialAmountMinor);
+  }, [accountForm.initialCurrency, accountForm.initialAmountMinor, initialAmountInput]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -196,13 +210,13 @@ export function AccountsPage() {
   const activeAccounts = accounts.filter(a => !a.archivedAt);
 
   const openCreateAccount = () => {
-    setAccountForm({ name: '', kind: 'cash' });
+    setAccountForm({ name: '', description: '', kind: 'cash', initialAmountMinor: null, initialCurrency: defaultCurrency });
     setFormError(null);
     setAccountModal({ mode: 'create' });
   };
 
   const openEditAccount = (account: AccountWithBalances) => {
-    setAccountForm({ name: account.name, kind: account.kind });
+    setAccountForm({ name: account.name, description: account.description ?? '', kind: account.kind, initialAmountMinor: null, initialCurrency: defaultCurrency });
     setFormError(null);
     setAccountModal({ mode: 'edit', account });
   };
@@ -218,13 +232,17 @@ export function AccountsPage() {
       const response = accountModal?.mode === 'edit' && accountModal.account
         ? await api.updateAccount(accountModal.account.id, {
             name: accountForm.name.trim(),
+            description: accountForm.description.trim() || null,
             kind: accountForm.kind
           })
         : await api.createAccount({
             id: crypto.randomUUID(),
             name: accountForm.name.trim(),
+            description: accountForm.description.trim() || null,
             kind: accountForm.kind,
-            sortOrder: 0
+            sortOrder: 0,
+            initialAmountMinor: accountForm.initialAmountMinor ?? undefined,
+            initialCurrency: accountForm.initialAmountMinor ? accountForm.initialCurrency : undefined
           });
       if (response.error) throw new Error(response.error.message);
       setAccountModal(null);
@@ -567,10 +585,40 @@ export function AccountsPage() {
               options={[
                 { value: 'cash', label: 'Efectivo' },
                 { value: 'bank', label: 'Banco' },
-                { value: 'wallet', label: 'Billetera virtual' },
-                { value: 'other', label: 'Otra' }
+                { value: 'credit_card', label: 'Tarjeta de crédito' },
+                { value: 'investment', label: 'Inversión' }
               ]}
             />
+            <Input
+              label="Descripción (opcional)"
+              value={accountForm.description}
+              onChange={value => setAccountForm(form => ({ ...form, description: value }))}
+              placeholder="Ej.: Cuenta sueldo"
+              maxLength={200}
+            />
+            {accountModal?.mode === 'create' && (
+              <>
+                <div className="currency-input">
+                  <Input
+                    label="Importe inicial"
+                    value={initialAmountInput.displayValue}
+                    onChange={initialAmountInput.onChangeString}
+                    onBlur={initialAmountInput.onBlur}
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
+                </div>
+                <Select
+                  label="Moneda del importe inicial"
+                  value={accountForm.initialCurrency}
+                  onChange={value => setAccountForm(form => ({ ...form, initialCurrency: value as CurrencyCode }))}
+                  options={[
+                    { value: 'ARS', label: 'ARS' },
+                    { value: 'USD', label: 'USD' }
+                  ]}
+                />
+              </>
+            )}
           </Stack>
         </form>
       </Modal>

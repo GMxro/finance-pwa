@@ -1,6 +1,7 @@
 // Application: Calendar
 import type { Env } from '@env';
 import { listTransactions } from '../transactions/transactions';
+import { INITIAL_SOURCE_TYPE } from '../transactions/transaction-filters';
 import { listCommitments } from '../commitments/commitments';
 import { todayLocalISO } from '@domain/date';
 
@@ -19,6 +20,7 @@ export async function getCalendarMonth(env: Env, userId: string, month: string) 
     days[key] = { date: key, transactions: [], commitments: [], incomeMinor: 0, expenseMinor: 0, isFuture: key > today };
   }
   for (const tx of transactions as any[]) {
+    if (tx.sourceType === INITIAL_SOURCE_TYPE) continue;
     if (days[tx.occurredOn]) {
       days[tx.occurredOn].transactions.push(tx);
       if (tx.kind === 'income') days[tx.occurredOn].incomeMinor += tx.amountMinor;

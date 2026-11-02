@@ -17,6 +17,7 @@ export interface TransactionInput {
 }
 
 export interface TransactionStored extends TransactionInput {
+  sourceType?: 'manual' | 'installment' | 'recurring' | 'initial';
   userId: string;
   version: number;
   changeSeq: number;

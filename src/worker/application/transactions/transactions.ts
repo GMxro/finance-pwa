@@ -2,6 +2,7 @@
 import type { Env } from '@env';
 import type { TransactionCreate, TransactionUpdate, TransactionResponse } from '@contracts/transaction';
 import { getDefaultAccountId } from '../accounts/accounts';
+import { excludeInitialSql } from './transaction-filters';
 import { ValidationError } from '../../middleware/error-handler';
 import { currencyFlowBindings, currencyFlowTotalSql } from '../financial-limit';
 import { MAX_MINOR_UNITS } from '@domain/money';
@@ -23,7 +24,7 @@ function mapTransaction(row: any): TransactionResponse {
     id: row.id,
     userId: row.user_id,
     categoryId: row.category_id,
-    accountId: row.account_id ?? null,
+    accountId: row.account_id,
     kind: row.kind,
     amountMinor,
     currency: row.currency_code,
@@ -334,6 +335,7 @@ export async function getMonthlySummary(
       FROM transactions
       WHERE user_id = ? AND currency_code = ? AND kind = 'income'
         AND occurred_on LIKE ? AND deleted_at IS NULL
+        AND ${excludeInitialSql()}
     `).bind(userId, curr, `${periodMonth}%`).first<{ total: number }>();
     
     const expenseResult = await env.DB.prepare(`
@@ -341,12 +343,14 @@ export async function getMonthlySummary(
       FROM transactions
       WHERE user_id = ? AND currency_code = ? AND kind = 'expense'
         AND occurred_on LIKE ? AND deleted_at IS NULL
+        AND ${excludeInitialSql()}
     `).bind(userId, curr, `${periodMonth}%`).first<{ total: number }>();
     
     const categoryResult = await env.DB.prepare(`
       SELECT category_id, kind, COALESCE(SUM(amount_minor), 0) as total
       FROM transactions
       WHERE user_id = ? AND currency_code = ? AND occurred_on LIKE ? AND deleted_at IS NULL
+        AND ${excludeInitialSql()}
       GROUP BY category_id, kind
     `).bind(userId, curr, `${periodMonth}%`).all<{ category_id: string; kind: 'income' | 'expense'; total: number }>();
     
@@ -354,6 +358,7 @@ export async function getMonthlySummary(
       SELECT COUNT(*) as count
       FROM transactions
       WHERE user_id = ? AND currency_code = ? AND occurred_on LIKE ? AND deleted_at IS NULL
+        AND ${excludeInitialSql()}
     `).bind(userId, curr, `${periodMonth}%`).first<{ count: number }>();
     
     const incomeMinor = Number(incomeResult?.total ?? 0);

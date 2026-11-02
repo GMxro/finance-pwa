@@ -28,7 +28,7 @@ const createTxSchema = z.object({
   amountMinor: z.number().int().positive().max(MAX_MINOR_UNITS),
   currency: z.enum(['ARS', 'USD']),
   categoryId: z.string().min(1),
-  accountId: z.string().min(1).optional(),
+  accountId: z.string().min(1),
   occurredOn: calendarDateSchema,
   note: z.string().max(500).optional()
 });

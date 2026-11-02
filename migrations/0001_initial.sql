@@ -58,6 +58,21 @@ CREATE TABLE user_preferences (
   updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE accounts (
+  id TEXT PRIMARY KEY NOT NULL,
+  user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  kind TEXT NOT NULL CHECK (kind IN ('cash', 'bank', 'credit_card', 'investment')),
+  is_default INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  archived_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE (user_id, id)
+);
+CREATE INDEX idx_accounts_user_sort ON accounts(user_id, archived_at, sort_order);
+
 CREATE TABLE categories (
   id TEXT PRIMARY KEY NOT NULL,
   user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
@@ -80,6 +95,7 @@ CREATE TABLE transactions (
   id TEXT PRIMARY KEY NOT NULL,
   user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   category_id TEXT NOT NULL,
+  account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
   kind TEXT NOT NULL CHECK (kind IN ('income', 'expense')),
   amount_minor INTEGER NOT NULL CHECK (amount_minor > 0),
   currency_code TEXT NOT NULL CHECK (currency_code IN ('ARS', 'USD')),
@@ -90,11 +106,15 @@ CREATE TABLE transactions (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   deleted_at INTEGER,
-  FOREIGN KEY (user_id, category_id) REFERENCES categories(user_id, id) ON DELETE RESTRICT
+  source_type TEXT NOT NULL DEFAULT 'manual' CHECK (source_type IN ('manual', 'installment', 'recurring', 'initial')),
+  source_id TEXT,
+  FOREIGN KEY (user_id, category_id) REFERENCES categories(user_id, id) ON DELETE RESTRICT,
+  FOREIGN KEY (user_id, account_id) REFERENCES accounts(user_id, id) ON DELETE RESTRICT
 );
 CREATE INDEX idx_transactions_user_occurred ON transactions(user_id, occurred_on DESC, id);
 CREATE INDEX idx_transactions_user_change_seq ON transactions(user_id, change_seq);
 CREATE INDEX idx_transactions_user_category_occurred_kind ON transactions(user_id, category_id, occurred_on, kind);
+CREATE INDEX idx_transactions_user_account ON transactions(user_id, account_id, occurred_on DESC);
 
 CREATE TABLE budgets (
   id TEXT PRIMARY KEY NOT NULL,

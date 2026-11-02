@@ -3,6 +3,7 @@ import type { Env } from '@env';
 import type { BudgetCreate, BudgetUpdate, BudgetWithSpent } from '@contracts/budget';
 import { subtractAmounts } from '@domain/money';
 import { ValidationError } from '../../middleware/error-handler';
+import { excludeInitialSql } from '../transactions/transaction-filters';
 
 function safeAggregate(value: unknown): number {
   const amount = Number(value ?? 0);
@@ -65,6 +66,7 @@ export async function listBudgets(
       AND t.occurred_on LIKE b.period_month || '%'
       AND t.kind = 'expense'
       AND t.deleted_at IS NULL
+      AND ${excludeInitialSql('t')}
     WHERE b.user_id = ? AND b.period_month = ?
     GROUP BY b.id
     ORDER BY b.created_at
@@ -168,6 +170,7 @@ export async function getBudgetWithSpent(
       AND t.occurred_on LIKE b.period_month || '%'
       AND t.kind = 'expense'
       AND t.deleted_at IS NULL
+      AND ${excludeInitialSql('t')}
     WHERE b.id = ? AND b.user_id = ?
     GROUP BY b.id
   `).bind(budgetId, userId).first<{ 

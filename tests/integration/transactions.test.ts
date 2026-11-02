@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
-import { createTransaction, listTransactions, updateTransaction, deleteTransaction } from '../../src/worker/application/transactions/transactions';
+import { createTransaction, listTransactions, updateTransaction, deleteTransaction, getMonthlySummary } from '../../src/worker/application/transactions/transactions';
+import { createTransfer } from '../../src/worker/application/transfers/transfers';
 import { upsertBudget, listBudgets } from '../../src/worker/application/budgets/budgets';
 import { initializeUserData } from '../../src/worker/application/bootstrap/initialize-user';
 
@@ -128,5 +129,32 @@ describe('transactions isolation and sync invariants', () => {
     expect(budgets[0]!.spentMinor).toBe(30000);
     expect(budgets[0]!.remainingMinor).toBe(70000);
     expect(budgets[0]!.isOverBudget).toBe(false);
+  });
+
+  it('excludes transfers from monthly income/expense totals', async () => {
+    const catA = await categoryId(USER_A, 'alimentacion');
+    const defaultAccount = (await db.prepare(`SELECT id FROM accounts WHERE user_id = ? ORDER BY is_default DESC, sort_order ASC LIMIT 1`).bind(USER_A).first() as any).id;
+    await createTransaction(env as any, USER_A, {
+      id: '99999999-9999-4999-8999-999999999999', kind: 'expense', amountMinor: 30000,
+      currency: 'ARS', categoryId: catA, occurredOn: '2026-10-10', accountId: defaultAccount
+    });
+
+    const accounts = await db.prepare(`SELECT id FROM accounts WHERE user_id = ? ORDER BY is_default DESC, sort_order ASC`).bind(USER_A).all();
+    const [fromId, toId] = (accounts.results as any[]).map((r) => r.id);
+    const before = await getMonthlySummary(env as any, USER_A, '2026-10');
+
+    await createTransfer(env as any, USER_A, {
+      id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      fromAccountId: fromId,
+      toAccountId: toId,
+      fromAmountMinor: 10000,
+      fromCurrency: 'ARS',
+      toAmountMinor: 10000,
+      toCurrency: 'ARS',
+      occurredOn: '2026-10-10'
+    });
+
+    const after = await getMonthlySummary(env as any, USER_A, '2026-10');
+    expect(after).toEqual(before);
   });
 });

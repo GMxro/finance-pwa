@@ -1,14 +1,16 @@
 // Contracts: Account DTOs
 import { z } from 'zod';
 
-export const accountKindSchema = z.enum(['cash', 'bank', 'wallet', 'other']);
-export const accountCurrencySchema = z.enum(['ARS', 'USD']);
+export const accountKindSchema = z.enum(['cash', 'bank', 'credit_card', 'investment']);
 
 export const accountCreateSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(60),
+  description: z.string().max(200).nullable().optional(),
   kind: accountKindSchema.default('cash'),
-  sortOrder: z.number().int().nonnegative().default(0)
+  sortOrder: z.number().int().nonnegative().default(0),
+  initialAmountMinor: z.number().int().optional(),
+  initialCurrency: z.enum(['ARS', 'USD']).optional()
 });
 
 export const accountUpdateSchema = accountCreateSchema.partial().extend({
@@ -16,7 +18,7 @@ export const accountUpdateSchema = accountCreateSchema.partial().extend({
   archivedAt: z.number().int().nonnegative().nullable().optional()
 });
 
-export const accountResponseSchema = accountCreateSchema.extend({
+export const accountResponseSchema = accountCreateSchema.omit({ initialAmountMinor: true, initialCurrency: true }).extend({
   userId: z.string(),
   isDefault: z.boolean(),
   archivedAt: z.number().int().nonnegative().nullable(),
@@ -25,7 +27,7 @@ export const accountResponseSchema = accountCreateSchema.extend({
 });
 
 export const accountBalanceSchema = z.object({
-  currency: accountCurrencySchema,
+  currency: z.enum(['ARS', 'USD']),
   amountMinor: z.number().int()
 });
 

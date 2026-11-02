@@ -24,13 +24,13 @@ export const transactionUpdateSchema = transactionCreateSchema.partial().extend(
 
 export const transactionResponseSchema = transactionCreateSchema.extend({
   userId: z.string(),
-  accountId: z.string().nullable(),
+  accountId: z.string().min(1),
   version: z.number().int().positive(),
   changeSeq: z.number().int().nonnegative(),
   createdAt: z.number(),
   updatedAt: z.number(),
   deletedAt: z.number().nullable(),
-  sourceType: z.enum(['manual', 'installment', 'recurring']).optional(),
+  sourceType: z.enum(['manual', 'installment', 'recurring', 'initial']).optional(),
   sourceId: z.string().nullable().optional()
 });
 

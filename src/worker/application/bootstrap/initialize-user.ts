@@ -27,21 +27,10 @@ export async function initializeUserData(env: Env, userId: string): Promise<void
   await env.DB.batch([
     // Cuentas por defecto
     ...DEFAULT_ACCOUNTS.map((account, _index) => env.DB.prepare(`
-      INSERT INTO accounts (id, user_id, name, kind, is_default, sort_order, archived_at, created_at, updated_at)
-      SELECT ?, ?, ?, ?, ?, ?, NULL, ?, ?
+      INSERT INTO accounts (id, user_id, name, description, kind, is_default, sort_order, archived_at, created_at, updated_at)
+      SELECT ?, ?, ?, NULL, ?, ?, ?, NULL, ?, ?
       WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE user_id = ? AND name = ?)
     `).bind(crypto.randomUUID(), userId, account.name, account.kind, account.is_default, account.sort_order, now, now, userId, account.name)),
-    // Asignar cuenta a transacciones huérfanas
-    env.DB.prepare(`
-      UPDATE transactions
-      SET account_id = (
-        SELECT id FROM accounts
-        WHERE user_id = ?
-        ORDER BY is_default DESC, sort_order ASC, name ASC
-        LIMIT 1
-      )
-      WHERE user_id = ? AND account_id IS NULL
-    `).bind(userId, userId),
     // Preferencias de usuario
     env.DB.prepare(`
       INSERT INTO user_preferences (user_id, locale, time_zone, default_currency, created_at, updated_at)

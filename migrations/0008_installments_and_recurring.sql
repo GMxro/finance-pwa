@@ -82,6 +82,4 @@ CREATE TABLE IF NOT EXISTS recurring_occurrences (
 CREATE INDEX IF NOT EXISTS idx_recurring_occurrences_user_due ON recurring_occurrences(user_id, due_on);
 
 -- Origen en transacciones (para identificación y filtrado)
-ALTER TABLE transactions ADD COLUMN source_type TEXT NOT NULL DEFAULT 'manual' CHECK (source_type IN ('manual','installment','recurring'));
-ALTER TABLE transactions ADD COLUMN source_id TEXT;
 CREATE INDEX IF NOT EXISTS idx_transactions_user_source ON transactions(user_id, source_type, source_id);

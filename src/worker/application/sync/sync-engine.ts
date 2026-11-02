@@ -280,7 +280,7 @@ async function updateTransactionFromSync(env: Env, userId: string, item: SyncPus
     SELECT category_id, kind, account_id, amount_minor, currency_code FROM transactions
     WHERE id = ? AND user_id = ? AND deleted_at IS NULL
   `).bind(item.id, userId).first<{
-    category_id: string; kind: 'income' | 'expense'; account_id: string | null; amount_minor: number; currency_code: string
+    category_id: string; kind: 'income' | 'expense'; account_id: string; amount_minor: number; currency_code: string
   }>();
   if (!current) throw new Error('NOT_FOUND');
   const categoryId = (payload.categoryId as string | undefined) ?? current.category_id;

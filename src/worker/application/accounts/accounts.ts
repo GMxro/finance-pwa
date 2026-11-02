@@ -8,6 +8,8 @@ import type {
 } from '@contracts/account';
 import { NotFoundError, ValidationError } from '../../middleware/error-handler';
 import { todayLocalISO } from '@domain/date';
+import { currencyFlowBindings, currencyFlowTotalSql } from '../financial-limit';
+import { MAX_MINOR_UNITS } from '@domain/money';
 
 function safeBalance(value: unknown): number {
   const amount = Number(value);
@@ -33,6 +35,7 @@ function mapAccount(row: any): AccountResponse {
     id: row.id,
     userId: row.user_id,
     name: row.name,
+    description: row.description ?? null,
     kind: row.kind,
     isDefault: row.is_default === 1,
     sortOrder: row.sort_order,
@@ -42,7 +45,7 @@ function mapAccount(row: any): AccountResponse {
   };
 }
 
-const ACCOUNT_COLUMNS = `id, user_id, name, kind, is_default, sort_order, archived_at, created_at, updated_at`;
+const ACCOUNT_COLUMNS = `id, user_id, name, description, kind, is_default, sort_order, archived_at, created_at, updated_at`;
 
 /**
  * Saldos por cuenta y moneda.
@@ -127,9 +130,51 @@ export async function createAccount(
   const sortOrder = data.sortOrder || (existing?.last_sort ?? -1) + 1;
 
   await env.DB.prepare(`
-    INSERT INTO accounts (id, user_id, name, kind, is_default, sort_order, archived_at, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)
-  `).bind(data.id, userId, data.name.trim(), data.kind, isFirst ? 1 : 0, sortOrder, now, now).run();
+    INSERT INTO accounts (id, user_id, name, description, kind, is_default, sort_order, archived_at, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)
+  `).bind(data.id, userId, data.name.trim(), data.description ?? null, data.kind, isFirst ? 1 : 0, sortOrder, now, now).run();
+
+  const initialAmount = data.initialAmountMinor ?? 0;
+  if (initialAmount !== 0) {
+    const initialKind = initialAmount > 0 ? 'income' : 'expense';
+    const initialCurrency = data.initialCurrency ?? 'ARS';
+    const absAmount = Math.abs(initialAmount);
+
+    const slug = initialKind === 'income' ? 'otros-ingresos' : 'otros-gastos';
+    let category = await env.DB.prepare(`
+      SELECT id FROM categories WHERE user_id = ? AND slug = ? AND archived_at IS NULL
+    `).bind(userId, slug).first<{ id: string }>();
+    if (!category) {
+      category = await env.DB.prepare(`
+        SELECT id FROM categories WHERE user_id = ? AND kind = ? AND archived_at IS NULL
+        ORDER BY sort_order ASC, name ASC LIMIT 1
+      `).bind(userId, initialKind).first<{ id: string }>();
+    }
+    if (!category) throw new ValidationError('No hay categoría disponible para el saldo inicial.');
+
+    const txId = crypto.randomUUID();
+    const today = todayLocalISO();
+    try {
+      const results = await env.DB.batch([
+        env.DB.prepare(`
+          INSERT INTO transactions (id, user_id, category_id, account_id, kind, amount_minor, currency_code, occurred_on, note, version, change_seq, created_at, updated_at, source_type, source_id)
+          SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, (SELECT sequence + 1 FROM user_sync_state WHERE user_id = ?), ?, ?, 'initial', ?
+          WHERE ${currencyFlowTotalSql()} + ? <= ?
+        `).bind(
+          txId, userId, category.id, data.id, initialKind, absAmount, initialCurrency, today, 'Saldo inicial',
+          userId, now, now, data.id,
+          ...currencyFlowBindings(userId, initialCurrency), absAmount, MAX_MINOR_UNITS
+        ),
+        env.DB.prepare(`UPDATE user_sync_state SET sequence = sequence + 1 WHERE user_id = ? AND changes() = 1`).bind(userId)
+      ]);
+      if (results[0]?.meta?.changes === 0) throw new ValidationError('El saldo inicial excede el rango financiero permitido.');
+    } catch (error) {
+      if (error instanceof Error && /integer overflow/i.test(error.message)) {
+        throw new ValidationError('El saldo inicial excede el rango financiero permitido.');
+      }
+      throw error;
+    }
+  }
 
   const row = await env.DB.prepare(`
     SELECT ${ACCOUNT_COLUMNS} FROM accounts WHERE id = ? AND user_id = ?
@@ -168,6 +213,7 @@ export async function updateAccount(
   const bindings: any[] = [now];
 
   if (data.name !== undefined) { setParts.push('name = ?'); bindings.push(data.name.trim()); }
+  if (data.description !== undefined) { setParts.push('description = ?'); bindings.push(data.description); }
   if (data.kind !== undefined) { setParts.push('kind = ?'); bindings.push(data.kind); }
   if (data.sortOrder !== undefined) { setParts.push('sort_order = ?'); bindings.push(data.sortOrder); }
   if (data.archivedAt !== undefined) { setParts.push('archived_at = ?'); bindings.push(data.archivedAt); }

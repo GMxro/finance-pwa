@@ -21,7 +21,7 @@ export function computeMonthlySummary(
   currency: CurrencyCode
 ): MonthlySummary {
   const filtered = transactions.filter(
-    (tx) => tx.currency === currency && isValidISODate(tx.occurredOn) && tx.occurredOn.startsWith(periodMonth) && !tx.deletedAt
+    (tx) => tx.currency === currency && isValidISODate(tx.occurredOn) && tx.occurredOn.startsWith(periodMonth) && !tx.deletedAt && tx.sourceType !== 'initial'
   );
 
   let incomeMinor = 0;
