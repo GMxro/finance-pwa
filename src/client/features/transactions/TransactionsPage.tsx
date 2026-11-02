@@ -85,6 +85,8 @@ export function TransactionsPage() {
   const [newCategoryError, setNewCategoryError] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
   const [entryMode, setEntryMode] = useState<'manual' | 'installment' | 'recurring'>('manual');
+  // Cuenta recordada por tipo de movimiento: ingreso y gasto no comparten la misma selección.
+  const lastAccountByKind = useRef<Record<TransactionKind, string>>({ income: '', expense: '' });
   const [description, setDescription] = useState('');
   const [notes, setNotes] = useState('');
   const [repeatModalOpen, setRepeatModalOpen] = useState(false);
@@ -230,8 +232,10 @@ export function TransactionsPage() {
 
   const openCreate = (kind: TransactionKind = 'expense') => {
     const firstCategory = categories.find(c => c.kind === kind && !c.archivedAt);
+    const remembered = lastAccountByKind.current[kind];
     const defaultAccount = accounts.find(a => a.isDefault) ?? accounts[0];
-    const newForm = { ...emptyForm(kind, defaultCurrency), categoryId: firstCategory?.id ?? '', accountId: defaultAccount?.id ?? '' };
+    const accountId = remembered || defaultAccount?.id || '';
+    const newForm = { ...emptyForm(kind, defaultCurrency), categoryId: firstCategory?.id ?? '', accountId };
     setFormData(newForm);
     setAmountMinor(null);
     setFormError(null);
@@ -252,6 +256,7 @@ export function TransactionsPage() {
   const startEdit = useCallback((item: LedgerItem) => {
     const tx = transactions.find(t => t.id === item.id);
     if (!tx) return;
+    lastAccountByKind.current[tx.kind as TransactionKind] = tx.accountId ?? '';
     setFormData({
       amountMinor: tx.amountMinor,
       currency: tx.currency,
@@ -325,9 +330,13 @@ export function TransactionsPage() {
   useEffect(() => {
     const mode = searchParams.get('new');
     if (mode === 'expense' || mode === 'income') {
+      const remembered = lastAccountByKind.current[mode as TransactionKind];
+      const defaultAccount = accounts.find(a => a.isDefault) ?? accounts[0];
+      const accountId = remembered || defaultAccount?.id || '';
       const newForm = {
         ...emptyForm(mode, defaultCurrency),
-        categoryId: categories.find(c => c.kind === mode && !c.archivedAt)?.id ?? ''
+        categoryId: categories.find(c => c.kind === mode && !c.archivedAt)?.id ?? '',
+        accountId
       };
       setFormData(newForm);
       setAmountMinor(null);
@@ -641,9 +650,14 @@ export function TransactionsPage() {
               value={formData.kind}
               onChange={v => {
                 const kind = v as TransactionKind;
-                const first = categories.find(c => c.kind === kind);
+                // Guardar la cuenta elegida para el tipo que se deja
+                lastAccountByKind.current[formData.kind] = formData.accountId;
+                const first = categories.find(c => c.kind === kind && !c.archivedAt) ?? categories.find(c => c.kind === kind);
+                const remembered = lastAccountByKind.current[kind];
+                const defaultAccount = accounts.find(a => a.isDefault) ?? accounts[0];
+                const accountId = remembered || defaultAccount?.id || '';
                 resetNewCategory();
-                setFormData(f => ({ ...f, kind, categoryId: first?.id ?? '' }));
+                setFormData(f => ({ ...f, kind, categoryId: first?.id ?? '', accountId }));
               }}
               options={[{ value: 'income', label: 'Ingreso' }, { value: 'expense', label: 'Gasto' }]}
             />
@@ -793,7 +807,10 @@ export function TransactionsPage() {
             <Select
               label="Cuenta"
               value={formData.accountId}
-              onChange={v => setFormData(f => ({ ...f, accountId: v }))}
+              onChange={v => {
+                setFormData(f => ({ ...f, accountId: v }));
+                lastAccountByKind.current[formData.kind] = v;
+              }}
               options={accounts.filter(a => !a.archivedAt).map(a => ({ value: a.id, label: a.name }))}
             />
 

@@ -75,9 +75,12 @@ export async function updateRecurringRule(env: Env, userId: string, data: any) {
     if (!acc) throw new ValidationError('Cuenta inválida');
     if (acc.archived_at) throw new ValidationError('No se puede usar una cuenta archivada');
   }
-  await env.DB.prepare(`UPDATE recurring_rules SET concept = ?, amount_minor = ?, category_id = ?, account_id = ?, frequency = ?, end_on = ?, version = version + 1, updated_at = ? WHERE id = ? AND user_id = ?`)
-    .bind(data.concept ?? rule.concept, data.amountMinor ?? rule.amount_minor, categoryId, accountId, data.frequency ?? rule.frequency, data.endOn !== undefined ? data.endOn : rule.end_on, now, data.id, userId)
+  await env.DB.prepare(`UPDATE recurring_rules SET concept = ?, amount_minor = ?, category_id = ?, account_id = ?, frequency = ?, day_of_month = ?, days_of_week = ?, month_of_year = ?, end_on = ?, version = version + 1, updated_at = ? WHERE id = ? AND user_id = ?`)
+    .bind(data.concept ?? rule.concept, data.amountMinor ?? rule.amount_minor, categoryId, accountId, data.frequency ?? rule.frequency, data.dayOfMonth !== undefined ? data.dayOfMonth : rule.day_of_month, data.daysOfWeek !== undefined ? data.daysOfWeek : rule.days_of_week, data.monthOfYear !== undefined ? data.monthOfYear : rule.month_of_year, data.endOn !== undefined ? data.endOn : rule.end_on, now, data.id, userId)
     .run();
+  if (data.frequency && data.frequency !== rule.frequency) {
+    await env.DB.prepare(`UPDATE recurring_rules SET next_due_on = ? WHERE id = ? AND user_id = ?`).bind(todayLocalISO(), data.id, userId).run();
+  }
   const row = await env.DB.prepare(`SELECT * FROM recurring_rules WHERE id = ? AND user_id = ?`).bind(data.id, userId).first<any>();
   return mapRule(row);
 }
