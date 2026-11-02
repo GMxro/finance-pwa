@@ -90,7 +90,7 @@ export function TransactionsPage() {
   const [repeatModalOpen, setRepeatModalOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [repeatStep, setRepeatStep] = useState<'choose' | 'installment'>('choose');
-  const [installmentsCount, setInstallmentsCount] = useState(2);
+  const [installmentsCount, setInstallmentsCount] = useState('2');
   const [firstDueOn, setFirstDueOn] = useState(todayLocalISO());
   const [recurringFrequency, setRecurringFrequency] = useState('monthly');
   const [recurringDaysOfWeek, setRecurringDaysOfWeek] = useState<number>(1 << new Date().getDay());
@@ -240,7 +240,7 @@ export function TransactionsPage() {
     setNotes('');
     setRepeatModalOpen(false);
     setRepeatStep('choose');
-    setInstallmentsCount(2);
+    setInstallmentsCount('2');
     setFirstDueOn(todayLocalISO());
     setRecurringFrequency('monthly');
     setRecurringDaysOfWeek(1 << new Date().getDay());
@@ -408,7 +408,7 @@ export function TransactionsPage() {
           concept: description || 'Compra en cuotas',
           totalMinor: amountMinor,
           currency: formData.currency,
-          installmentsCount: installmentsCount,
+          installmentsCount: Number(installmentsCount) || 2,
           categoryId: formData.categoryId,
           accountId: formData.accountId || undefined,
           firstDueOn: firstDueOn
@@ -719,14 +719,19 @@ export function TransactionsPage() {
 
             {entryMode === 'installment' && (
               <Grid columns={2} gap="md">
-                <Input
-                  label="Cantidad de cuotas"
-                  type="number"
-                  value={String(installmentsCount)}
-                  onChange={v => setInstallmentsCount(Math.max(2, Math.min(999, Number(v) || 2)))}
-                  min={2}
-                  max={999}
-                />
+                 <Input
+                   label="Cantidad de cuotas"
+                   type="number"
+                   value={installmentsCount}
+                   onChange={v => setInstallmentsCount(v)}
+                   onBlur={() => {
+                     const n = Number(installmentsCount);
+                     if (isNaN(n) || n < 2) setInstallmentsCount('2');
+                     else if (n > 999) setInstallmentsCount('999');
+                   }}
+                   min={2}
+                   max={999}
+                 />
                 <Input
                   label="Primer vencimiento"
                   type="date"
@@ -878,14 +883,19 @@ export function TransactionsPage() {
             </>
           ) : (
             <>
-              <Input
-                label="Cantidad de cuotas"
-                type="number"
-                value={String(installmentsCount)}
-                onChange={v => setInstallmentsCount(Math.max(2, Math.min(999, Number(v) || 2)))}
-                min={2}
-                max={999}
-              />
+               <Input
+                 label="Cantidad de cuotas"
+                 type="number"
+                 value={installmentsCount}
+                 onChange={v => setInstallmentsCount(v)}
+                 onBlur={() => {
+                   const n = Number(installmentsCount);
+                   if (isNaN(n) || n < 2) setInstallmentsCount('2');
+                   else if (n > 999) setInstallmentsCount('999');
+                 }}
+                 min={2}
+                 max={999}
+               />
               <Input
                 label="Primer vencimiento"
                 type="date"
