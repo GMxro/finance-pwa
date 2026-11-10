@@ -12,7 +12,7 @@
   padding: calc(var(--space-4) + var(--safe-top)) var(--space-3) calc(var(--space-4) + var(--safe-bottom));
   background: var(--color-ink);
   color: var(--color-on-ink);
-  z-index: 30;
+  z-index: var(--z-shell);
 }
 
 .ui-sidebar__brand {
@@ -171,7 +171,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 40;
+  z-index: var(--z-nav);
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
@@ -232,7 +232,7 @@
   position: fixed;
   right: calc(var(--safe-right) + var(--space-4));
   bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + var(--space-3));
-  z-index: 35;
+  z-index: var(--z-shell);
   width: 56px;
   height: 56px;
   padding: 0;
@@ -271,7 +271,7 @@
   position: fixed;
   right: calc(var(--safe-right) + var(--space-3));
   bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + var(--space-2));
-  z-index: 45;
+  z-index: var(--z-nav);
   display: grid;
   min-width: 190px;
   padding: var(--space-2);

@@ -124,6 +124,15 @@
   --sheet-header-h: 56px;
   --sheet-footer-h: 56px;
   --sheet-radius: 24px;
+
+  /* ---- Z-index scale ---- */
+  --z-base: 0;
+  --z-raised: 1;
+  --z-shell: 30;
+  --z-nav: 40;
+  --z-overlay: 200;
+  --z-sheet: 300;
+  --z-toast: 1000;
 }
 
 @media (max-width: 640px) {
