@@ -78,6 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="ui-shell">
+      <a href="#main-content" className="ui-skip-link">Saltar al contenido principal</a>
       <aside className="ui-sidebar" aria-label="Navegación principal">
         <div className="ui-sidebar__brand">
           <img src="/icons/icon-96.png" alt="" width="34" height="34" />
@@ -134,7 +135,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="ui-shell__main">
+      <div className="ui-shell__main" id="main-content">
         <div className="ui-shell__content">{children}</div>
 
         {showQuickAdd && (

@@ -164,3 +164,17 @@ input[type='number'] {
     scroll-behavior: auto !important;
   }
 }
+
+.ui-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: var(--space-2) var(--space-3);
+  z-index: var(--z-toast);
+  transition: top 0.2s;
+}
+.ui-skip-link:focus {
+  top: 0;
+}
