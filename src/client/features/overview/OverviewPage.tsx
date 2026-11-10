@@ -163,8 +163,34 @@ export function OverviewPage() {
     const client = summaries.find((s: { currency: CurrencyCode }) => s.currency === 'USD') ?? summaries[0]!;
     return { incomeMinor: client.incomeMinor, expenseMinor: client.expenseMinor, netMinor: client.netMinor };
   }, [serverSummaryUSD, summaries]);
+
   const categoriesById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
   const accountsById = useMemo(() => new Map(accounts.map(account => [account.id, account.name])), [accounts]);
+
+  const budgetItems = useMemo(() => budgets.map(b => ({
+    id: b.id,
+    categoryId: b.categoryId,
+    currency: b.currency,
+    limitMinor: b.limitMinor,
+    spentMinor: b.spentMinor,
+    remainingMinor: b.remainingMinor,
+    isOverBudget: b.isOverBudget
+  })), [budgets]);
+
+  const recentItems = useMemo(() => transactions.slice(0, 8).map(t => ({
+    id: t.id,
+    kind: t.kind,
+    amountMinor: t.amountMinor,
+    currency: t.currency,
+    occurredOn: t.occurredOn,
+    note: t.note,
+    categoryId: t.categoryId,
+    accountName: t.accountId ? accountsById.get(t.accountId) : undefined,
+    pending: !t.synced
+  })), [transactions, accountsById]);
+
+  const categoryName = useCallback((id: string | undefined) => categoriesById.get(id ?? '')?.name ?? '—', [categoriesById]);
+  const categoryIcon = useCallback((id: string | undefined) => categoriesById.get(id ?? '')?.iconKey ?? '📁', [categoriesById]);
 
   const KIND_LABELS: Record<'income' | 'expense', string> = { income: 'Ingresos', expense: 'Gastos' };
 
@@ -239,17 +265,9 @@ export function OverviewPage() {
 
       <Section title="Presupuestos" className="overview-section-spaced" action={<ButtonLink to="/presupuestos" variant="ghost" size="sm" className="overview-section-action">Ver todos</ButtonLink>}>
         <BudgetList
-          items={budgets.map(b => ({
-            id: b.id,
-            categoryId: b.categoryId,
-            currency: b.currency,
-            limitMinor: b.limitMinor,
-            spentMinor: b.spentMinor,
-            remainingMinor: b.remainingMinor,
-            isOverBudget: b.isOverBudget
-          }))}
-          categoryName={id => categoriesById.get(id)?.name ?? '—'}
-          categoryIcon={id => categoriesById.get(id)?.iconKey ?? '📁'}
+          items={budgetItems}
+          categoryName={categoryName}
+          categoryIcon={categoryIcon}
           censored={!showAmounts}
           onSelect={item => navigate(`/movimientos?period=${month}&kind=expense&categoryId=${item.categoryId}`)}
           emptyLabel={budgetLoadError ? 'No se pudieron cargar los presupuestos.' : 'Todavía no definiste presupuestos para este mes.'}
@@ -263,19 +281,9 @@ export function OverviewPage() {
 
       <Section title="Movimientos recientes" className="overview-recent overview-section-spaced" action={<ButtonLink to={`/movimientos?period=${month}`} variant="ghost" size="sm" className="overview-section-action">Ver historial</ButtonLink>}>
         <LedgerList
-          items={transactions.slice(0, 8).map(t => ({
-            id: t.id,
-            kind: t.kind,
-            amountMinor: t.amountMinor,
-            currency: t.currency,
-            occurredOn: t.occurredOn,
-            note: t.note,
-            categoryId: t.categoryId,
-            accountName: t.accountId ? accountsById.get(t.accountId) : undefined,
-            pending: !t.synced
-          }))}
-          categoryName={id => categoriesById.get(id)?.name ?? '—'}
-          categoryIcon={id => categoriesById.get(id)?.iconKey ?? '📁'}
+          items={recentItems}
+          categoryName={categoryName}
+          categoryIcon={categoryIcon}
           onEdit={item => navigate(`/movimientos?period=${month}&edit=${encodeURIComponent(item.id)}`)}
           censored={!showAmounts}
           emptyLabel={dataStatus === 'unavailable' ? 'No se pudieron cargar los movimientos.' : 'Todavía no hay movimientos en este mes.'}
