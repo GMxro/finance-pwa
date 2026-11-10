@@ -1,5 +1,7 @@
 // Mutations must come from the one configured public origin. The request Host
 // is not an authority for approving a caller-supplied Origin header.
+// NOTE (SEC-03): Better Auth retains a request-derived origin fallback for
+// Origin: null. This guard is mandatory on /api/* and must not be removed.
 import type { Context, Next } from 'hono';
 import type { Env } from '@env';
 
