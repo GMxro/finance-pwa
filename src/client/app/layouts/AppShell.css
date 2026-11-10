@@ -26,7 +26,7 @@
 }
 
 .ui-sidebar__brand img {
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
@@ -121,8 +121,8 @@
 }
 
 .ui-avatar {
-  width: 34px;
-  height: 34px;
+  width: var(--avatar-size-sm);
+  height: var(--avatar-size-sm);
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -189,9 +189,9 @@
   justify-content: center;
   gap: 2px;
   min-width: 0;
-  min-height: 48px;
+  min-height: var(--tap-target-min);
   padding: 4px 2px;
-  border-radius: 14px;
+  border-radius: var(--radius-chip);
   color: var(--color-stone);
   font-size: var(--text-micro);
   line-height: 1.1;
@@ -233,8 +233,8 @@
   right: calc(var(--safe-right) + var(--space-4));
   bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + var(--space-3));
   z-index: var(--z-shell);
-  width: 56px;
-  height: 56px;
+  width: var(--quick-add-size);
+  height: var(--quick-add-size);
   padding: 0;
   border-radius: 50%;
   display: inline-flex;
@@ -286,7 +286,7 @@
   gap: var(--space-3);
   min-height: var(--control-h-md);
   padding: 0 var(--space-3);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   color: var(--color-stone-strong);
   font-size: var(--text-body);
 }
