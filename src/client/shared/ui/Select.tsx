@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { SegmentedControl } from './SegmentedControl';
 import { Input } from './Input';
 import { Modal } from './Modal';
+import { Field } from './Field';
 import './Select.css';
 
 export interface SelectOption {
@@ -68,13 +69,7 @@ export function Select({
     const segmentedLabel = label && required ? `${label} (obligatorio)` : label;
 
     return (
-      <div className={`ui-field ${className}`}>
-        {label && (
-          <span className="ui-field__label">
-            {label}
-            {required && <span className="ui-field__required" aria-hidden="true"> *</span>}
-          </span>
-        )}
+      <Field label={label} error={error} helperText={helperText} required={required} htmlFor={selectId} className={className}>
         <SegmentedControl
           id={selectId}
           value={value}
@@ -83,22 +78,14 @@ export function Select({
           disabled={disabled}
           label={segmentedLabel}
           aria-invalid={error ? 'true' : undefined}
-          aria-describedby={error ? errorId : helperText ? helperId : undefined}
+          aria-describedby={error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined}
         />
-        {error && <span id={errorId} className="ui-field__error" role="alert">{error}</span>}
-        {helperText && !error && <span id={helperId} className="ui-field__hint">{helperText}</span>}
-      </div>
+      </Field>
     );
   }
 
   return (
-    <div className={`ui-field ${className}`}>
-      {label && (
-        <label htmlFor={selectId} className="ui-field__label">
-          {label}
-          {required && <span className="ui-field__required" aria-hidden="true"> *</span>}
-        </label>
-      )}
+    <Field label={label} error={error} helperText={helperText} required={required} htmlFor={selectId} className={className}>
       <button
         ref={triggerRef}
         type="button"
@@ -109,15 +96,13 @@ export function Select({
         aria-haspopup="listbox"
         aria-expanded={sheetOpen}
         aria-invalid={error ? 'true' : undefined}
-        aria-describedby={error ? errorId : helperText ? helperId : undefined}
+        aria-describedby={error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined}
       >
         <span className="ui-select-trigger__value">
           {value ? options.find(o => o.value === value)?.label : placeholder || 'Seleccionar'}
         </span>
         <ChevronDown size={18} className="ui-select-trigger__arrow" aria-hidden="true" />
       </button>
-      {error && <span id={errorId} className="ui-field__error" role="alert">{error}</span>}
-      {helperText && !error && <span id={helperId} className="ui-field__hint">{helperText}</span>}
       <Modal
         open={sheetOpen}
         onClose={handleCloseSheet}
@@ -157,6 +142,6 @@ export function Select({
           )}
         </div>
       </Modal>
-    </div>
+    </Field>
   );
 }
