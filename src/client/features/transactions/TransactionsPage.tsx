@@ -760,303 +760,357 @@ export function TransactionsPage() {
            </>
          }
        >
-        <form id="tx-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }}>
-          <Stack gap="md">
-            {formError && <Notice tone="strong">{formError}</Notice>}
+         <form id="tx-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} className="tx-compact-form">
+           {formError && <Notice tone="strong">{formError}</Notice>}
 
-            {/* 1. Tipo - SegmentedControl */}
-            <SegmentedControl
-              label="Tipo"
-              value={formData.kind}
-              onChange={v => {
-                const kind = v as TransactionKind;
-                lastAccountByKind.current[formData.kind] = formData.accountId;
-                const first = categories.find(c => c.kind === kind && !c.archivedAt) ?? categories.find(c => c.kind === kind);
-                const remembered = lastAccountByKind.current[kind];
-                const defaultAccount = accounts.find(a => a.isDefault) ?? accounts[0];
-                const accountId = remembered || defaultAccount?.id || '';
-                resetNewCategory();
-                setFormData(f => ({ ...f, kind, categoryId: first?.id ?? '', accountId }));
-                if (accountId) clearFieldError('accountId');
-                if (first?.id) clearFieldError('categoryId');
-              }}
-              options={kindOptions}
-            />
+           <div className="tx-compact-segmented">
+             <SegmentedControl
+               label="Tipo"
+               value={formData.kind}
+               onChange={v => {
+                 const kind = v as TransactionKind;
+                 lastAccountByKind.current[formData.kind] = formData.accountId;
+                 const first = categories.find(c => c.kind === kind && !c.archivedAt) ?? categories.find(c => c.kind === kind);
+                 const remembered = lastAccountByKind.current[kind];
+                 const defaultAccount = accounts.find(a => a.isDefault) ?? accounts[0];
+                 const accountId = remembered || defaultAccount?.id || '';
+                 resetNewCategory();
+                 setFormData(f => ({ ...f, kind, categoryId: first?.id ?? '', accountId }));
+                 if (accountId) clearFieldError('accountId');
+                 if (first?.id) clearFieldError('categoryId');
+               }}
+               options={kindOptions}
+             />
+           </div>
 
-            {/* 2. Fecha + Hoy/Ayer en una línea */}
-            <div className="tx-date-row">
-              <div className="tx-date-field">
-                <Input
-                  label="Fecha"
-                  type="text"
-                  inputMode="numeric"
-                  error={fieldErrors.occurredOn}
-                  value={(() => {
-                    if (!formData.occurredOn) return '';
-                    const [y, m, d] = formData.occurredOn.split('-');
-                    if (!y || !m || !d) return formData.occurredOn;
-                    return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
-                  })()}
-                  readOnly
-                  aria-haspopup="dialog"
-                  onClick={openDatePicker}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    event.preventDefault();
-                    openDatePicker();
-                  }}
-                  required
-                />
-                <input
-                  ref={dateInputRef}
-                  className="tx-date-native"
-                  type="date"
-                  tabIndex={-1}
-                  value={formData.occurredOn}
-                  onChange={(event) => {
-                    setFormData(f => ({ ...f, occurredOn: event.target.value }));
-                    if (event.target.value) clearFieldError('occurredOn');
-                  }}
-                />
-              </div>
-              <Button type="button" variant={formData.occurredOn === todayLocalISO() ? 'primary' : 'secondary'} size="sm" onClick={() => {
-                setFormData(f => ({ ...f, occurredOn: todayLocalISO() }));
-                clearFieldError('occurredOn');
-              }}>Hoy</Button>
-              <Button type="button" variant={(() => { const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1); return formData.occurredOn === d.toISOString().slice(0, 10); })() ? 'primary' : 'secondary'} size="sm" onClick={() => {
-                const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1);
-                setFormData(f => ({ ...f, occurredOn: d.toISOString().slice(0, 10) }));
-                clearFieldError('occurredOn');
-              }}>Ayer</Button>
-            </div>
+           <div className="tx-compact-row">
+             <span className="tx-compact-label">Fecha</span>
+             <div className="tx-compact-field">
+               <Input
+                 type="text"
+                 inputMode="numeric"
+                 error={fieldErrors.occurredOn}
+                 value={(() => {
+                   if (!formData.occurredOn) return '';
+                   const [y, m, d] = formData.occurredOn.split('-');
+                   if (!y || !m || !d) return formData.occurredOn;
+                   return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
+                 })()}
+                 readOnly
+                 aria-haspopup="dialog"
+                 onClick={openDatePicker}
+                 onKeyDown={(event) => {
+                   if (event.key !== 'Enter' && event.key !== ' ') return;
+                   event.preventDefault();
+                   openDatePicker();
+                 }}
+                 required
+                 className="tx-compact-input"
+                 style={{ flex: 1 }}
+               />
+               <input
+                 ref={dateInputRef}
+                 className="tx-date-native"
+                 type="date"
+                 tabIndex={-1}
+                 value={formData.occurredOn}
+                 onChange={(event) => {
+                   setFormData(f => ({ ...f, occurredOn: event.target.value }));
+                   if (event.target.value) clearFieldError('occurredOn');
+                 }}
+               />
+               <Button type="button" variant={formData.occurredOn === todayLocalISO() ? 'primary' : 'secondary'} size="sm" onClick={() => {
+                 setFormData(f => ({ ...f, occurredOn: todayLocalISO() }));
+                 clearFieldError('occurredOn');
+               }}>Hoy</Button>
+               <Button type="button" variant={(() => { const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1); return formData.occurredOn === d.toISOString().slice(0, 10); })() ? 'primary' : 'secondary'} size="sm" onClick={() => {
+                 const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1);
+                 setFormData(f => ({ ...f, occurredOn: d.toISOString().slice(0, 10) }));
+                 clearFieldError('occurredOn');
+               }}>Ayer</Button>
+             </div>
+           </div>
 
-            {/* 3. Importe grande + moneda ARS/USD en misma línea */}
-            <div className="tx-amount-full">
-              <Input
-                label="Importe"
-                value={amountInput.displayValue}
-                onChange={amountInput.onChangeString}
-                onBlur={amountInput.onBlur}
-                onFocus={amountInput.onFocus}
-                placeholder="0,00"
-                prefix={formData.currency === 'USD' ? 'US$' : '$'}
-                error={fieldErrors.amount}
-                required
-                data-autofocus
-                inputMode="decimal"
-                pattern="[0-9.,]*"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-              />
-            </div>
-            <div className="tx-currency-row">
-              <SegmentedControl
-                label="Moneda"
-                value={formData.currency}
-                onChange={v => {
-                  const newCurrency = v as CurrencyCode;
-                  setFormData(f => ({ ...f, currency: newCurrency }));
-                }}
-                options={currencyOptions}
-                className="tx-currency-segment"
-              />
-            </div>
+           <div className="tx-compact-row">
+             <span className="tx-compact-label">Importe</span>
+             <div className="tx-compact-field">
+               <Input
+                 value={amountInput.displayValue}
+                 onChange={amountInput.onChangeString}
+                 onBlur={amountInput.onBlur}
+                 onFocus={amountInput.onFocus}
+                 placeholder="0,00"
+                 prefix={formData.currency === 'USD' ? 'US$' : '$'}
+                 error={fieldErrors.amount}
+                 required
+                 data-autofocus
+                 inputMode="decimal"
+                 pattern="[0-9.,]*"
+                 autoComplete="off"
+                 autoCorrect="off"
+                 autoCapitalize="off"
+                 spellCheck={false}
+                 className="tx-compact-amount-input"
+                 style={{ flex: 1, textAlign: 'right' }}
+               />
+             </div>
+           </div>
 
-            {!editingTx?.id && (
-              <div className="tx-repeat">
-                <span className="ui-field__label">Repetición</span>
-                <SegmentedControl
-                  aria-label="Repetición"
-                  value={entryMode}
-                  onChange={changeEntryMode}
-                  options={REPETITION_OPTIONS}
-                />
-              </div>
-            )}
+           <div className="tx-compact-row">
+             <span className="tx-compact-label">Moneda</span>
+             <div className="tx-compact-field">
+               <SegmentedControl
+                 value={formData.currency}
+                 onChange={v => {
+                   const newCurrency = v as CurrencyCode;
+                   setFormData(f => ({ ...f, currency: newCurrency }));
+                 }}
+                 options={currencyOptions}
+                 className="tx-compact-currency"
+               />
+             </div>
+           </div>
 
-            {entryMode === 'installment' && (
-              <Grid columns={2} gap="md">
-                 <Input
-                   label="Cantidad de cuotas"
-                   type="number"
-                   value={installmentsCount}
-                   error={fieldErrors.installmentsCount}
-                   onChange={v => {
-                     setInstallmentsCount(v);
-                     const count = Number(v);
-                     if (Number.isInteger(count) && count >= 2 && count <= 999) clearFieldError('installmentsCount');
-                   }}
-                   onBlur={() => {
-                     const n = Number(installmentsCount);
-                     if (isNaN(n) || n < 2) {
-                       setInstallmentsCount('2');
-                       clearFieldError('installmentsCount');
-                     } else if (n > 999) {
-                       setInstallmentsCount('999');
-                       clearFieldError('installmentsCount');
-                     }
-                   }}
-                   min={2}
-                   max={999}
+           {!editingTx?.id && (
+             <div className="tx-compact-row">
+               <span className="tx-compact-label">Repetición</span>
+               <div className="tx-compact-field">
+                 <SegmentedControl
+                   aria-label="Repetición"
+                   value={entryMode}
+                   onChange={changeEntryMode}
+                   options={REPETITION_OPTIONS}
+                   className="tx-compact-inner-segmented"
                  />
-                <Input
-                  label="Primer vencimiento"
-                  type="date"
-                  value={firstDueOn}
-                  error={fieldErrors.firstDueOn}
-                  onChange={v => {
-                    setFirstDueOn(v);
-                    if (v) clearFieldError('firstDueOn');
-                  }}
-                />
-              </Grid>
-            )}
+               </div>
+             </div>
+           )}
 
-            {entryMode === 'recurring' && (
-              <>
-                <Grid columns={2} gap="md">
-                  <Select
-                    label="Frecuencia"
-                    value={recurringFrequency}
-                    error={fieldErrors.recurringFrequency}
-                    onChange={v => {
-                      setRecurringFrequency(v as RecurringFrequency);
-                      clearFieldError('recurringFrequency');
-                    }}
-                    options={RECURRING_FREQUENCY_OPTIONS}
-                  />
-                  <Input
-                    label="Fecha de fin (opcional)"
-                    type="date"
-                    value={recurringEndOn}
-                    error={fieldErrors.recurringEndOn}
-                    onChange={v => {
-                      setRecurringEndOn(v);
-                      if (!v || v >= todayLocalISO()) clearFieldError('recurringEndOn');
-                    }}
-                  />
-                </Grid>
-                {recurringFrequency === 'weekly_days' && (
-                  <fieldset className="tx-weekdays">
-                    <legend className="tx-weekdays__legend">Días de repetición</legend>
-                    <div className="tx-weekdays__options">
-                      {WEEKDAY_OPTIONS.map(({ label, bit }) => {
-                        const checked = (recurringDaysOfWeek & bit) !== 0;
-                        return (
-                          <label key={label} className="tx-weekday">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => {
-                                setRecurringDaysOfWeek(prev => (checked ? prev & ~bit : prev | bit));
-                                clearFieldError('recurringFrequency');
-                              }}
-                            />
-                            {label}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </fieldset>
-                )}
-              </>
-            )}
+           {entryMode === 'installment' && (
+             <>
+               <div className="tx-compact-row">
+                 <span className="tx-compact-label">Cuotas</span>
+                 <div className="tx-compact-field">
+                   <Input
+                     type="number"
+                     value={installmentsCount}
+                     error={fieldErrors.installmentsCount}
+                     onChange={v => {
+                       setInstallmentsCount(v);
+                       const count = Number(v);
+                       if (Number.isInteger(count) && count >= 2 && count <= 999) clearFieldError('installmentsCount');
+                     }}
+                     onBlur={() => {
+                       const n = Number(installmentsCount);
+                       if (isNaN(n) || n < 2) {
+                         setInstallmentsCount('2');
+                         clearFieldError('installmentsCount');
+                       } else if (n > 999) {
+                         setInstallmentsCount('999');
+                         clearFieldError('installmentsCount');
+                       }
+                     }}
+                     min={2}
+                     max={999}
+                     className="tx-compact-input"
+                     style={{ flex: 1 }}
+                   />
+                 </div>
+               </div>
+               <div className="tx-compact-row">
+                 <span className="tx-compact-label">Primer venc.</span>
+                 <div className="tx-compact-field">
+                   <Input
+                     type="date"
+                     value={firstDueOn}
+                     error={fieldErrors.firstDueOn}
+                     onChange={v => {
+                       setFirstDueOn(v);
+                       if (v) clearFieldError('firstDueOn');
+                     }}
+                     className="tx-compact-input"
+                     style={{ flex: 1 }}
+                   />
+                 </div>
+               </div>
+             </>
+           )}
 
-            {/* 4. Cuenta */}
-            <Select
-              label="Cuenta"
-              value={formData.accountId}
-              error={fieldErrors.accountId}
-              onChange={v => {
-                setFormData(f => ({ ...f, accountId: v }));
-                lastAccountByKind.current[formData.kind] = v;
-                if (v) clearFieldError('accountId');
-              }}
-              options={accountOptions}
-            />
+           {entryMode === 'recurring' && (
+             <>
+               <div className="tx-compact-row">
+                 <span className="tx-compact-label">Frecuencia</span>
+                 <div className="tx-compact-field">
+                   <Select
+                     value={recurringFrequency}
+                     error={fieldErrors.recurringFrequency}
+                     onChange={v => {
+                       setRecurringFrequency(v as RecurringFrequency);
+                       clearFieldError('recurringFrequency');
+                     }}
+                     options={RECURRING_FREQUENCY_OPTIONS}
+                     className="tx-compact-select"
+                     style={{ flex: 1 }}
+                   />
+                 </div>
+               </div>
+               <div className="tx-compact-row">
+                 <span className="tx-compact-label">Fin (opc.)</span>
+                 <div className="tx-compact-field">
+                   <Input
+                     type="date"
+                     value={recurringEndOn}
+                     error={fieldErrors.recurringEndOn}
+                     onChange={v => {
+                       setRecurringEndOn(v);
+                       if (!v || v >= todayLocalISO()) clearFieldError('recurringEndOn');
+                     }}
+                     className="tx-compact-input"
+                     style={{ flex: 1 }}
+                   />
+                 </div>
+               </div>
+               {recurringFrequency === 'weekly_days' && (
+                 <div className="tx-compact-row" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                   <span className="tx-compact-label">Días</span>
+                   <div className="tx-compact-field" style={{ flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+                     <fieldset className="tx-weekdays" style={{ border: 'none', padding: 0, margin: 0, width: '100%' }}>
+                       <div className="tx-weekdays__options">
+                         {WEEKDAY_OPTIONS.map(({ label, bit }) => {
+                           const checked = (recurringDaysOfWeek & bit) !== 0;
+                           return (
+                             <label key={label} className="tx-weekday">
+                               <input
+                                 type="checkbox"
+                                 checked={checked}
+                                 onChange={() => {
+                                   setRecurringDaysOfWeek(prev => (checked ? prev & ~bit : prev | bit));
+                                   clearFieldError('recurringFrequency');
+                                 }}
+                               />
+                               {label}
+                             </label>
+                           );
+                         })}
+                       </div>
+                     </fieldset>
+                   </div>
+                 </div>
+               )}
+             </>
+           )}
 
-            {/* 5. Descripción */}
-            <Input
-              label="Descripción"
-              value={description}
-              onChange={setDescription}
-              placeholder="Ej: Supermercado"
-            />
+           <div className="tx-compact-row">
+             <span className="tx-compact-label">Categoría</span>
+             <div className="tx-compact-field">
+               <Select
+                 value={formData.categoryId}
+                 error={fieldErrors.categoryId}
+                 onChange={v => {
+                   if (v === '__new__') {
+                     setNewCategoryOpen(true);
+                     setNewCategoryName('');
+                     setNewCategoryIcon(formData.kind === 'income' ? 'briefcase' : 'tag');
+                     return;
+                   }
+                   setFormData(f => ({ ...f, categoryId: v }));
+                   if (v) clearFieldError('categoryId');
+                 }}
+                 options={[
+                   ...categories
+                     .filter(c => c.kind === formData.kind && (!c.archivedAt || c.id === formData.categoryId))
+                     .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name })),
+                   { value: '__new__', label: 'Crear' }
+                  ]}
+                 className="tx-compact-select"
+                 style={{ flex: 1 }}
+               />
+             </div>
+           </div>
 
-            {/* 6. Notas (opcional) - colapsable */}
-            <div className="tx-notes-section">
-              {!showNotes ? (
-                <Button type="button" variant="ghost" size="sm" onClick={() => setShowNotes(true)} className="tx-add-note">
-                  Agregar nota
-                </Button>
-              ) : (
-                <Input
-                  label="Notas (opcional)"
-                  value={notes}
-                  onChange={setNotes}
-                  placeholder="Observación breve"
-                />
-              )}
-            </div>
+           {newCategoryOpen && (
+             <div className="tx-new-category">
+               <Input
+                 label="Nombre de la categoría"
+                 value={newCategoryName}
+                 onChange={setNewCategoryName}
+                 placeholder="Ej. Supermercado"
+                 autoFocus
+               />
+               <div className="tx-new-category__actions">
+                 <Button
+                   type="button"
+                   variant="secondary"
+                   onClick={resetNewCategory}
+                   disabled={savingCategory}
+                 >
+                   Cancelar
+                 </Button>
+                 <Button
+                   type="button"
+                   onClick={handleCreateCategory}
+                   loading={savingCategory}
+                   disabled={savingCategory}
+                 >
+                   Crear
+                 </Button>
+               </div>
+               {newCategoryError && (
+                 <p className="ui-field__error" role="alert">{newCategoryError}</p>
+               )}
+             </div>
+           )}
 
-            {/* Categoría (adaptada por tipo) */}
-            <Select
-              label="Categoría"
-              value={formData.categoryId}
-              error={fieldErrors.categoryId}
-              onChange={v => {
-                if (v === '__new__') {
-                  setNewCategoryOpen(true);
-                  setNewCategoryName('');
-                  setNewCategoryIcon(formData.kind === 'income' ? 'briefcase' : 'tag');
-                  return;
-                }
-                setFormData(f => ({ ...f, categoryId: v }));
-                if (v) clearFieldError('categoryId');
-              }}
-              options={[
-                ...categories
-                  .filter(c => c.kind === formData.kind && (!c.archivedAt || c.id === formData.categoryId))
-                  .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name })),
-                { value: '__new__', label: 'Crear categoría' }
-               ]}
-            />
-            {newCategoryOpen && (
-              <div className="tx-new-category">
-                <Input
-                  label="Nombre de la categoría"
-                  value={newCategoryName}
-                  onChange={setNewCategoryName}
-                  placeholder="Ej. Supermercado"
-                  autoFocus
-                />
-                <div className="tx-new-category__actions">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={resetNewCategory}
-                    disabled={savingCategory}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleCreateCategory}
-                    loading={savingCategory}
-                    disabled={savingCategory}
-                  >
-                    Crear
-                  </Button>
-                </div>
-                {newCategoryError && (
-                  <p className="ui-field__error" role="alert">{newCategoryError}</p>
-                )}
-              </div>
-            )}
-          </Stack>
-        </form>
+           <div className="tx-compact-row">
+             <span className="tx-compact-label">Cuenta</span>
+             <div className="tx-compact-field">
+               <Select
+                 value={formData.accountId}
+                 error={fieldErrors.accountId}
+                 onChange={v => {
+                   setFormData(f => ({ ...f, accountId: v }));
+                   lastAccountByKind.current[formData.kind] = v;
+                   if (v) clearFieldError('accountId');
+                 }}
+                 options={accountOptions}
+                 className="tx-compact-select"
+                 style={{ flex: 1 }}
+               />
+             </div>
+           </div>
+
+           <div className="tx-compact-row">
+             <span className="tx-compact-label">Descripción</span>
+             <div className="tx-compact-field">
+               <Input
+                 value={description}
+                 onChange={setDescription}
+                 placeholder="Ej: Supermercado"
+                 className="tx-compact-input"
+                 style={{ flex: 1 }}
+               />
+             </div>
+           </div>
+
+           <div className="tx-compact-row">
+             <span className="tx-compact-label">Notas</span>
+             <div className="tx-compact-field">
+               {!showNotes ? (
+                 <Button type="button" variant="ghost" size="sm" onClick={() => setShowNotes(true)} className="tx-add-note">
+                   + Agregar
+                 </Button>
+               ) : (
+                 <Input
+                   value={notes}
+                   onChange={setNotes}
+                   placeholder="Observación breve"
+                   className="tx-compact-input"
+                   style={{ flex: 1 }}
+                 />
+               )}
+             </div>
+           </div>
+         </form>
       </Modal>
 
       <Modal
