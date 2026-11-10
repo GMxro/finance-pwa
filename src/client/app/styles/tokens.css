@@ -57,6 +57,7 @@
 
   /* Tipografía unificada mobile: 24 / 16 / 14 / 12 */
   --text-page-title: 1.5rem;      /* 24px */
+  --text-modal-title: 1.375rem; /* 22px */
   --text-section-title: 1rem;      /* 16px */
   --text-body: 0.875rem;           /* 14px */
   --text-caption: 0.75rem;         /* 12px */
@@ -124,6 +125,11 @@
   --sheet-header-h: 56px;
   --sheet-footer-h: 56px;
   --sheet-radius: 24px;
+
+  /* ---- Layout ---- */
+  --content-max: 720px;
+  --reading-max: 60ch;
+  --split-min: 280px;
 
   /* ---- Z-index scale ---- */
   --z-base: 0;
