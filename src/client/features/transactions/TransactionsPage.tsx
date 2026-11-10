@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Filter, WifiOff, CloudOff } from 'lucide-react';
+import { Plus, Filter, WifiOff, CloudOff, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../app/providers';
 import { api } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
@@ -113,6 +113,7 @@ export function TransactionsPage() {
   const [description, setDescription] = useState('');
   const [notes, setNotes] = useState('');
   const [showNotes, setShowNotes] = useState(false);
+  const [repeatMenuOpen, setRepeatMenuOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [installmentsCount, setInstallmentsCount] = useState('2');
   const [firstDueOn, setFirstDueOn] = useState(todayLocalISO());
@@ -742,30 +743,28 @@ export function TransactionsPage() {
           busy={saving}
           title={editingTx?.id ? 'Editar movimiento' : 'Nuevo movimiento'}
           autoFocusFirstEmpty
-         footer={
-           <>
-             {editingTx?.id && (
-               <Button
-                 variant="ghost"
-                 className="tx-modal-delete"
-                 onClick={() => {
-                   setDeleteTarget(editingTx);
-                 }}
-               >
-                 Eliminar
-               </Button>
-             )}
-             <Button variant="secondary" onClick={closeModal} disabled={saving}>Cancelar</Button>
-             <Button type="submit" form="tx-form" loading={saving} onClick={() => void handleSubmit()}>{editingTx?.id ? "Guardar" : "Crear"}</Button>
-           </>
-         }
+          footer={
+            <>
+              {editingTx?.id && (
+                <Button
+                  variant="ghost"
+                  className="tx-modal-delete"
+                  onClick={() => {
+                    setDeleteTarget(editingTx);
+                  }}
+                >
+                  Eliminar
+                </Button>
+              )}
+              <Button type="submit" form="tx-form" loading={saving} onClick={() => void handleSubmit()} className="tx-compact-submit">{editingTx?.id ? "Guardar" : "Crear"}</Button>
+            </>
+          }
        >
-         <form id="tx-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} className="tx-compact-form">
+         <form id="tx-form" onSubmit={e => { e.preventDefault(); void handleSubmit(); }} className={`tx-compact-form tx-compact-form--${formData.kind}`}>
            {formError && <Notice tone="strong">{formError}</Notice>}
 
-           <div className="tx-compact-segmented">
+           <div className="tx-compact-type">
              <SegmentedControl
-               label="Tipo"
                value={formData.kind}
                onChange={v => {
                  const kind = v as TransactionKind;
@@ -783,31 +782,51 @@ export function TransactionsPage() {
              />
            </div>
 
+           <div className="tx-compact-amount-row">
+             <input
+               type="text"
+               inputMode="decimal"
+               value={amountInput.displayValue}
+               onChange={e => amountInput.onChangeString(e.target.value)}
+               onBlur={amountInput.onBlur}
+               onFocus={amountInput.onFocus}
+               placeholder="0,00"
+               data-autofocus
+               pattern="[0-9.,]*"
+               autoComplete="off"
+               autoCorrect="off"
+               autoCapitalize="off"
+               spellCheck={false}
+               className="tx-compact-amount-input"
+             />
+             <button
+               type="button"
+               className="tx-compact-currency-chip"
+               onClick={() => {
+                 const newCurrency = formData.currency === 'ARS' ? 'USD' : 'ARS';
+                 setFormData(f => ({ ...f, currency: newCurrency }));
+               }}
+             >
+               {formData.currency}
+             </button>
+           </div>
+           {fieldErrors.amount && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.amount}</p>}
+
            <div className="tx-compact-row">
              <span className="tx-compact-label">Fecha</span>
-             <div className="tx-compact-field">
-               <Input
-                 type="text"
-                 inputMode="numeric"
-                 error={fieldErrors.occurredOn}
-                 value={(() => {
+             <div className="tx-compact-value">
+               <button
+                 type="button"
+                 className="tx-compact-date-btn"
+                 onClick={openDatePicker}
+               >
+                 {(() => {
                    if (!formData.occurredOn) return '';
                    const [y, m, d] = formData.occurredOn.split('-');
                    if (!y || !m || !d) return formData.occurredOn;
                    return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
                  })()}
-                 readOnly
-                 aria-haspopup="dialog"
-                 onClick={openDatePicker}
-                 onKeyDown={(event) => {
-                   if (event.key !== 'Enter' && event.key !== ' ') return;
-                   event.preventDefault();
-                   openDatePicker();
-                 }}
-                 required
-                 className="tx-compact-input"
-                 style={{ flex: 1 }}
-               />
+               </button>
                <input
                  ref={dateInputRef}
                  className="tx-date-native"
@@ -819,70 +838,56 @@ export function TransactionsPage() {
                    if (event.target.value) clearFieldError('occurredOn');
                  }}
                />
-               <Button type="button" variant={formData.occurredOn === todayLocalISO() ? 'primary' : 'secondary'} size="sm" onClick={() => {
-                 setFormData(f => ({ ...f, occurredOn: todayLocalISO() }));
-                 clearFieldError('occurredOn');
-               }}>Hoy</Button>
-               <Button type="button" variant={(() => { const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1); return formData.occurredOn === d.toISOString().slice(0, 10); })() ? 'primary' : 'secondary'} size="sm" onClick={() => {
-                 const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1);
-                 setFormData(f => ({ ...f, occurredOn: d.toISOString().slice(0, 10) }));
-                 clearFieldError('occurredOn');
-               }}>Ayer</Button>
-             </div>
-           </div>
-
-           <div className="tx-compact-row">
-             <span className="tx-compact-label">Importe</span>
-             <div className="tx-compact-field">
-               <Input
-                 value={amountInput.displayValue}
-                 onChange={amountInput.onChangeString}
-                 onBlur={amountInput.onBlur}
-                 onFocus={amountInput.onFocus}
-                 placeholder="0,00"
-                 prefix={formData.currency === 'USD' ? 'US$' : '$'}
-                 error={fieldErrors.amount}
-                 required
-                 data-autofocus
-                 inputMode="decimal"
-                 pattern="[0-9.,]*"
-                 autoComplete="off"
-                 autoCorrect="off"
-                 autoCapitalize="off"
-                 spellCheck={false}
-                 className="tx-compact-amount-input"
-                 style={{ flex: 1, textAlign: 'right' }}
-               />
-             </div>
-           </div>
-
-           <div className="tx-compact-row">
-             <span className="tx-compact-label">Moneda</span>
-             <div className="tx-compact-field">
-               <SegmentedControl
-                 value={formData.currency}
-                 onChange={v => {
-                   const newCurrency = v as CurrencyCode;
-                   setFormData(f => ({ ...f, currency: newCurrency }));
-                 }}
-                 options={currencyOptions}
-                 className="tx-compact-currency"
-               />
-             </div>
-           </div>
-
-           {!editingTx?.id && (
-             <div className="tx-compact-row">
-               <span className="tx-compact-label">Repetición</span>
-               <div className="tx-compact-field">
-                 <SegmentedControl
-                   aria-label="Repetición"
-                   value={entryMode}
-                   onChange={changeEntryMode}
-                   options={REPETITION_OPTIONS}
-                   className="tx-compact-inner-segmented"
-                 />
+               <div className="tx-compact-chips">
+                 <button
+                   type="button"
+                   className={`tx-compact-chip ${formData.occurredOn === todayLocalISO() ? 'is-active' : ''}`}
+                   onClick={() => {
+                     setFormData(f => ({ ...f, occurredOn: todayLocalISO() }));
+                     clearFieldError('occurredOn');
+                   }}
+                 >
+                   Hoy
+                 </button>
+                 <button
+                   type="button"
+                   className={`tx-compact-chip ${(() => { const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1); return formData.occurredOn === d.toISOString().slice(0, 10); })() ? 'is-active' : ''}`}
+                   onClick={() => {
+                     const d = new Date(`${todayLocalISO()}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - 1);
+                     setFormData(f => ({ ...f, occurredOn: d.toISOString().slice(0, 10) }));
+                     clearFieldError('occurredOn');
+                   }}
+                 >
+                   Ayer
+                 </button>
                </div>
+               <button
+                 type="button"
+                 className="tx-compact-repeat-icon"
+                 onClick={() => setRepeatMenuOpen(v => !v)}
+                 aria-label="Repetición"
+               >
+                 <RefreshCw size={16} />
+               </button>
+             </div>
+           </div>
+           {fieldErrors.occurredOn && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.occurredOn}</p>}
+
+           {repeatMenuOpen && (
+             <div className="tx-compact-repeat-menu">
+               {REPETITION_OPTIONS.map(opt => (
+                 <button
+                   key={opt.value}
+                   type="button"
+                   className={`tx-compact-repeat-option ${entryMode === opt.value ? 'is-active' : ''}`}
+                   onClick={() => {
+                     changeEntryMode(opt.value);
+                     setRepeatMenuOpen(false);
+                   }}
+                 >
+                   {opt.label}
+                 </button>
+               ))}
              </div>
            )}
 
@@ -890,14 +895,13 @@ export function TransactionsPage() {
              <>
                <div className="tx-compact-row">
                  <span className="tx-compact-label">Cuotas</span>
-                 <div className="tx-compact-field">
-                   <Input
+                 <div className="tx-compact-value">
+                   <input
                      type="number"
                      value={installmentsCount}
-                     error={fieldErrors.installmentsCount}
-                     onChange={v => {
-                       setInstallmentsCount(v);
-                       const count = Number(v);
+                     onChange={e => {
+                       setInstallmentsCount(e.target.value);
+                       const count = Number(e.target.value);
                        if (Number.isInteger(count) && count >= 2 && count <= 999) clearFieldError('installmentsCount');
                      }}
                      onBlur={() => {
@@ -912,27 +916,26 @@ export function TransactionsPage() {
                      }}
                      min={2}
                      max={999}
-                     className="tx-compact-input"
-                     style={{ flex: 1 }}
+                     className="tx-compact-value-input"
                    />
                  </div>
                </div>
+               {fieldErrors.installmentsCount && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.installmentsCount}</p>}
                <div className="tx-compact-row">
                  <span className="tx-compact-label">Primer venc.</span>
-                 <div className="tx-compact-field">
-                   <Input
+                 <div className="tx-compact-value">
+                   <input
                      type="date"
                      value={firstDueOn}
-                     error={fieldErrors.firstDueOn}
-                     onChange={v => {
-                       setFirstDueOn(v);
-                       if (v) clearFieldError('firstDueOn');
+                     onChange={e => {
+                       setFirstDueOn(e.target.value);
+                       if (e.target.value) clearFieldError('firstDueOn');
                      }}
-                     className="tx-compact-input"
-                     style={{ flex: 1 }}
+                     className="tx-compact-value-input"
                    />
                  </div>
                </div>
+               {fieldErrors.firstDueOn && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.firstDueOn}</p>}
              </>
            )}
 
@@ -940,41 +943,42 @@ export function TransactionsPage() {
              <>
                <div className="tx-compact-row">
                  <span className="tx-compact-label">Frecuencia</span>
-                 <div className="tx-compact-field">
-                   <Select
+                 <div className="tx-compact-value">
+                   <select
                      value={recurringFrequency}
-                     error={fieldErrors.recurringFrequency}
-                     onChange={v => {
-                       setRecurringFrequency(v as RecurringFrequency);
+                     onChange={e => {
+                       setRecurringFrequency(e.target.value as RecurringFrequency);
                        clearFieldError('recurringFrequency');
                      }}
-                     options={RECURRING_FREQUENCY_OPTIONS}
-                     className="tx-compact-select"
-                     style={{ flex: 1 }}
-                   />
+                     className="tx-compact-value-input"
+                   >
+                     {RECURRING_FREQUENCY_OPTIONS.map(opt => (
+                       <option key={opt.value} value={opt.value}>{opt.label}</option>
+                     ))}
+                   </select>
                  </div>
                </div>
+               {fieldErrors.recurringFrequency && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.recurringFrequency}</p>}
                <div className="tx-compact-row">
                  <span className="tx-compact-label">Fin (opc.)</span>
-                 <div className="tx-compact-field">
-                   <Input
+                 <div className="tx-compact-value">
+                   <input
                      type="date"
                      value={recurringEndOn}
-                     error={fieldErrors.recurringEndOn}
-                     onChange={v => {
-                       setRecurringEndOn(v);
-                       if (!v || v >= todayLocalISO()) clearFieldError('recurringEndOn');
+                     onChange={e => {
+                       setRecurringEndOn(e.target.value);
+                       if (!e.target.value || e.target.value >= todayLocalISO()) clearFieldError('recurringEndOn');
                      }}
-                     className="tx-compact-input"
-                     style={{ flex: 1 }}
+                     className="tx-compact-value-input"
                    />
                  </div>
                </div>
+               {fieldErrors.recurringEndOn && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.recurringEndOn}</p>}
                {recurringFrequency === 'weekly_days' && (
-                 <div className="tx-compact-row" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                 <div className="tx-compact-row" style={{ flexWrap: 'wrap', alignItems: 'flex-start', minHeight: 'auto', padding: 'var(--space-2) var(--space-3)' }}>
                    <span className="tx-compact-label">Días</span>
-                   <div className="tx-compact-field" style={{ flexWrap: 'wrap', justifyContent: 'flex-start' }}>
-                     <fieldset className="tx-weekdays" style={{ border: 'none', padding: 0, margin: 0, width: '100%' }}>
+                   <div className="tx-compact-value" style={{ flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+                     <fieldset style={{ border: 'none', padding: 0, margin: 0, width: '100%' }}>
                        <div className="tx-weekdays__options">
                          {WEEKDAY_OPTIONS.map(({ label, bit }) => {
                            const checked = (recurringDaysOfWeek & bit) !== 0;
@@ -1002,7 +1006,7 @@ export function TransactionsPage() {
 
            <div className="tx-compact-row">
              <span className="tx-compact-label">Categoría</span>
-             <div className="tx-compact-field">
+             <div className="tx-compact-value">
                <Select
                  value={formData.categoryId}
                  error={fieldErrors.categoryId}
@@ -1022,11 +1026,12 @@ export function TransactionsPage() {
                      .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name })),
                    { value: '__new__', label: 'Crear' }
                   ]}
-                 className="tx-compact-select"
+                 className="tx-compact-select-btn"
                  style={{ flex: 1 }}
                />
              </div>
            </div>
+           {fieldErrors.categoryId && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.categoryId}</p>}
 
            {newCategoryOpen && (
              <div className="tx-new-category">
@@ -1063,7 +1068,7 @@ export function TransactionsPage() {
 
            <div className="tx-compact-row">
              <span className="tx-compact-label">Cuenta</span>
-             <div className="tx-compact-field">
+             <div className="tx-compact-value">
                <Select
                  value={formData.accountId}
                  error={fieldErrors.accountId}
@@ -1073,39 +1078,44 @@ export function TransactionsPage() {
                    if (v) clearFieldError('accountId');
                  }}
                  options={accountOptions}
-                 className="tx-compact-select"
+                 className="tx-compact-select-btn"
                  style={{ flex: 1 }}
                />
              </div>
            </div>
+           {fieldErrors.accountId && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.accountId}</p>}
 
            <div className="tx-compact-row">
              <span className="tx-compact-label">Descripción</span>
-             <div className="tx-compact-field">
-               <Input
+             <div className="tx-compact-value">
+               <input
+                 type="text"
                  value={description}
-                 onChange={setDescription}
+                 onChange={e => setDescription(e.target.value)}
                  placeholder="Ej: Supermercado"
-                 className="tx-compact-input"
-                 style={{ flex: 1 }}
+                 className="tx-compact-value-input"
                />
              </div>
            </div>
 
            <div className="tx-compact-row">
              <span className="tx-compact-label">Notas</span>
-             <div className="tx-compact-field">
+             <div className="tx-compact-value">
                {!showNotes ? (
-                 <Button type="button" variant="ghost" size="sm" onClick={() => setShowNotes(true)} className="tx-add-note">
+                 <button
+                   type="button"
+                   className="tx-compact-add-btn"
+                   onClick={() => setShowNotes(true)}
+                 >
                    + Agregar
-                 </Button>
+                 </button>
                ) : (
-                 <Input
+                 <input
+                   type="text"
                    value={notes}
-                   onChange={setNotes}
+                   onChange={e => setNotes(e.target.value)}
                    placeholder="Observación breve"
-                   className="tx-compact-input"
-                   style={{ flex: 1 }}
+                   className="tx-compact-value-input"
                  />
                )}
              </div>
