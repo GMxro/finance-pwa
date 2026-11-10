@@ -102,7 +102,7 @@
   }
 }
 
-@media (max-width: 719px) {
+@media (max-width: 720px) {
   .commitments-summary__currency + .commitments-summary__currency {
     border-top: 1px solid var(--color-line);
     padding-top: var(--gap-field);

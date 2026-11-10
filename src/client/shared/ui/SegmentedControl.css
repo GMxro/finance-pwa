@@ -49,7 +49,7 @@
 }
 
 .ui-segment__item.is-disabled {
-  opacity: 0.45;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
