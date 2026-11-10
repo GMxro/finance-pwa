@@ -139,6 +139,7 @@ CREATE TABLE user_sync_state (
 CREATE TABLE sync_operations (
   user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   operation_id TEXT NOT NULL,
+  entity_type TEXT NOT NULL DEFAULT 'transaction',
   entity_id TEXT NOT NULL,
   request_hash TEXT NOT NULL,
   result TEXT NOT NULL CHECK (result IN ('applied', 'conflict')),

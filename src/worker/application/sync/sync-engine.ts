@@ -139,8 +139,8 @@ async function recordOperation(
   errorCode: string | null = null
 ): Promise<void> {
   await env.DB.prepare(`
-    INSERT INTO sync_operations (user_id, operation_id, entity_id, request_hash, result, error_code, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO sync_operations (user_id, operation_id, entity_type, entity_id, request_hash, result, error_code, created_at)
+    VALUES (?, ?, 'transaction', ?, ?, ?, ?, ?)
     ON CONFLICT(user_id, operation_id) DO NOTHING
   `).bind(userId, operationId, entityId, requestHash, result, errorCode, Date.now()).run();
 }
@@ -152,8 +152,8 @@ function operationStatement(
   operation: OperationContext
 ) {
   return env.DB.prepare(`
-    INSERT INTO sync_operations (user_id, operation_id, entity_id, request_hash, result, error_code, created_at)
-    SELECT ?, ?, ?, ?, 'applied', NULL, ? WHERE changes() = 1
+    INSERT INTO sync_operations (user_id, operation_id, entity_type, entity_id, request_hash, result, error_code, created_at)
+    SELECT ?, ?, 'transaction', ?, ?, 'applied', NULL, ? WHERE changes() = 1
   `).bind(userId, operation.operationId, entityId, operation.requestHash, Date.now());
 }
 
