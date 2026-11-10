@@ -213,6 +213,7 @@ export function AccountsPage() {
     }
   };
 
+  const [totalsOverflow, setTotalsOverflow] = useState(false);
   const totals = useMemo(() => {
     const byCurrency = new Map<CurrencyCode, number>();
     let overflow = false;
@@ -220,22 +221,24 @@ export function AccountsPage() {
       for (const balance of account.balances) {
         const current = byCurrency.get(balance.currency) ?? 0;
         const next = current + balance.amountMinor;
-        if (!Number.isSafeInteger(next)) {
+        if (!Number.isSafeInteger(next) || Math.abs(next) > 999999999999) {
           overflow = true;
           continue;
         }
         byCurrency.set(balance.currency, next);
       }
     }
-    if (overflow) {
-      setError('Los saldos superan el rango seguro; algunos totales no se muestran.');
-    }
+    setTotalsOverflow(overflow);
     return Array.from(byCurrency.entries())
       .filter(([, amount]) => amount !== 0)
       .sort(([a], [b]) => a.localeCompare(b));
   }, [accounts]);
 
-  const activeAccounts = accounts.filter(a => !a.archivedAt);
+  useEffect(() => {
+    if (totalsOverflow) setError('Los saldos superan el rango seguro; algunos totales no se muestran.');
+  }, [totalsOverflow]);
+
+  const activeAccounts = useMemo(() => accounts.filter(a => !a.archivedAt), [accounts]);
 
   const openCreateAccount = () => {
     setAccountForm({ name: '', description: '', kind: 'cash', initialAmountMinor: null, initialCurrency: defaultCurrency });
