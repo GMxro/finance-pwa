@@ -28,6 +28,19 @@ export async function apiMutationRateLimit(c: Context<{ Bindings: Env }>, next: 
   await next();
 }
 
+export async function authRateLimit(c: Context<{ Bindings: Env }>, next: Next) {
+  const ip = c.req.header('cf-connecting-ip') ?? 'unattributed';
+  try {
+    await c.env.DB.prepare(`DELETE FROM api_rate_limits WHERE user_id IS NULL AND window_started_at < ?`)
+      .bind(Date.now() - 86_400_000).run();
+    const ipKey = await hashKey(`ip:${ip}`);
+    if (await consumeRateLimit(c.env, ipKey, null, 'auth') > 30) return rateLimited(c);
+  } catch {
+    return c.json({ code: 'RATE_LIMIT_UNAVAILABLE', message: 'No pudimos validar el límite de solicitudes.' }, 503);
+  }
+  await next();
+}
+
 export async function deletionStatusRateLimit(c: Context<{ Bindings: Env }>, next: Next) {
   const ip = c.req.header('cf-connecting-ip') ?? 'unattributed';
   try {

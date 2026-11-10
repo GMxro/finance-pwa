@@ -164,6 +164,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSyncEpoch(null);
         }
       } catch (error) {
+        setUser(null);
+        setSession(null);
+        setOnboardingComplete(false);
+        setLegalAcceptance(null);
+        setDefaultCurrency('ARS');
+        setSyncEpoch(null);
         setSyncState((current) => ({
           ...current,
           status: 'error',

@@ -274,14 +274,15 @@ deletionStatusRoutes.post('/', async (c) => {
   if (!parsed.success) {
     throw new ValidationError('Identificador de borrado inválido.');
   }
-  // La consulta por userId requiere sesión y solo permite consultar la propia cuenta.
-  if ('userId' in parsed.data) {
-    const authResponse = await sessionMiddleware(c, async () => {});
-    if (authResponse) return authResponse;
-    const sessionUser = c.get('user' as any) as { id?: string } | undefined;
-    if (!sessionUser?.id || sessionUser.id !== parsed.data.userId) {
-      return c.json({ code: 'FORBIDDEN', message: 'No podés consultar el estado de otra cuenta.' }, 403);
-    }
+  // Toda consulta de estado de borrado requiere sesión autenticada.
+  const authResponse = await sessionMiddleware(c, async () => {});
+  if (authResponse) return authResponse;
+  const sessionUser = c.get('user' as any) as { id?: string } | undefined;
+  if (!sessionUser?.id) {
+    return c.json({ code: 'UNAUTHORIZED', message: 'Se requiere sesión.' }, 401);
+  }
+  if ('userId' in parsed.data && sessionUser.id !== parsed.data.userId) {
+    return c.json({ code: 'FORBIDDEN', message: 'No podés consultar el estado de otra cuenta.' }, 403);
   }
   return c.json(await getAccountDeletionStatus(c.env, parsed.data), 200, { 'Cache-Control': 'no-store' });
 });

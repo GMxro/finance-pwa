@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { requestId } from 'hono/request-id';
 
 import { sessionMiddleware } from './middleware/session';
-import { apiMutationRateLimit } from './middleware/rate-limit';
+import { apiMutationRateLimit, authRateLimit } from './middleware/rate-limit';
 import { legalAcceptanceRequired } from './middleware/legal-acceptance';
 import { sameOriginGuard } from './middleware/same-origin';
 import { apiBodyLimit } from './middleware/body-limit';
@@ -44,6 +44,7 @@ app.use('/api/*', minimumAppVersion);
 app.route('/api', healthRoutes);
 
 // Better Auth routes (public; Better Auth validates origin/CSRF itself)
+app.use('/api/auth/*', authRateLimit);
 app.route('/api/auth', authRoutes);
 app.route('/api/account/deletion-status', deletionStatusRoutes);
 
