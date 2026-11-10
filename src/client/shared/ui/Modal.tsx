@@ -80,13 +80,15 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md';
+  /** Variante visual: 'dialog' (centrado) o 'sheet' (bottom sheet en mobile) */
+  variant?: 'dialog' | 'sheet';
   /** Si true, enfoca el primer campo editable (o una acción segura del diálogo) la primera vez que se abre */
   autoFocusFirstEmpty?: boolean;
   /** Si true, impide cerrar el modal (Escape, overlay, botón X) mientras hay una operación en curso */
   busy?: boolean;
 }
 
-export function Modal({ open, onClose, title, description, children, footer, size = 'md', autoFocusFirstEmpty = true, busy = false }: ModalProps) {
+export function Modal({ open, onClose, title, description, children, footer, size = 'md', variant = 'dialog', autoFocusFirstEmpty = true, busy = false }: ModalProps) {
   const titleId = useId();
   const descriptionId = useId();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -216,7 +218,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     <div className="ui-modal-overlay" onPointerDown={handleOverlayPointerDown} role="presentation">
       <div
         ref={contentRef}
-        className={`ui-modal ui-modal--${size}`}
+         className={`ui-modal ui-modal--${size} ui-modal--${variant}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}

@@ -1,11 +1,8 @@
 import React, { useId } from 'react';
+import { ChoiceOption } from './choice';
 import './RadioGroup.css';
 
-export interface RadioOption {
-  value: string;
-  label: string;
-  description?: string;
-}
+export type RadioOption = ChoiceOption;
 
 export interface RadioGroupProps {
   label?: string;

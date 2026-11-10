@@ -10,6 +10,14 @@
   animation: ui-overlay-in var(--dur-base) var(--ease-out);
 }
 
+/* Sheet variant: bottom sheet on mobile */
+.ui-modal--sheet {
+  max-width: 100%;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  margin-top: auto;
+  max-height: var(--sheet-max-height);
+}
+
 .ui-modal {
   width: 100%;
   max-width: 560px;

@@ -1,10 +1,9 @@
 import React, { useId, useRef } from 'react';
 import './SegmentedControl.css';
 
-export interface SegmentedOption {
-  value: string;
-  label: string;
-}
+import { ChoiceOption } from './choice';
+
+export type SegmentedOption = ChoiceOption;
 
 export interface SegmentedControlProps {
   value: string;
