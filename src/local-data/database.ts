@@ -94,12 +94,13 @@ export async function getUserBudgets(userId: string, periodMonth: string): Promi
   return db.budgets.where({ userId, periodMonth }).toArray();
 }
 
-export async function getSyncMeta(): Promise<SyncMeta | undefined> {
+export async function getSyncMeta(userId?: string): Promise<SyncMeta | undefined> {
+  if (userId) return db.syncMeta.get(`sync-meta:${userId}`);
   return db.syncMeta.get('sync-meta');
 }
 
 export async function setSyncMeta(meta: Omit<SyncMeta, 'id'>): Promise<void> {
-  await db.syncMeta.put({ id: 'sync-meta', ...meta });
+  await db.syncMeta.put({ id: `sync-meta:${meta.userId}`, ...meta });
 }
 
 export async function addToOutbox(

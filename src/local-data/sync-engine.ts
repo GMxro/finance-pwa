@@ -39,7 +39,7 @@ export class SyncEngine {
   private async performInitialize(userId: string, epoch: string): Promise<void> {
     this.setState({ status: 'syncing', error: null });
     try {
-      const meta = await getSyncMeta();
+      const meta = await getSyncMeta(userId);
       if (!meta || meta.userId !== userId || meta.epoch !== epoch) {
         await this.fullSync(userId, epoch);
         await this.pushOutbox(userId, epoch);
@@ -214,8 +214,10 @@ export class SyncEngine {
           } else {
             const local = await db.transactions.get(tx.id);
             const serverVersion = tx.version ?? 0;
-            if (!local || local.userId !== userId || local.synced || (local.localVersion ?? 0) <= serverVersion) {
-              await db.transactions.put({ ...tx, userId, synced: true, pendingOp: undefined, localVersion: tx.version });
+            if (!local || (local.userId === userId && (local.synced || (local.localVersion ?? 0) <= serverVersion))) {
+              if (!local || local.userId === userId) {
+                await db.transactions.put({ ...tx, userId, synced: true, pendingOp: undefined, localVersion: tx.version });
+              }
             }
           }
         }

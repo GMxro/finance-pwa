@@ -91,6 +91,7 @@ export async function cacheServerRows(userId: string, rows: TransactionResponse[
   await db.transaction('rw', [db.transactions], async () => {
     for (const row of rows) {
       const existing = await db.transactions.get(row.id);
+    if (existing && existing.userId !== userId) continue; // don't overwrite other users' rows
       if (existing && !existing.synced) continue; // keep pending local copy
       await db.transactions.put({ ...row, userId, synced: true, localVersion: row.version });
     }
