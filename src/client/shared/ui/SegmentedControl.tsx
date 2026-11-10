@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useId, useRef } from 'react';
 import './SegmentedControl.css';
 
 export interface SegmentedOption {
@@ -33,10 +33,34 @@ export function SegmentedControl({
 }: SegmentedControlProps) {
   const generatedId = useId();
   const controlId = id || generatedId;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (disabled) return;
+    let nextIndex = index;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIndex = (index + 1) % options.length;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIndex = (index - 1 + options.length) % options.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = options.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    const next = options[nextIndex];
+    if (next) {
+      onChange(next.value);
+      const btn = containerRef.current?.querySelector<HTMLButtonElement>(`#${controlId}-${next.value}`);
+      btn?.focus();
+    }
+  };
 
   return (
-    <div className={`ui-segment ${className}`} role="group" aria-label={ariaLabel || label}>
-      {options.map(opt => {
+    <div className={`ui-segment ${className}`} role="group" aria-label={ariaLabel || label} ref={containerRef}>
+      {options.map((opt, index) => {
         const active = opt.value === value;
         return (
           <button
@@ -48,7 +72,9 @@ export function SegmentedControl({
             aria-disabled={disabled}
             aria-invalid={ariaInvalid}
             aria-describedby={ariaDescribedBy}
+            tabIndex={active ? 0 : -1}
             onClick={() => !disabled && onChange(opt.value)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
             disabled={disabled}
           >
             {opt.label}
