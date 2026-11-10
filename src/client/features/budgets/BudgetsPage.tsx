@@ -203,7 +203,6 @@ export function BudgetsPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Límites por categoría"
         title="Presupuestos"
         actions={<Button leftIcon={<Plus size={17} />} onClick={openCreate}>Nuevo presupuesto</Button>}
       />

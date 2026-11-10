@@ -99,8 +99,8 @@
   --radius-field: 12px;
 
   /* ---- Control Heights (tokens únicos) ---- */
-  --control-h-sm: 32px;   /* botón chico */
-  --control-h-md: 40px;   /* botón estándar */
+  --control-h-sm: 40px;   /* botón chico */
+  --control-h-md: 44px;   /* botón estándar */
   --control-h-lg: 44px;   /* input/select, botón grande */
   --control-h-xl: 56px;   /* fila lista, bottom nav */
 

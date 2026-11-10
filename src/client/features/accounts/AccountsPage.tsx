@@ -453,7 +453,6 @@ export function AccountsPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Tu plata"
         title="Cuentas"
         description="Las transferencias mueven plata entre tus cuentas: no cuentan como ingreso ni como gasto."
         actions={

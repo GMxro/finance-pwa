@@ -637,7 +637,6 @@ export function TransactionsPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Ingresos y gastos"
         title="Movimientos"
         actions={<Button leftIcon={<Plus size={17} />} onClick={() => openCreate('expense')}>Nuevo movimiento</Button>}
       />

@@ -203,7 +203,6 @@ export function CategoriesPage() {
   return (
     <Page>
       <PageHeader
-        eyebrow="Ajustes · Organización"
         title="Categorías"
         description="Agrupá tus movimientos para entender en qué se va la plata."
         actions={

@@ -16,6 +16,12 @@
   font-weight: var(--weight-regular);
 }
 
+.ui-money__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .ui-money--sm {
   font-size: var(--text-body);
   font-weight: var(--weight-label);

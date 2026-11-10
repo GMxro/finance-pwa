@@ -129,7 +129,7 @@
 
   .ui-modal__footer {
     min-height: var(--sheet-footer-h);
-    padding: var(--space-3) var(--space-4) calc(var(--space-4) + var(--safe-bottom));
+    padding: var(--space-3) var(--space-4) var(--space-4);
   }
 
   .ui-modal__title {

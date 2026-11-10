@@ -27,7 +27,7 @@ export function Money({
   return (
     <span className={`ui-money ui-money--${size} ui-money--${tone} ${className}`}>
       {prefix && <span className="ui-money__sign" aria-hidden="true">{prefix}</span>}
-      {displayAmount}
+      <span className="ui-money__value">{displayAmount}</span>
     </span>
   );
 }

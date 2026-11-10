@@ -231,9 +231,9 @@
   .ui-select-sheet {
     max-height: calc(var(--sheet-max-height) - var(--safe-top));
     border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
-    padding-bottom: var(--safe-bottom);
+    /* safe-area handled by list padding */
   }
-
+  
   .ui-select-sheet__header {
     padding: var(--space-4) var(--space-4) var(--space-2);
   }
