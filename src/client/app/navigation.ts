@@ -10,7 +10,6 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
   { to: '/movimientos', label: 'Movimientos', icon: List },
-  { to: '/cuentas', label: 'Cuentas', icon: Wallet },
   { to: '/presupuestos', label: 'Presupuestos', icon: Target },
   { to: '/estadisticas', label: 'Estadísticas', icon: ChartColumn },
   { to: '/calendario', label: 'Calendario', icon: Calendar },
@@ -21,11 +20,11 @@ export const NAV_ITEMS: NavItem[] = [
 export const MOBILE_NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
   { to: '/movimientos', label: 'Movimientos', icon: List },
+  { to: '/cuentas', label: 'Cuentas', icon: Wallet },
   { to: '/estadisticas', label: 'Estadísticas', icon: ChartColumn }
 ];
 
 export const MORE_NAV_ITEMS: NavItem[] = [
-  { to: '/cuentas', label: 'Cuentas', icon: Wallet },
   { to: '/presupuestos', label: 'Presupuestos', icon: Target },
   { to: '/calendario', label: 'Calendario', icon: Calendar },
   { to: '/compromisos', label: 'Compromisos', icon: CalendarClock },
