@@ -1,14 +1,14 @@
 // Application: Budgets business logic
 import type { Env } from '@env';
 import type { BudgetCreate, BudgetUpdate, BudgetWithSpent } from '@contracts/budget';
-import { subtractAmounts } from '@domain/money';
+import { MAX_MINOR_UNITS, subtractAmounts } from '@domain/money';
 import { ValidationError } from '../../middleware/error-handler';
 import { excludeInitialSql } from '../transactions/transaction-filters';
 import { todayLocalISO } from '@domain/date';
 
 function safeAggregate(value: unknown): number {
   const amount = Number(value ?? 0);
-  if (!Number.isSafeInteger(amount) || amount < 0) {
+  if (!Number.isSafeInteger(amount) || Math.abs(amount) > MAX_MINOR_UNITS || amount < 0) {
     throw new ValidationError('El total financiero excede el rango exacto admitido.');
   }
   return amount;

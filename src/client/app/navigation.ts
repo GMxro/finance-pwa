@@ -13,6 +13,8 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/cuentas', label: 'Cuentas', icon: Wallet },
   { to: '/presupuestos', label: 'Presupuestos', icon: Target },
   { to: '/estadisticas', label: 'Estadísticas', icon: ChartColumn },
+  { to: '/calendario', label: 'Calendario', icon: Calendar },
+  { to: '/compromisos', label: 'Compromisos', icon: CalendarClock },
   { to: '/ajustes', label: 'Ajustes', icon: Settings }
 ];
 

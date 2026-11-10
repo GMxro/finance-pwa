@@ -164,9 +164,10 @@ export async function updateTransaction(
   const now = Date.now();
 
   const current = await env.DB.prepare(`
-    SELECT category_id, kind, amount_minor, currency_code FROM transactions WHERE id = ? AND user_id = ? AND deleted_at IS NULL
-  `).bind(id, userId).first<{ category_id: string; kind: 'income' | 'expense'; amount_minor: number; currency_code: string }>();
+    SELECT category_id, kind, amount_minor, currency_code, source_type FROM transactions WHERE id = ? AND user_id = ? AND deleted_at IS NULL
+  `).bind(id, userId).first<{ category_id: string; kind: 'income' | 'expense'; amount_minor: number; currency_code: string; source_type: string }>();
   if (!current) throw new Error('NOT_FOUND');
+  if (current.source_type === 'initial') throw new Error('NOT_EDITABLE');
   const nextCategoryId = updates.categoryId ?? current.category_id;
   const nextKind = updates.kind ?? current.kind;
   if (nextCategoryId !== current.category_id || nextKind !== current.kind) {
@@ -258,6 +259,10 @@ export async function deleteTransaction(
   id: string,
   version: number
 ): Promise<void> {
+  const existingSource = await env.DB.prepare(`
+    SELECT source_type FROM transactions WHERE id = ? AND user_id = ? AND deleted_at IS NULL
+  `).bind(id, userId).first<{ source_type: string }>();
+  if (existingSource?.source_type === 'initial') throw new Error('NOT_EDITABLE');
   const now = Date.now();
 
   const stmt1 = env.DB.prepare(`

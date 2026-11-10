@@ -8,6 +8,7 @@ import { Button } from '@shared/ui/Button';
 import { DangerZone } from '@shared/ui/DangerZone';
 import { Notice } from '@shared/ui/Notice';
 import { Stack } from '@shared/ui/Layout';
+import { todayLocalISO } from '@domain/date';
 import { LoadingScreen } from '@shared/ui/LoadingScreen';
 import './LegalAcceptancePage.css';
 
@@ -50,7 +51,7 @@ export function LegalAcceptancePage() {
       const url = URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `finanzas-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.download = `finanzas-${todayLocalISO()}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

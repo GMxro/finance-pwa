@@ -543,7 +543,7 @@ describe('sync engine and account deletion', () => {
       categoryId, periodMonth: '2026-10', currency: 'ARS', limitMinor: 100
     });
     await createTransaction(env as any, USER, {
-      id: 'e2e2e2e2-e2e2-42e2-82e2-e2e2e2e2e2e2', kind: 'expense', amountMinor: Number.MAX_SAFE_INTEGER,
+      id: 'e2e2e2e2-e2e2-42e2-82e2-e2e2e2e2e2e2', kind: 'expense', amountMinor: 999999999999,
       currency: 'ARS', categoryId, occurredOn: '2026-10-01'
     });
     await expect(createTransaction(env as any, USER, {
@@ -552,13 +552,13 @@ describe('sync engine and account deletion', () => {
     })).rejects.toThrow('rango exacto');
 
     const budgets = await listBudgets(env as any, USER, '2026-10');
-    expect(budgets[0]).toMatchObject({ spentMinor: Number.MAX_SAFE_INTEGER });
+    expect(budgets[0]).toMatchObject({ spentMinor: 999999999999 });
   });
 
   it('rejects an income that would exceed the exact account balance range', async () => {
     const categoryId = await catId('salario');
     await createTransaction(env as any, USER, {
-      id: 'e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4', kind: 'income', amountMinor: Number.MAX_SAFE_INTEGER,
+      id: 'e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4', kind: 'income', amountMinor: 999999999999,
       currency: 'ARS', categoryId, occurredOn: '2026-10-01'
     });
     await expect(createTransaction(env as any, USER, {
@@ -567,13 +567,13 @@ describe('sync engine and account deletion', () => {
     })).rejects.toThrow('rango exacto');
 
     const accounts = await listAccounts(env as any, USER);
-    expect(accounts.some((account) => account.balances.some((balance) => balance.amountMinor === Number.MAX_SAFE_INTEGER))).toBe(true);
+    expect(accounts.some((account) => account.balances.some((balance) => balance.amountMinor === 999999999999))).toBe(true);
   });
 
   it('does not acknowledge an offline create that would overflow aggregate totals', async () => {
     const categoryId = await catId('alimentacion');
     await createTransaction(env as any, USER, {
-      id: 'ea0ea0ea-0ea0-4ea0-8ea0-ea0ea0ea0ea0', kind: 'expense', amountMinor: Number.MAX_SAFE_INTEGER,
+      id: 'ea0ea0ea-0ea0-4ea0-8ea0-ea0ea0ea0ea0', kind: 'expense', amountMinor: 999999999999,
       currency: 'ARS', categoryId, occurredOn: '2026-10-01'
     });
     const item = {
@@ -602,7 +602,7 @@ describe('sync engine and account deletion', () => {
       id: 'e6e6e6e6-e6e6-46e6-86e6-e6e6e6e6e6e6',
       fromAccountId: from.id,
       toAccountId: to.id,
-      fromAmountMinor: Number.MAX_SAFE_INTEGER,
+      fromAmountMinor: 999999999999,
       fromCurrency: 'ARS',
       occurredOn: '2026-10-01'
     })).rejects.toThrow('rango exacto');
@@ -616,12 +616,12 @@ describe('sync engine and account deletion', () => {
       categoryId, periodMonth: '2026-10', currency: 'ARS', limitMinor: 100
     });
     await createTransaction(env as any, USER, {
-      id: 'e8e8e8e8-e8e8-48e8-88e8-e8e8e8e8e8e8', kind: 'expense', amountMinor: Number.MAX_SAFE_INTEGER,
+      id: 'e8e8e8e8-e8e8-48e8-88e8-e8e8e8e8e8e8', kind: 'expense', amountMinor: 999999999999,
       currency: 'ARS', categoryId, occurredOn: '2026-10-01'
     });
     await db.prepare(`INSERT INTO transactions
       (id, user_id, category_id, account_id, kind, amount_minor, currency_code, occurred_on, version, change_seq, created_at, updated_at)
-      VALUES (?, ?, ?, ?, 'expense', 1, 'ARS', '2026-10-02', 1, 99, ?, ?)`)
+      VALUES (?, ?, ?, ?, 'expense', 2, 'ARS', '2026-10-02', 1, 99, ?, ?)`)
       .bind('e9e9e9e9-e9e9-49e9-89e9-e9e9e9e9e9e9', USER, categoryId, account!.id, Date.now(), Date.now()).run();
 
     await expect(listBudgets(env as any, USER, '2026-10')).rejects.toThrow('rango exacto');

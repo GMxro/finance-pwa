@@ -13,7 +13,7 @@ import { MAX_MINOR_UNITS } from '@domain/money';
 
 function safeBalance(value: unknown): number {
   const amount = Number(value);
-  if (!Number.isSafeInteger(amount)) {
+  if (!Number.isSafeInteger(amount) || Math.abs(amount) > MAX_MINOR_UNITS) {
     throw new ValidationError('El saldo excede el rango exacto admitido.');
   }
   return amount;

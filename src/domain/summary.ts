@@ -1,9 +1,9 @@
 // Domain: Summary calculations (shared between client and worker)
 
-import { addAmounts, subtractAmounts } from './money';
+import { addAmounts, assertSafeMinorUnits, subtractAmounts } from './money';
 import type { CurrencyCode } from './money';
 import type { TransactionStored } from './transaction';
-import { isValidISODate } from './date';
+import { isValidISODate, todayLocalISO } from './date';
 
 export interface MonthlySummary {
   periodMonth: string; // YYYY-MM
@@ -18,10 +18,11 @@ export interface MonthlySummary {
 export function computeMonthlySummary(
   transactions: TransactionStored[],
   periodMonth: string,
-  currency: CurrencyCode
+  currency: CurrencyCode,
+  todayISO: string = todayLocalISO()
 ): MonthlySummary {
   const filtered = transactions.filter(
-    (tx) => tx.currency === currency && isValidISODate(tx.occurredOn) && tx.occurredOn.startsWith(periodMonth) && !tx.deletedAt && tx.sourceType !== 'initial'
+    (tx) => tx.currency === currency && isValidISODate(tx.occurredOn) && tx.occurredOn.startsWith(periodMonth) && tx.occurredOn <= todayISO && !tx.deletedAt && tx.sourceType !== 'initial'
   );
 
   let incomeMinor = 0;
@@ -40,6 +41,7 @@ export function computeMonthlySummary(
       existing.amountMinor = addAmounts(existing.amountMinor, tx.amountMinor);
     } else {
       byCategoryMap.set(key, { kind: tx.kind, amountMinor: tx.amountMinor });
+      assertSafeMinorUnits(tx.amountMinor);
     }
   }
 

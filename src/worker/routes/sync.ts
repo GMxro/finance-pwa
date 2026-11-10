@@ -47,7 +47,7 @@ syncRoutes.post('/transactions', async (c) => {
     return c.json({ code: 'PAYLOAD_TOO_LARGE', message: 'El lote de sincronización supera el tamaño permitido.' }, 413);
   }
   const text = await c.req.text();
-  if (text.length > 256 * 1024) {
+  if (new TextEncoder().encode(text).byteLength > 256 * 1024) {
     return c.json({ code: 'PAYLOAD_TOO_LARGE', message: 'El lote de sincronización supera el tamaño permitido.' }, 413);
   }
   let body: unknown;

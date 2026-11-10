@@ -1,7 +1,7 @@
 // Domain: Money handling - exact arithmetic in minor units (cents)
 
 export type CurrencyCode = 'ARS' | 'USD';
-export const MAX_MINOR_UNITS = Number.MAX_SAFE_INTEGER;
+export const MAX_MINOR_UNITS = 999_999_999_999;
 
 export class FinancialRangeError extends RangeError {
   constructor() {
@@ -24,7 +24,7 @@ export function parseAmount(input: string, currency: CurrencyCode): { amountMino
   const exponent = CURRENCIES[currency].exponent;
   const paddedDec = (decPart + '00').slice(0, exponent);
   const amountMinor = Number(intPart + paddedDec);
-  if (!Number.isSafeInteger(amountMinor)) {
+  if (!Number.isSafeInteger(amountMinor) || Math.abs(amountMinor) > MAX_MINOR_UNITS) {
     return { amountMinor: 0, valid: false, error: 'Importe fuera de rango seguro.' };
   }
   if (amountMinor <= 0) {
@@ -81,7 +81,7 @@ export function subtractAmounts(a: number, b: number): number {
 }
 
 export function assertSafeMinorUnits(amount: number): void {
-  if (!Number.isSafeInteger(amount)) throw new FinancialRangeError();
+  if (!Number.isSafeInteger(amount) || Math.abs(amount) > MAX_MINOR_UNITS) throw new FinancialRangeError();
 }
 
 export function isValidCurrency(code: string): code is CurrencyCode {

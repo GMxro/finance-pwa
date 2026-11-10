@@ -118,7 +118,7 @@ export function TransactionsPage() {
   const [installmentsCount, setInstallmentsCount] = useState('2');
   const [firstDueOn, setFirstDueOn] = useState(todayLocalISO());
   const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>('monthly');
-  const [recurringDaysOfWeek, setRecurringDaysOfWeek] = useState<number>(1 << new Date().getDay());
+  const [recurringDaysOfWeek, setRecurringDaysOfWeek] = useState<number>(1 << new Date(`${todayLocalISO()}T00:00:00Z`).getUTCDay());
   const [recurringEndOn, setRecurringEndOn] = useState('');
 
   const clearFieldError = (field: string) => {
@@ -129,7 +129,7 @@ export function TransactionsPage() {
     setInstallmentsCount('2');
     setFirstDueOn(todayLocalISO());
     setRecurringFrequency('monthly');
-    setRecurringDaysOfWeek(1 << new Date().getDay());
+    setRecurringDaysOfWeek(1 << new Date(`${todayLocalISO()}T00:00:00Z`).getUTCDay());
     setRecurringEndOn('');
   }, []);
 
@@ -216,9 +216,7 @@ export function TransactionsPage() {
         setPage(1);
         setHasMore(false);
         setOffline(true);
-        setError(cachedForMonth.length > 0
-          ? 'Sin conexión. Se muestran movimientos guardados en este dispositivo; pueden estar desactualizados.'
-          : 'Sin conexión y no hay movimientos guardados para estos filtros.');
+        setError(null);
       } else {
         setOffline(false);
         setHasMore(false);
@@ -667,8 +665,8 @@ export function TransactionsPage() {
 
       <Stack gap="md" className="tx-notices">
         {offline && (
-          <Notice>
-            <Inline gap="sm"><WifiOff size={16} /> Sin conexión. Podés seguir registrando movimientos.</Inline>
+          <Notice action={{ label: 'Reintentar', onClick: () => void loadData(false, 1) }}>
+            <Inline gap="sm"><WifiOff size={16} /> Sin conexión. Se muestran los movimientos guardados en este dispositivo (pueden estar desactualizados). Podés seguir registrando movimientos.</Inline>
           </Notice>
         )}
         {localNotice && (
@@ -714,6 +712,7 @@ export function TransactionsPage() {
         <EmptyState
           title={search ? 'Sin coincidencias' : 'Sin movimientos'}
           message={emptyMessage}
+          action={search ? undefined : { label: 'Nuevo movimiento', onClick: () => openCreate('expense') }}
         />
       )}
 
@@ -745,18 +744,20 @@ export function TransactionsPage() {
           autoFocusFirstEmpty
           footer={
             <>
-              {editingTx?.id && (
-                <Button
-                  variant="ghost"
-                  className="tx-modal-delete"
-                  onClick={() => {
-                    setDeleteTarget(editingTx);
-                  }}
-                >
-                  Eliminar
-                </Button>
-              )}
-              <Button type="submit" form="tx-form" loading={saving} onClick={() => void handleSubmit()} className="tx-compact-submit">{editingTx?.id ? "Guardar" : "Crear"}</Button>
+               {editingTx?.id && (
+                 <Button
+                   variant="ghost"
+                   className="tx-modal-delete"
+                   disabled={saving}
+                   onClick={() => {
+                     setDeleteTarget(editingTx);
+                   }}
+                 >
+                   Eliminar
+                 </Button>
+               )}
+               <Button type="button" variant="ghost" disabled={saving} onClick={closeModal}>Cancelar</Button>
+               <Button type="submit" form="tx-form" loading={saving} className="tx-compact-submit">{editingTx?.id ? "Guardar" : "Crear"}</Button>
             </>
           }
        >

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAmount, formatAmount, addAmounts, subtractAmounts, isValidCurrency } from '@domain/money';
+import { MAX_MINOR_UNITS, parseAmount, formatAmount, addAmounts, subtractAmounts, isValidCurrency } from '@domain/money';
 
 describe('money', () => {
   it('parses whole amounts into minor units', () => {
@@ -24,11 +24,12 @@ describe('money', () => {
   });
 
   it('guards integer overflow', () => {
-    expect(() => addAmounts(Number.MAX_SAFE_INTEGER, 1)).toThrow();
-    expect(() => subtractAmounts(Number.MAX_SAFE_INTEGER + 1, 0)).toThrow();
-    expect(() => formatAmount(Number.MAX_SAFE_INTEGER + 1, 'ARS')).toThrow();
-    expect(parseAmount('90071992547409.92', 'ARS').valid).toBe(false);
-    expect(parseAmount('90071992547409.91', 'ARS')).toMatchObject({ valid: true, amountMinor: Number.MAX_SAFE_INTEGER });
+    expect(() => addAmounts(MAX_MINOR_UNITS + 1, 0)).toThrow();
+    expect(() => subtractAmounts(MAX_MINOR_UNITS + 1, 0)).toThrow();
+    expect(() => formatAmount(MAX_MINOR_UNITS + 1, 'ARS')).toThrow();
+    expect(parseAmount('99999999999.99', 'ARS').valid).toBe(false);
+    expect(parseAmount('10000000000.00', 'ARS')).toMatchObject({ valid: false });
+    expect(parseAmount('9999999999.99', 'ARS')).toMatchObject({ valid: true, amountMinor: MAX_MINOR_UNITS });
   });
 
   it('validates currency codes', () => {

@@ -3,7 +3,7 @@ import { Download, LogOut, ChevronRight, Layers, RefreshCw } from 'lucide-react'
 import { useAuth } from '../../app/providers';
 import { performAccountDeletion } from '../../app/account-deletion';
 import { APP_VERSION, api } from '@shared/api/client';
-import { ARGENTINA_TZ } from '@domain/date';
+import { ARGENTINA_TZ, todayLocalISO } from '@domain/date';
 import { Page, PageHeader, Stack, Inline, Divider } from '@shared/ui/Layout';
 import { Panel } from '@shared/ui/Panel';
 import { Text } from '@shared/ui/Text';
@@ -43,7 +43,7 @@ export function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `finanzas-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.download = `finanzas-${todayLocalISO()}.csv`;
       link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch (e: any) {

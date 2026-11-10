@@ -227,7 +227,7 @@
   flex: 1;
   font-size: var(--text-section-title);
   font-weight: var(--weight-display);
-  min-height: 32px;
+  min-height: var(--control-h-lg);
   padding: var(--space-1) 0;
   border: none;
   background: transparent;
