@@ -25,11 +25,21 @@ import '../../app/styles/statistics.css';
 const MAX_PAGES = 20;
 
 async function fetchMonth(period: string): Promise<any[]> {
-  const rows: any[] = [];
-  for (let page = 1; page <= MAX_PAGES; page += 1) {
-    const response = await api.listTransactions({ period, page, limit: 100 });
-    if (response.error) throw response.error;
-    const batch = response.data ?? [];
+  const firstResponse = await api.listTransactions({ period, page: 1, limit: 100 });
+  if (firstResponse.error) throw firstResponse.error;
+  const firstBatch = firstResponse.data ?? [];
+  const rows: any[] = [...firstBatch];
+  if (firstBatch.length < 100) return rows;
+
+  // Fetch remaining pages in parallel; stop at the first short page.
+  const remaining = await Promise.all(
+    Array.from({ length: MAX_PAGES - 1 }, (_, i) => i + 2).map(async (page) => {
+      const response = await api.listTransactions({ period, page, limit: 100 });
+      if (response.error) throw response.error;
+      return response.data ?? [];
+    })
+  );
+  for (const batch of remaining) {
     rows.push(...batch);
     if (batch.length < 100) break;
   }
