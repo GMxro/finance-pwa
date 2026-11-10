@@ -153,14 +153,16 @@ export function OverviewPage() {
     () => computeAllCurrenciesSummary(transactions as any, month),
     [transactions, month]
   );
-  const summaryFor = (cur: CurrencyCode) => {
-    const server = cur === 'ARS' ? serverSummaryARS : serverSummaryUSD;
-    if (server) return { incomeMinor: server.incomeMinor, expenseMinor: server.expenseMinor, netMinor: server.netMinor };
-    const client = summaries.find((s: { currency: CurrencyCode }) => s.currency === cur) ?? summaries[0]!;
+  const arsSummary = useMemo(() => {
+    if (serverSummaryARS) return { incomeMinor: serverSummaryARS.incomeMinor, expenseMinor: serverSummaryARS.expenseMinor, netMinor: serverSummaryARS.netMinor };
+    const client = summaries.find((s: { currency: CurrencyCode }) => s.currency === 'ARS') ?? summaries[0]!;
     return { incomeMinor: client.incomeMinor, expenseMinor: client.expenseMinor, netMinor: client.netMinor };
-  };
-  const arsSummary = summaryFor('ARS');
-  const usdSummary = summaryFor('USD');
+  }, [serverSummaryARS, summaries]);
+  const usdSummary = useMemo(() => {
+    if (serverSummaryUSD) return { incomeMinor: serverSummaryUSD.incomeMinor, expenseMinor: serverSummaryUSD.expenseMinor, netMinor: serverSummaryUSD.netMinor };
+    const client = summaries.find((s: { currency: CurrencyCode }) => s.currency === 'USD') ?? summaries[0]!;
+    return { incomeMinor: client.incomeMinor, expenseMinor: client.expenseMinor, netMinor: client.netMinor };
+  }, [serverSummaryUSD, summaries]);
   const categoriesById = useMemo(() => new Map(categories.map(c => [c.id, c])), [categories]);
   const accountsById = useMemo(() => new Map(accounts.map(account => [account.id, account.name])), [accounts]);
 

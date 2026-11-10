@@ -605,7 +605,7 @@ export function TransactionsPage() {
     }
   };
 
-  const items: LedgerItem[] = transactions.map(tx => ({
+  const items: LedgerItem[] = useMemo(() => transactions.map(tx => ({
     id: tx.id,
     kind: tx.kind,
     amountMinor: tx.amountMinor,
@@ -616,14 +616,16 @@ export function TransactionsPage() {
     accountName: tx.accountId ? accountsById.get(tx.accountId) : undefined,
     sourceType: tx.sourceType,
     pending: tx.synced === false
-  }));
-  const visibleItems = search.trim()
-    ? items.filter(item => `${item.note ?? ''} ${categoryName(item.categoryId)} ${item.accountName ?? ''}`.toLocaleLowerCase('es-AR').includes(search.trim().toLocaleLowerCase('es-AR')))
-    : items;
+  })), [transactions, accountsById]);
 
-  const categoryOptions = categories
+  const visibleItems = useMemo(() => (search.trim()
+    ? items.filter(item => `${item.note ?? ''} ${categoryName(item.categoryId)} ${item.accountName ?? ''}`.toLocaleLowerCase('es-AR').includes(search.trim().toLocaleLowerCase('es-AR')))
+    : items), [items, search, categoryName]);
+
+  const categoryOptions = useMemo(() => categories
     .filter(c => c.kind === formData.kind && (!c.archivedAt || c.id === formData.categoryId))
-    .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name }));
+    .map(c => ({ value: c.id, label: c.archivedAt ? `${c.name} (archivada)` : c.name })), [categories, formData.kind, formData.categoryId]);
+
   const emptyMessage = search
     ? hasMore ? 'No hay coincidencias entre los movimientos cargados. Cargá más para ampliar la búsqueda.' : 'Probá con otra descripción, categoría o cuenta.'
     : month === todayLocalISO().slice(0, 7)
@@ -640,7 +642,7 @@ export function TransactionsPage() {
     { value: 'USD', label: 'USD' }
   ];
 
-  const accountOptions = accounts.filter(a => !a.archivedAt).map(a => ({ value: a.id, label: a.name }));
+  const accountOptions = useMemo(() => accounts.filter(a => !a.archivedAt).map(a => ({ value: a.id, label: a.name })), [accounts]);
 
   return (
     <Page>

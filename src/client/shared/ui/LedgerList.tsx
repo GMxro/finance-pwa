@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import type { CurrencyCode } from '@domain/money';
 import { Money } from './Money';
@@ -31,7 +31,7 @@ interface LedgerListProps {
   censored?: boolean;
 }
 
-export function LedgerList({
+export const LedgerList = React.memo(function LedgerList({
   items,
   categoryName,
   categoryIcon,
@@ -50,12 +50,15 @@ export function LedgerList({
     );
   }
 
-  const groups = new Map<string, LedgerItem[]>();
-  for (const item of items) {
-    const dayItems = groups.get(item.occurredOn) ?? [];
-    dayItems.push(item);
-    groups.set(item.occurredOn, dayItems);
-  }
+  const groups = useMemo(() => {
+    const map = new Map<string, LedgerItem[]>();
+    for (const item of items) {
+      const dayItems = map.get(item.occurredOn) ?? [];
+      dayItems.push(item);
+      map.set(item.occurredOn, dayItems);
+    }
+    return map;
+  }, [items]);
 
   return (
     <div className="ui-ledger">
@@ -147,4 +150,4 @@ export function LedgerList({
       ))}
     </div>
   );
-}
+});
