@@ -458,9 +458,9 @@ export function AccountsPage() {
         actions={
           <Inline gap="sm">
             <Button variant="secondary" leftIcon={<Plus size={16} />} onClick={openCreateAccount}>Nueva cuenta</Button>
-            <Button leftIcon={<ArrowRightLeft size={16} />} onClick={openTransfer} disabled={activeAccounts.length < 2}>
-              Transferir
-            </Button>
+             <Button leftIcon={<ArrowRightLeft size={16} />} onClick={openTransfer} disabled={activeAccounts.length < 2} title={activeAccounts.length < 2 ? 'Necesitás al menos 2 cuentas activas para transferir.' : undefined}>
+               Transferir
+             </Button>
           </Inline>
         }
       />

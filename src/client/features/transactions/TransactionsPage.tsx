@@ -791,22 +791,13 @@ export function TransactionsPage() {
            </div>
 
            <div className="tx-compact-amount-row">
-             <input
-               type="text"
-               inputMode="decimal"
-               value={amountInput.displayValue}
-               onChange={e => amountInput.onChangeString(e.target.value)}
-               onBlur={amountInput.onBlur}
-               onFocus={amountInput.onFocus}
-               placeholder="0,00"
-               data-autofocus
-               pattern="[0-9.,]*"
-               autoComplete="off"
-               autoCorrect="off"
-               autoCapitalize="off"
-               spellCheck={false}
-               className="tx-compact-amount-input"
-             />
+              <input
+                type="text"
+                {...amountInput.inputProps}
+                placeholder="0,00"
+                data-autofocus
+                className="tx-compact-amount-input"
+              />
              <button
                type="button"
                className="tx-compact-currency-chip"
@@ -1047,9 +1038,9 @@ export function TransactionsPage() {
                  label="Nombre de la categoría"
                  value={newCategoryName}
                  onChange={setNewCategoryName}
-                 placeholder="Ej. Supermercado"
-                 autoFocus
-               />
+                  placeholder="Ej. Supermercado"
+                  data-autofocus
+                />
                <div className="tx-new-category__actions">
                  <Button
                    type="button"
