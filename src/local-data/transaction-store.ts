@@ -72,6 +72,7 @@ export async function mergeWithCache(userId: string, serverRows: TransactionResp
 
   const byId = new Map<string, any>();
   for (const row of serverRows) {
+    if ((row as any).deletedAt) continue;
     byId.set(row.id, row);
   }
   for (const row of pending) {

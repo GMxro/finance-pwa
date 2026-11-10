@@ -65,9 +65,11 @@ export class FinanceDB extends Dexie {
     });
 
     this.transactions.hook('creating', (_id, row) => {
-      row.localVersion = 1;
-      row.synced = false;
-      row.pendingOp = 'create';
+      row.localVersion = row.localVersion ?? 1;
+      if (row.synced !== true) {
+        row.synced = false;
+        row.pendingOp = row.pendingOp ?? 'create';
+      }
     });
 
     this.transactions.hook('updating', (changes, _id, row) => {

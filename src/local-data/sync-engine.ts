@@ -108,7 +108,7 @@ export class SyncEngine {
       if (hasMore && nextCursor <= cursor) throw new Error('La sincronización no avanzó el cursor.');
 
       await db.transaction('rw', [db.transactions], async () => {
-        if (firstPage) await db.transactions.clear();
+        if (firstPage) await db.transactions.where('userId').equals(userId).filter((row) => row.synced).delete();
         for (const tx of transactions) {
           if (tx.deletedAt) {
             const local = await db.transactions.get(tx.id);
@@ -121,8 +121,8 @@ export class SyncEngine {
         }
         for (const tomb of tombstones) {
           const local = await db.transactions.get(tomb.id);
-          if (local?.userId === userId) {
-            await db.transactions.update(tomb.id, { deletedAt: tomb.deletedAt, synced: true, pendingOp: undefined });
+          if (!local || local.userId === userId) {
+            await db.transactions.put({ ...(local ?? {}), id: tomb.id, userId, deletedAt: tomb.deletedAt, synced: true, pendingOp: undefined, localVersion: local?.localVersion ?? 1 } as any);
           }
         }
         const tombstoneIds = new Set(tombstones.map((t: any) => t.id));
@@ -213,7 +213,8 @@ export class SyncEngine {
             }
           } else {
             const local = await db.transactions.get(tx.id);
-            if (!local || local.userId !== userId || local.synced) {
+            const serverVersion = tx.version ?? 0;
+            if (!local || local.userId !== userId || local.synced || (local.localVersion ?? 0) <= serverVersion) {
               await db.transactions.put({ ...tx, userId, synced: true, pendingOp: undefined, localVersion: tx.version });
             }
           }
@@ -221,8 +222,8 @@ export class SyncEngine {
 
         for (const tomb of tombstones) {
           const local = await db.transactions.get(tomb.id);
-          if (local?.userId === userId) {
-            await db.transactions.update(tomb.id, { deletedAt: tomb.deletedAt, synced: true, pendingOp: undefined });
+          if (!local || local.userId === userId) {
+            await db.transactions.put({ ...(local ?? {}), id: tomb.id, userId, deletedAt: tomb.deletedAt, synced: true, pendingOp: undefined, localVersion: local?.localVersion ?? 1 } as any);
           }
         }
 
