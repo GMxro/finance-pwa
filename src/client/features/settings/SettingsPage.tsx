@@ -67,12 +67,11 @@ export function SettingsPage() {
 
   const handleSync = async () => {
     setError(null);
-    try {
-      await syncNow();
-    } catch {
+    const result = await syncNow();
+    if (!result.ok) {
       setError(syncState.pendingCount > 0
         ? `No se pudo sincronizar. Tus ${syncState.pendingCount} cambios siguen pendientes en este dispositivo.`
-        : 'No se pudo completar la sincronización. Volvé a intentar.');
+        : (result.error ?? 'No se pudo completar la sincronización. Volvé a intentar.'));
     }
   };
 

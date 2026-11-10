@@ -5,7 +5,7 @@ import type { SyncPushItem } from '@client/shared/api/client';
 
 export class SyncEngine {
   private operationQueue: Promise<void> = Promise.resolve();
-  private syncInFlight = new Map<string, Promise<void>>();
+  private syncInFlight = new Map<string, Promise<any>>();
   private listeners: Array<(state: SyncState) => void> = [];
   
   private state: SyncState = {
@@ -56,15 +56,18 @@ export class SyncEngine {
     }
   }
   
-  async syncNow(userId: string, epoch: string): Promise<void> {
+  async syncNow(userId: string, epoch: string): Promise<{ ok: boolean; error?: string }> {
     const key = `${userId}:${epoch}`;
     const current = this.syncInFlight.get(key);
     if (current) return current;
 
     const run = this.serialize(() => this.performSyncNow(userId, epoch));
-    this.syncInFlight.set(key, run);
+    this.syncInFlight.set(key, run as any);
     try {
       await run;
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : 'Sync failed' };
     } finally {
       if (this.syncInFlight.get(key) === run) this.syncInFlight.delete(key);
     }

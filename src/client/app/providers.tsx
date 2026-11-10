@@ -106,7 +106,7 @@ interface AuthContextType {
   completeOnboarding: (currency: CurrencyCode) => Promise<void>;
   acceptLegalDocuments: (input: LegalAcceptanceInput) => Promise<void>;
   syncState: SyncState;
-  syncNow: () => Promise<void>;
+  syncNow: () => Promise<{ ok: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -333,18 +333,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (response.data) setLegalAcceptance(response.data);
   }, []);
 
-  const syncNow = useCallback(async () => {
-    if (!legalAcceptance?.accepted) throw new Error('Aceptá los documentos vigentes antes de sincronizar.');
-    if (!user) return;
+  const syncNow = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
+    if (!legalAcceptance?.accepted) {
+      const message = 'Aceptá los documentos vigentes antes de sincronizar.';
+      setSyncState((current) => ({ ...current, status: 'error', error: message }));
+      return { ok: false, error: message };
+    }
+    if (!user) return { ok: true };
     try {
       await syncForUser(user.id);
+      return { ok: true };
     } catch (error) {
-      setSyncState((current) => ({
-        ...current,
-        status: 'error',
-        error: error instanceof Error ? error.message : 'No se pudo sincronizar.'
-      }));
-      throw error;
+      const message = error instanceof Error ? error.message : 'No se pudo sincronizar.';
+      setSyncState((current) => ({ ...current, status: 'error', error: message }));
+      return { ok: false, error: message };
     }
   }, [legalAcceptance?.accepted, syncForUser, user]);
   
