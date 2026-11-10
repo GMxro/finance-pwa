@@ -103,6 +103,15 @@
   --control-h-sm: 40px;   /* botón chico */
   --control-h-md: 44px;   /* botón estándar */
   --control-h-lg: 44px;   /* input/select, botón grande */
+
+  /* ---- Avatars / tap targets / quick-add ---- */
+  --avatar-size-sm: 34px;
+  --tap-target-min: 44px;
+  --quick-add-size: 56px;
+
+  /* ---- Radii (control) ---- */
+  --radius-control: 10px;
+  --radius-chip: 14px;
   --control-h-xl: 56px;   /* fila lista, bottom nav */
 
   /* ---- Motion ---- */
