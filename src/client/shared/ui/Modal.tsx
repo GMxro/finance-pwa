@@ -180,7 +180,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     const root = document.documentElement;
     const sync = () => {
       const rawInset = Math.round(window.innerHeight - viewport.height);
-      const inset = rawInset >= 100 ? rawInset : 0;
+      const inset = rawInset >= 50 ? rawInset : 0;
       root.style.setProperty('--keyboard-inset', `${inset}px`);
     };
 
