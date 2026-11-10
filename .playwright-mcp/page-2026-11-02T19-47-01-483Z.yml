@@ -1,0 +1,36 @@
+- generic [ref=f5e1]:
+  - generic [ref=f5e3]:
+    - button "Abrir modal padre" [ref=f5e4] [cursor=pointer]
+    - generic [ref=f5e5]: parent-open
+    - generic [ref=f5e7]:
+      - generic [ref=f5e8]: Standalone
+      - button "Standalone" [ref=f5e9] [cursor=pointer]:
+        - generic [ref=f5e10]: Seleccionar
+    - dialog "Modal padre" [ref=f5e70]:
+      - generic [ref=f5e71]:
+        - generic [ref=f5e72]: Frecuencia
+        - button "Frecuencia" [expanded] [ref=f5e73] [cursor=pointer]:
+          - generic [ref=f5e74]: Seleccionar
+      - generic [ref=f5e77]:
+        - generic [ref=f5e78]: Tipo
+        - button "Tipo" [ref=f5e79] [cursor=pointer]:
+          - generic [ref=f5e80]: Alfa
+      - generic [ref=f5e83]:
+        - generic [ref=f5e84]: Segmentado *
+        - group "Segmentado (obligatorio)" [ref=f5e85]:
+          - button "Alfa" [pressed] [ref=f5e86] [cursor=pointer]
+          - button "Beta" [ref=f5e87] [cursor=pointer]
+          - button "Gamma" [ref=f5e88] [cursor=pointer]
+  - dialog [ref=f5e89]:
+    - banner [ref=f5e90]:
+      - heading "Frecuencia" [level=2] [ref=f5e91]
+      - button "Cerrar" [active] [ref=f5e92] [cursor=pointer]
+    - listbox "Frecuencia" [ref=f5e96]:
+      - option "Alfa" [ref=f5e97] [cursor=pointer]
+      - option "Beta" [ref=f5e99] [cursor=pointer]
+      - option "Gamma" [ref=f5e101] [cursor=pointer]
+      - option "Delta" [ref=f5e103] [cursor=pointer]
+      - option "Epsilon" [ref=f5e105] [cursor=pointer]
+      - option "Zeta" [ref=f5e107] [cursor=pointer]
+      - option "Eta" [ref=f5e109] [cursor=pointer]
+      - option "Theta" [ref=f5e111] [cursor=pointer]

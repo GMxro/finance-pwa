@@ -1,0 +1,82 @@
+- generic [ref=f12e10]:
+  - generic [ref=f12e12]:
+    - banner [ref=f12e13]:
+      - heading "Resumen" [level=1] [ref=f12e15]
+    - generic [ref=f12e17]:
+      - button "Mes anterior" [ref=f12e18] [cursor=pointer]
+      - generic [ref=f12e21]: Noviembre de 2026
+      - button "Mes siguiente" [disabled] [ref=f12e22]
+    - generic [ref=f12e25]:
+      - generic [ref=f12e27]:
+        - generic [ref=f12e28]:
+          - paragraph [ref=f12e29]: Saldo neto
+          - button "Ocultar montos" [pressed] [ref=f12e30] [cursor=pointer]
+        - generic [ref=f12e34]:
+          - generic [ref=f12e35]:
+            - paragraph [ref=f12e36]: Pesos · ARS
+            - generic [ref=f12e37]:
+              - generic [aria-hidden] [ref=f12e38]: +
+              - text: $ 1.200.000,00
+          - generic [ref=f12e39]:
+            - paragraph [ref=f12e40]: Dólares · USD
+            - generic [ref=f12e41]: US$ 0,00
+      - generic [ref=f12e42]:
+        - generic [ref=f12e44]:
+          - paragraph [ref=f12e45]: Ingresos
+          - generic [ref=f12e46]:
+            - link "Ver ingresos en ARS de 2026-11" [ref=f12e47] [cursor=pointer]:
+              - /url: /movimientos?period=2026-11&kind=income&currency=ARS
+              - generic [ref=f12e48]:
+                - generic [aria-hidden] [ref=f12e49]: +
+                - text: $ 1.200.000,00
+            - link "Ver ingresos en USD de 2026-11" [ref=f12e50] [cursor=pointer]:
+              - /url: /movimientos?period=2026-11&kind=income&currency=USD
+              - generic [ref=f12e51]:
+                - generic [aria-hidden] [ref=f12e52]: +
+                - text: US$ 0,00
+        - generic [ref=f12e54]:
+          - paragraph [ref=f12e55]: Gastos
+          - generic [ref=f12e56]:
+            - link "Ver gastos en ARS de 2026-11" [ref=f12e57] [cursor=pointer]:
+              - /url: /movimientos?period=2026-11&kind=expense&currency=ARS
+              - generic [ref=f12e58]:
+                - generic [aria-hidden] [ref=f12e59]: −
+                - text: $ 0,00
+            - link "Ver gastos en USD de 2026-11" [ref=f12e60] [cursor=pointer]:
+              - /url: /movimientos?period=2026-11&kind=expense&currency=USD
+              - generic [ref=f12e61]:
+                - generic [aria-hidden] [ref=f12e62]: −
+                - text: US$ 0,00
+    - generic [ref=f12e63]:
+      - generic [ref=f12e64]:
+        - heading "Presupuestos" [level=2] [ref=f12e65]
+        - link "Ver todos" [ref=f12e67] [cursor=pointer]:
+          - /url: /presupuestos
+      - generic [ref=f12e69]:
+        - paragraph [ref=f12e70]: Todavía no definiste presupuestos para este mes.
+        - link "Definir mi primer presupuesto" [ref=f12e71] [cursor=pointer]:
+          - /url: /presupuestos
+    - generic [ref=f12e73]:
+      - generic [ref=f12e74]:
+        - heading "Movimientos recientes" [level=2] [ref=f12e75]
+        - link "Ver historial" [ref=f12e77] [cursor=pointer]:
+          - /url: /movimientos?period=2026-11
+      - region "02/11/2026" [ref=f12e80]:
+        - heading "02/11/2026" [level=3] [ref=f12e81]
+        - button "Abrir Salario" [ref=f12e83] [cursor=pointer]:
+          - generic [ref=f12e89]:
+            - generic [ref=f12e90]: Salario
+            - generic [ref=f12e92]: Salario·EfectivoPendiente
+          - generic [ref=f12e94]:
+            - generic [aria-hidden] [ref=f12e95]: +
+            - text: $ 1.200.000,00
+  - link "Nuevo movimiento" [ref=f12e96] [cursor=pointer]:
+    - /url: /movimientos?new=expense
+  - navigation "Navegación principal" [ref=f12e99]:
+    - link "Inicio" [ref=f12e100] [cursor=pointer]:
+      - /url: /
+    - link "Movimientos" [ref=f12e105] [cursor=pointer]:
+      - /url: /movimientos
+    - link "Estadísticas" [ref=f12e108] [cursor=pointer]:
+      - /url: /estadisticas
+    - button "Más" [ref=f12e112] [cursor=pointer]

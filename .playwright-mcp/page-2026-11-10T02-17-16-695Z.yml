@@ -1,0 +1,4 @@
+- status "Cargando la aplicación" [ref=f1e3]:
+  - generic [ref=f1e4]: Finanzas
+  - status "Cargando" [ref=f1e6]:
+    - generic [ref=f1e8]: Cargando...

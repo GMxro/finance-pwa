@@ -1,0 +1,7 @@
+- generic [ref=f4e3]:
+  - button "Abrir modal padre" [ref=f4e4] [cursor=pointer]
+  - generic [ref=f4e5]: parent-closed
+  - generic [ref=f4e7]:
+    - generic [ref=f4e8]: Standalone
+    - button "Standalone" [ref=f4e9] [cursor=pointer]:
+      - generic [ref=f4e10]: Seleccionar

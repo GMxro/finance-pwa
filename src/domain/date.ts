@@ -15,7 +15,18 @@ export function isValidISODate(iso: string): boolean {
 }
 
 export function nowInArgentina(): Date {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: ARGENTINA_TZ }));
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: ARGENTINA_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00';
+  return new Date(`${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`);
 }
 
 export function todayLocalISO(): string {

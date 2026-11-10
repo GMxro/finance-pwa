@@ -11,6 +11,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, syncState, syncNow } = useAuth();
   const { pathname } = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const moreMenuRef = useRef<HTMLElement>(null);
 
@@ -31,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [moreOpen]);
-  const showQuickAdd = pathname === '/' || pathname === '/estadisticas';
+  const showQuickAdd = pathname === '/' || pathname === '/estadisticas' || pathname === '/movimientos';
   const moreActive = MORE_NAV_ITEMS.some(item => pathname.startsWith(item.to));
 
   const syncLabel = syncState.error

@@ -1,0 +1,20 @@
+- generic [ref=f13e10]:
+  - generic [ref=f13e12]:
+    - banner [ref=f13e13]:
+      - generic [ref=f13e14]:
+        - heading "Compromisos" [level=1] [ref=f13e15]
+        - paragraph [ref=f13e16]: Cuotas pendientes, recurrencias y próximos vencimientos.
+      - generic [ref=f13e18]:
+        - button "Mes anterior" [ref=f13e19] [cursor=pointer]
+        - generic [ref=f13e22]: Noviembre de 2026
+        - button "Mes siguiente" [disabled] [ref=f13e23]
+    - status "Cargando" [ref=f13e27]:
+      - generic [ref=f13e29]: Cargando...
+  - navigation "Navegación principal" [ref=f13e30]:
+    - link "Inicio" [ref=f13e31] [cursor=pointer]:
+      - /url: /
+    - link "Movimientos" [ref=f13e36] [cursor=pointer]:
+      - /url: /movimientos
+    - link "Estadísticas" [ref=f13e39] [cursor=pointer]:
+      - /url: /estadisticas
+    - button "Más" [ref=f13e43] [cursor=pointer]

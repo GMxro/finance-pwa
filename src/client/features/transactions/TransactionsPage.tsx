@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Filter, WifiOff, CloudOff, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../app/providers';
-import { api } from '@shared/api/client';
+import { api, formatApiError } from '@shared/api/client';
 import type { CategoryResponse } from '@contracts/category';
 import type { AccountWithBalances } from '@contracts/account';
 import type { CurrencyCode } from '@domain/money';
@@ -230,13 +230,21 @@ export function TransactionsPage() {
 
   const loadCategories = useCallback(async () => {
     const response = await api.listCategories(true);
-    if (!response.error) setCategories(response.data || []);
+    if (response.error) {
+      setError(formatApiError(response.error, 'No se pudieron cargar las categorías.'));
+    } else {
+      setCategories(response.data || []);
+    }
     setCategoriesReady(true);
   }, []);
 
   const loadAccounts = useCallback(async () => {
     const response = await api.listAccounts();
-    if (!response.error) setAccounts(response.data || []);
+    if (response.error) {
+      setError(formatApiError(response.error, 'No se pudieron cargar las cuentas.'));
+    } else {
+      setAccounts(response.data || []);
+    }
     setAccountsReady(true);
   }, []);
 

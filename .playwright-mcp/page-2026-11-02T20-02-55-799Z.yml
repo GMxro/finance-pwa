@@ -1,0 +1,77 @@
+- generic [ref=f10e1]:
+  - generic [ref=f10e10]:
+    - generic [ref=f10e12]:
+      - banner [ref=f10e13]:
+        - generic [ref=f10e14]:
+          - generic [ref=f10e15]: Ingresos y gastos
+          - heading "Movimientos" [level=1] [ref=f10e16]
+        - button "Nuevo movimiento" [ref=f10e18] [cursor=pointer]
+      - generic [ref=f10e22]:
+        - generic [ref=f10e23]:
+          - button "Mes anterior" [ref=f10e24] [cursor=pointer]
+          - generic [ref=f10e27]: Noviembre de 2026
+          - button "Mes siguiente" [disabled] [ref=f10e28]
+        - button "Filtros" [ref=f10e31] [cursor=pointer]
+      - generic [ref=f10e36]:
+        - generic [ref=f10e37]: Buscar movimientos
+        - searchbox "Buscar movimientos" [ref=f10e39]
+      - generic [ref=f10e44]:
+        - heading "Sin movimientos" [level=3] [ref=f10e45]
+        - paragraph [ref=f10e46]: Todavía no registraste movimientos este mes.
+    - navigation "Navegación principal" [ref=f10e47]:
+      - link "Inicio" [ref=f10e48] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f10e53] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f10e56] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f10e60] [cursor=pointer]
+  - dialog [ref=f10e66]:
+    - banner [ref=f10e67]:
+      - heading "Nuevo movimiento" [level=2] [ref=f10e69]
+      - button "Cerrar" [ref=f10e70] [cursor=pointer]
+    - generic [ref=f10e76]:
+      - status [ref=f10e161]:
+        - generic [ref=f10e162]: Elegí una cuenta.
+      - group "Tipo" [ref=f10e77]:
+        - button "Ingreso" [ref=f10e78] [cursor=pointer]
+        - button "Gasto" [pressed] [ref=f10e79] [cursor=pointer]
+      - generic [ref=f10e80]:
+        - generic [ref=f10e81]:
+          - generic [ref=f10e82]:
+            - generic [ref=f10e83]: Fecha *
+            - textbox "Fecha" [ref=f10e85]: 02/11/2026
+          - textbox: 2026-11-02
+        - button "Hoy" [ref=f10e86] [cursor=pointer]
+        - button "Ayer" [ref=f10e88] [cursor=pointer]
+      - generic [ref=f10e91]:
+        - generic [ref=f10e92]: Importe *
+        - generic [ref=f10e93]:
+          - generic [aria-hidden]: $
+          - textbox "Importe" [ref=f10e94]:
+            - /placeholder: 0,00
+            - text: "1"
+      - generic [ref=f10e95]:
+        - group "Moneda" [ref=f10e96]:
+          - button "ARS" [pressed] [ref=f10e97] [cursor=pointer]
+          - button "USD" [ref=f10e98] [cursor=pointer]
+        - button "Repetir" [ref=f10e99] [cursor=pointer]
+      - generic [ref=f10e107]:
+        - generic [ref=f10e108]: Cuenta
+        - group "Cuenta" [ref=f10e109]:
+          - button "Efectivo" [ref=f10e110] [cursor=pointer]
+          - button "Sueldo" [ref=f10e111] [cursor=pointer]
+          - button "Otros ingresos" [ref=f10e112] [cursor=pointer]
+      - generic [ref=f10e113]:
+        - generic [ref=f10e114]: Descripción
+        - textbox "Descripción" [ref=f10e116]:
+          - /placeholder: "Ej: Supermercado"
+          - text: Prueba UI
+      - button "Agregar nota" [ref=f10e118] [cursor=pointer]
+      - generic [ref=f10e120]:
+        - generic [ref=f10e121]: Categoría
+        - button "Categoría" [ref=f10e122] [cursor=pointer]:
+          - generic [ref=f10e123]: Alimentación
+    - contentinfo [ref=f10e126]:
+      - button "Cancelar" [ref=f10e127] [cursor=pointer]
+      - button "Crear" [active] [ref=f10e129] [cursor=pointer]

@@ -630,9 +630,10 @@ export function AccountsPage() {
         <form id="account-form" noValidate onSubmit={event => { event.preventDefault(); void saveAccount(); }}>
           <Stack gap="md">
             {formError && <Notice tone="strong">{formError}</Notice>}
-            <Input
-              label="Nombre"
-              value={accountForm.name}
+             <Input
+               label="Nombre"
+               data-autofocus
+               value={accountForm.name}
               onChange={value => updateAccountField('name', value)}
               error={accountFieldErrors.name}
               placeholder="Ej.: Banco Nación"
@@ -726,9 +727,10 @@ export function AccountsPage() {
               />
             </Grid>
             <Grid columns={2} gap="md">
-              <div style={{ flex: 1 }}>
-                <Input
-                  label="Monto que sale"
+               <div style={{ flex: 1 }}>
+                 <Input
+                   data-autofocus
+                   label="Monto que sale"
                   value={fromAmountInput.displayValue}
                   onChange={fromAmountInput.onChangeString}
                   onBlur={fromAmountInput.onBlur}

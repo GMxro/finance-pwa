@@ -1,0 +1,23 @@
+- generic [ref=f19e10]:
+  - generic [ref=f19e12]:
+    - banner [ref=f19e13]:
+      - generic [ref=f19e14]:
+        - generic [ref=f19e15]: Tu plata
+        - heading "Cuentas" [level=1] [ref=f19e16]
+        - paragraph [ref=f19e17]: "Las transferencias mueven plata entre tus cuentas: no cuentan como ingreso ni como gasto."
+      - generic [ref=f19e19]:
+        - button "Nueva cuenta" [ref=f19e20] [cursor=pointer]
+        - button "Transferir" [disabled] [ref=f19e24]
+    - status "Cargando" [ref=f19e30]:
+      - generic [ref=f19e32]: Cargando...
+    - generic [ref=f19e33]:
+      - heading "Transferencias" [level=2] [ref=f19e35]
+      - paragraph [ref=f19e37]: Todavía no registraste transferencias. Mové plata entre tus cuentas sin que cuente como gasto.
+  - navigation "Navegación principal" [ref=f19e38]:
+    - link "Inicio" [ref=f19e39] [cursor=pointer]:
+      - /url: /
+    - link "Movimientos" [ref=f19e44] [cursor=pointer]:
+      - /url: /movimientos
+    - link "Estadísticas" [ref=f19e47] [cursor=pointer]:
+      - /url: /estadisticas
+    - button "Más" [ref=f19e51] [cursor=pointer]

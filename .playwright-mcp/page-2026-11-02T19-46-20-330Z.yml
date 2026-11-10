@@ -1,0 +1,23 @@
+- generic [ref=f5e1]:
+  - generic [ref=f5e3]:
+    - button "Abrir modal padre" [ref=f5e4] [cursor=pointer]
+    - generic [ref=f5e5]: parent-closed
+    - generic [ref=f5e7]:
+      - generic [ref=f5e8]: Standalone
+      - button "Standalone" [expanded] [ref=f5e9] [cursor=pointer]:
+        - generic [ref=f5e10]: Seleccionar
+  - dialog [ref=f5e13]:
+    - banner [ref=f5e14]:
+      - heading "Standalone" [level=2] [ref=f5e15]
+      - button "Cerrar" [ref=f5e16] [cursor=pointer]
+    - textbox "Buscar opción" [active] [ref=f5e23]:
+      - /placeholder: Buscar...
+    - listbox "Standalone" [ref=f5e24]:
+      - option "Alfa" [ref=f5e25] [cursor=pointer]
+      - option "Beta" [ref=f5e27] [cursor=pointer]
+      - option "Gamma" [ref=f5e29] [cursor=pointer]
+      - option "Delta" [ref=f5e31] [cursor=pointer]
+      - option "Epsilon" [ref=f5e33] [cursor=pointer]
+      - option "Zeta" [ref=f5e35] [cursor=pointer]
+      - option "Eta" [ref=f5e37] [cursor=pointer]
+      - option "Theta" [ref=f5e39] [cursor=pointer]

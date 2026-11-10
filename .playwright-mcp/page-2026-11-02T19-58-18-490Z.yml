@@ -1,0 +1,69 @@
+- generic [ref=f5e9]:
+  - complementary "Navegación principal" [ref=f5e10]:
+    - generic [ref=f5e11]: Finanzas
+    - navigation [ref=f5e13]:
+      - link "Inicio" [ref=f5e14] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f5e20] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Cuentas" [ref=f5e24] [cursor=pointer]:
+        - /url: /cuentas
+      - link "Presupuestos" [ref=f5e30] [cursor=pointer]:
+        - /url: /presupuestos
+      - link "Estadísticas" [ref=f5e37] [cursor=pointer]:
+        - /url: /estadisticas
+      - link "Ajustes" [ref=f5e42] [cursor=pointer]:
+        - /url: /ajustes
+    - generic [ref=f5e48]:
+      - link "Nuevo movimiento" [ref=f5e49] [cursor=pointer]:
+        - /url: /movimientos?new=expense
+      - button "Al día. Sincronizar ahora" [ref=f5e53] [cursor=pointer]:
+        - generic [ref=f5e54]: Al día
+      - generic [ref=f5e56]:
+        - generic [aria-hidden] [ref=f5e57]: G
+        - generic [ref=f5e58]:
+          - generic [ref=f5e59]: Gonzalo Marinaro
+          - generic [ref=f5e60]: gonzalogomezmarinaro@gmail.com
+  - generic [ref=f5e63]:
+    - banner [ref=f5e64]:
+      - generic [ref=f5e65]:
+        - generic [ref=f5e66]: Tu plata
+        - heading "Cuentas" [level=1] [ref=f5e67]
+        - paragraph [ref=f5e68]: "Las transferencias mueven plata entre tus cuentas: no cuentan como ingreso ni como gasto."
+      - generic [ref=f5e70]:
+        - button "Nueva cuenta" [ref=f5e71] [cursor=pointer]
+        - button "Transferir" [ref=f5e75] [cursor=pointer]
+    - generic [ref=f5e81]:
+      - heading "Cuentas activas" [level=2] [ref=f5e83]
+      - generic [ref=f5e85]:
+        - generic [ref=f5e86]:
+          - generic [ref=f5e92]:
+            - generic [ref=f5e94]:
+              - generic [ref=f5e95]: Efectivo
+              - generic [ref=f5e96]: Predeterminada
+            - generic [ref=f5e97]: Efectivo
+          - paragraph [ref=f5e99]: Sin movimientos
+          - generic [ref=f5e101]:
+            - button "Editar Efectivo" [ref=f5e102] [cursor=pointer]
+            - button "Archivar Efectivo" [ref=f5e106] [cursor=pointer]
+        - generic [ref=f5e110]:
+          - generic [ref=f5e115]:
+            - generic [ref=f5e116]: Sueldo
+            - generic [ref=f5e119]: Banco
+          - paragraph [ref=f5e121]: Sin movimientos
+          - generic [ref=f5e123]:
+            - button "Predeterminar" [ref=f5e124] [cursor=pointer]
+            - button "Editar Sueldo" [ref=f5e126] [cursor=pointer]
+            - button "Archivar Sueldo" [ref=f5e130] [cursor=pointer]
+        - generic [ref=f5e134]:
+          - generic [ref=f5e139]:
+            - generic [ref=f5e140]: Otros ingresos
+            - generic [ref=f5e143]: Banco
+          - paragraph [ref=f5e145]: Sin movimientos
+          - generic [ref=f5e147]:
+            - button "Predeterminar" [ref=f5e148] [cursor=pointer]
+            - button "Editar Otros ingresos" [ref=f5e150] [cursor=pointer]
+            - button "Archivar Otros ingresos" [ref=f5e154] [cursor=pointer]
+    - generic [ref=f5e158]:
+      - heading "Transferencias" [level=2] [ref=f5e160]
+      - paragraph [ref=f5e162]: Todavía no registraste transferencias. Mové plata entre tus cuentas sin que cuente como gasto.

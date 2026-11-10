@@ -1,0 +1,88 @@
+- generic [ref=f8e1]:
+  - generic [ref=f8e10]:
+    - generic [ref=f8e12]:
+      - banner [ref=f8e13]:
+        - generic [ref=f8e14]:
+          - generic [ref=f8e15]: Ingresos y gastos
+          - heading "Movimientos" [level=1] [ref=f8e16]
+        - button "Nuevo movimiento" [ref=f8e18] [cursor=pointer]
+      - generic [ref=f8e22]:
+        - generic [ref=f8e23]:
+          - button "Mes anterior" [ref=f8e24] [cursor=pointer]
+          - generic [ref=f8e27]: Noviembre de 2026
+          - button "Mes siguiente" [disabled] [ref=f8e28]
+        - button "Filtros" [ref=f8e31] [cursor=pointer]
+      - generic [ref=f8e36]:
+        - generic [ref=f8e37]: Buscar movimientos
+        - searchbox "Buscar movimientos" [ref=f8e39]
+      - generic [ref=f8e44]:
+        - heading "Sin movimientos" [level=3] [ref=f8e45]
+        - paragraph [ref=f8e46]: Todavía no registraste movimientos este mes.
+    - navigation "Navegación principal" [ref=f8e47]:
+      - link "Inicio" [ref=f8e48] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f8e53] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f8e56] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f8e60] [cursor=pointer]
+  - dialog [ref=f8e66]:
+    - banner [ref=f8e67]:
+      - heading "Nuevo movimiento" [level=2] [ref=f8e69]
+      - button "Cerrar" [ref=f8e70] [cursor=pointer]
+    - generic [ref=f8e76]:
+      - group "Tipo" [ref=f8e77]:
+        - button "Ingreso" [ref=f8e78] [cursor=pointer]
+        - button "Gasto" [pressed] [ref=f8e79] [cursor=pointer]
+      - generic [ref=f8e80]:
+        - generic [ref=f8e81]:
+          - generic [ref=f8e82]:
+            - generic [ref=f8e83]: Fecha *
+            - textbox "Fecha" [ref=f8e85]: 02/11/2026
+          - textbox: 2026-11-02
+        - button "Hoy" [ref=f8e86] [cursor=pointer]
+        - button "Ayer" [ref=f8e88] [cursor=pointer]
+      - generic [ref=f8e91]:
+        - generic [ref=f8e92]: Importe *
+        - generic [ref=f8e93]:
+          - generic [aria-hidden]: $
+          - textbox "Importe" [ref=f8e94]:
+            - /placeholder: 0,00
+      - generic [ref=f8e95]:
+        - group "Moneda" [ref=f8e96]:
+          - button "ARS" [pressed] [ref=f8e97] [cursor=pointer]
+          - button "USD" [ref=f8e98] [cursor=pointer]
+        - button "Repetir" [ref=f8e99] [cursor=pointer]
+      - generic [ref=f8e107]:
+        - generic [ref=f8e108]: Cuenta
+        - group "Cuenta" [ref=f8e109]:
+          - button "Efectivo" [ref=f8e110] [cursor=pointer]
+          - button "Sueldo" [ref=f8e111] [cursor=pointer]
+          - button "Otros ingresos" [ref=f8e112] [cursor=pointer]
+      - generic [ref=f8e113]:
+        - generic [ref=f8e114]: Descripción
+        - textbox "Descripción" [ref=f8e116]:
+          - /placeholder: "Ej: Supermercado"
+      - button "Agregar nota" [ref=f8e118] [cursor=pointer]
+      - generic [ref=f8e120]:
+        - generic [ref=f8e121]: Categoría
+        - button "Categoría" [expanded] [ref=f8e122] [cursor=pointer]:
+          - generic [ref=f8e123]: Alimentación
+    - contentinfo [ref=f8e126]:
+      - button "Cancelar" [ref=f8e127] [cursor=pointer]
+      - button "Crear" [ref=f8e129] [cursor=pointer]
+  - dialog [ref=f8e161]:
+    - banner [ref=f8e162]:
+      - heading "Categoría" [level=2] [ref=f8e163]
+      - button "Cerrar" [active] [ref=f8e164] [cursor=pointer]
+    - listbox "Categoría" [ref=f8e168]:
+      - option "Alimentación" [selected] [ref=f8e169] [cursor=pointer]
+      - option "Transporte" [ref=f8e173] [cursor=pointer]
+      - option "Vivienda" [ref=f8e175] [cursor=pointer]
+      - option "Servicios" [ref=f8e177] [cursor=pointer]
+      - option "Salud" [ref=f8e179] [cursor=pointer]
+      - option "Entretenimiento" [ref=f8e181] [cursor=pointer]
+      - option "Compras" [ref=f8e183] [cursor=pointer]
+      - option "Educación" [ref=f8e185] [cursor=pointer]
+      - option "Otros gastos" [ref=f8e187] [cursor=pointer]
+      - option "Crear categoría" [ref=f8e189] [cursor=pointer]

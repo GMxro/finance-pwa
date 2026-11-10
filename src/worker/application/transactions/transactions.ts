@@ -371,7 +371,7 @@ export async function getMonthlySummary(
     const incomeMinor = Number(incomeResult?.total ?? 0);
     const expenseMinor = Number(expenseResult?.total ?? 0);
     const netMinor = incomeMinor - expenseMinor;
-    if (!Number.isSafeInteger(incomeMinor) || !Number.isSafeInteger(expenseMinor) || !Number.isSafeInteger(netMinor)) {
+    if (!Number.isSafeInteger(incomeMinor) || !Number.isSafeInteger(expenseMinor) || !Number.isSafeInteger(netMinor) || Math.abs(incomeMinor) > 999999999999 || Math.abs(expenseMinor) > 999999999999 || Math.abs(netMinor) > 999999999999) {
       throw new ValidationError('El total financiero excede el rango exacto admitido.');
     }
     const byCategory = (categoryResult.results as any[]).map(row => {

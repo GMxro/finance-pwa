@@ -445,7 +445,7 @@ function mapRowToDto(row: any) {
     id: row.id,
     userId: row.user_id,
     categoryId: row.category_id,
-    accountId: row.account_id ?? null,
+      accountId: row.account_id,
     kind: row.kind,
     amountMinor,
     currency: row.currency_code,

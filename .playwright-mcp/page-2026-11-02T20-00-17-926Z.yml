@@ -1,0 +1,74 @@
+- generic [ref=f7e1]:
+  - generic [ref=f7e10]:
+    - generic [ref=f7e12]:
+      - banner [ref=f7e13]:
+        - generic [ref=f7e14]:
+          - generic [ref=f7e15]: Tu plata
+          - heading "Cuentas" [level=1] [ref=f7e16]
+          - paragraph [ref=f7e17]: "Las transferencias mueven plata entre tus cuentas: no cuentan como ingreso ni como gasto."
+        - generic [ref=f7e19]:
+          - button "Nueva cuenta" [ref=f7e20] [cursor=pointer]
+          - button "Transferir" [ref=f7e24] [cursor=pointer]
+      - generic [ref=f7e30]:
+        - heading "Cuentas activas" [level=2] [ref=f7e32]
+        - generic [ref=f7e34]:
+          - generic [ref=f7e35]:
+            - generic [ref=f7e41]:
+              - generic [ref=f7e42]: Efectivo
+              - generic [ref=f7e45]: Efectivo
+            - paragraph [ref=f7e47]: Sin movimientos
+            - generic [ref=f7e49]:
+              - button "Editar Efectivo" [ref=f7e50] [cursor=pointer]
+              - button "Archivar Efectivo" [ref=f7e54] [cursor=pointer]
+          - generic [ref=f7e58]:
+            - generic [ref=f7e63]:
+              - generic [ref=f7e64]: Sueldo
+              - generic [ref=f7e67]: Banco
+            - paragraph [ref=f7e69]: Sin movimientos
+            - generic [ref=f7e71]:
+              - button "Editar Sueldo" [ref=f7e72] [cursor=pointer]
+              - button "Archivar Sueldo" [ref=f7e76] [cursor=pointer]
+          - generic [ref=f7e80]:
+            - generic [ref=f7e85]:
+              - generic [ref=f7e86]: Otros ingresos
+              - generic [ref=f7e89]: Banco
+            - paragraph [ref=f7e91]: Sin movimientos
+            - generic [ref=f7e93]:
+              - button "Editar Otros ingresos" [ref=f7e94] [cursor=pointer]
+              - button "Archivar Otros ingresos" [ref=f7e98] [cursor=pointer]
+      - generic [ref=f7e102]:
+        - heading "Transferencias" [level=2] [ref=f7e104]
+        - paragraph [ref=f7e106]: Todavía no registraste transferencias. Mové plata entre tus cuentas sin que cuente como gasto.
+    - navigation "Navegación principal" [ref=f7e107]:
+      - link "Inicio" [ref=f7e108] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f7e113] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f7e116] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f7e120] [cursor=pointer]
+  - dialog [ref=f7e126]:
+    - banner [ref=f7e127]:
+      - generic [ref=f7e128]:
+        - heading "Editar cuenta" [level=2] [ref=f7e129]
+        - paragraph [ref=f7e130]: "Las cuentas agrupan tu plata: efectivo, banco, billeteras."
+      - button "Cerrar" [ref=f7e131] [cursor=pointer]
+    - generic [ref=f7e137]:
+      - generic [ref=f7e138]:
+        - generic [ref=f7e139]: Nombre *
+        - textbox "Nombre" [active] [ref=f7e141]:
+          - /placeholder: "Ej.: Banco Nación"
+          - text: Sueldo
+      - group "Tipo" [ref=f7e142]:
+        - button "Efectivo" [ref=f7e143] [cursor=pointer]
+        - button "Banco" [pressed] [ref=f7e144] [cursor=pointer]
+        - button "Tarjeta" [ref=f7e145] [cursor=pointer]
+        - button "Inversión" [ref=f7e146] [cursor=pointer]
+      - generic [ref=f7e147]:
+        - generic [ref=f7e148]: Descripción (opcional)
+        - textbox "Descripción (opcional)" [ref=f7e150]:
+          - /placeholder: "Ej.: Cuenta sueldo"
+    - contentinfo [ref=f7e151]:
+      - button "Predeterminar" [ref=f7e152] [cursor=pointer]
+      - button "Cancelar" [ref=f7e154] [cursor=pointer]
+      - button "Guardar" [ref=f7e156] [cursor=pointer]

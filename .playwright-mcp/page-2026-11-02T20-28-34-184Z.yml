@@ -1,0 +1,83 @@
+- generic [ref=f19e1]:
+  - generic [ref=f19e10]:
+    - generic [ref=f19e12]:
+      - banner [ref=f19e13]:
+        - generic [ref=f19e14]:
+          - generic [ref=f19e15]: Tu plata
+          - heading "Cuentas" [level=1] [ref=f19e16]
+          - paragraph [ref=f19e17]: "Las transferencias mueven plata entre tus cuentas: no cuentan como ingreso ni como gasto."
+        - generic [ref=f19e19]:
+          - button "Nueva cuenta" [ref=f19e20] [cursor=pointer]
+          - button "Transferir" [ref=f19e24] [cursor=pointer]
+      - generic [ref=f19e57]:
+        - heading "Cuentas activas" [level=2] [ref=f19e59]
+        - generic [ref=f19e61]:
+          - generic [ref=f19e62]:
+            - generic [ref=f19e68]:
+              - generic [ref=f19e69]: Efectivo
+              - generic [ref=f19e72]: Efectivo
+            - paragraph [ref=f19e74]: Sin movimientos
+            - generic [ref=f19e76]:
+              - button "Editar Efectivo" [ref=f19e77] [cursor=pointer]
+              - button "Archivar Efectivo" [ref=f19e81] [cursor=pointer]
+          - generic [ref=f19e85]:
+            - generic [ref=f19e90]:
+              - generic [ref=f19e91]: Sueldo
+              - generic [ref=f19e94]: Banco
+            - paragraph [ref=f19e96]: Sin movimientos
+            - generic [ref=f19e98]:
+              - button "Editar Sueldo" [ref=f19e99] [cursor=pointer]
+              - button "Archivar Sueldo" [ref=f19e103] [cursor=pointer]
+          - generic [ref=f19e107]:
+            - generic [ref=f19e112]:
+              - generic [ref=f19e113]: Otros ingresos
+              - generic [ref=f19e116]: Banco
+            - paragraph [ref=f19e118]: Sin movimientos
+            - generic [ref=f19e120]:
+              - button "Editar Otros ingresos" [ref=f19e121] [cursor=pointer]
+              - button "Archivar Otros ingresos" [ref=f19e125] [cursor=pointer]
+      - generic [ref=f19e33]:
+        - heading "Transferencias" [level=2] [ref=f19e35]
+        - paragraph [ref=f19e37]: Todavía no registraste transferencias. Mové plata entre tus cuentas sin que cuente como gasto.
+    - navigation "Navegación principal" [ref=f19e38]:
+      - link "Inicio" [ref=f19e39] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f19e44] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f19e47] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f19e51] [cursor=pointer]
+  - dialog [ref=f19e129]:
+    - banner [ref=f19e130]:
+      - generic [ref=f19e131]:
+        - heading "Nueva cuenta" [level=2] [ref=f19e132]
+        - paragraph [ref=f19e133]: "Las cuentas agrupan tu plata: efectivo, banco, billeteras."
+      - button "Cerrar" [ref=f19e134] [cursor=pointer]
+    - generic [ref=f19e140]:
+      - generic [ref=f19e141]:
+        - generic [ref=f19e142]: Nombre *
+        - textbox "Nombre" [active] [ref=f19e144]:
+          - /placeholder: "Ej.: Banco Nación"
+      - group "Tipo" [ref=f19e145]:
+        - button "Efectivo" [pressed] [ref=f19e146] [cursor=pointer]
+        - button "Banco" [ref=f19e147] [cursor=pointer]
+        - button "Tarjeta" [ref=f19e148] [cursor=pointer]
+        - button "Inversión" [ref=f19e149] [cursor=pointer]
+      - generic [ref=f19e150]:
+        - generic [ref=f19e151]: Descripción (opcional)
+        - textbox "Descripción (opcional)" [ref=f19e153]:
+          - /placeholder: "Ej.: Cuenta sueldo"
+      - generic [ref=f19e154]:
+        - generic [ref=f19e155]: Importe inicial (opcional)
+        - generic [ref=f19e156]:
+          - generic [aria-hidden]: $
+          - textbox "Importe inicial (opcional)" [ref=f19e157]:
+            - /placeholder: "0"
+      - generic [ref=f19e158]:
+        - generic [ref=f19e159]: Moneda del importe inicial
+        - group "Moneda del importe inicial" [ref=f19e160]:
+          - button "ARS" [pressed] [ref=f19e161] [cursor=pointer]
+          - button "USD" [ref=f19e162] [cursor=pointer]
+    - contentinfo [ref=f19e163]:
+      - button "Cancelar" [ref=f19e164] [cursor=pointer]
+      - button "Crear" [ref=f19e166] [cursor=pointer]

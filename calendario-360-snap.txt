@@ -1,0 +1,92 @@
+- generic [ref=f14e10]:
+  - generic [ref=f14e12]:
+    - banner [ref=f14e13]:
+      - heading "Calendario" [level=1] [ref=f14e15]
+    - generic [ref=f14e17]:
+      - button "Mes anterior" [ref=f14e18] [cursor=pointer]
+      - generic [ref=f14e21]: Noviembre de 2026
+      - button "Mes siguiente" [disabled] [ref=f14e22]
+    - generic [ref=f14e25]:
+      - generic [ref=f14e26]:
+        - generic [aria-hidden] [ref=f14e27]:
+          - generic [ref=f14e28]: L
+          - generic [ref=f14e29]: M
+          - generic [ref=f14e30]: X
+          - generic [ref=f14e31]: J
+          - generic [ref=f14e32]: V
+          - generic [ref=f14e33]: S
+          - generic [ref=f14e34]: D
+        - group "Calendario mensual" [ref=f14e35]:
+          - button "01/11/2026" [ref=f14e36] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e37]: "1"
+          - button "02/11/2026, 1 movimiento" [ref=f14e38] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e39]: "2"
+          - button "03/11/2026" [ref=f14e41] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e42]: "3"
+          - button "04/11/2026" [ref=f14e43] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e44]: "4"
+          - button "05/11/2026" [ref=f14e45] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e46]: "5"
+          - button "06/11/2026" [ref=f14e47] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e48]: "6"
+          - button "07/11/2026" [ref=f14e49] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e50]: "7"
+          - button "08/11/2026" [ref=f14e51] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e52]: "8"
+          - button "09/11/2026" [ref=f14e53] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e54]: "9"
+          - button "10/11/2026" [pressed] [ref=f14e55] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e56]: "10"
+          - button "11/11/2026" [ref=f14e57] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e58]: "11"
+          - button "12/11/2026" [ref=f14e59] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e60]: "12"
+          - button "13/11/2026" [ref=f14e61] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e62]: "13"
+          - button "14/11/2026" [ref=f14e63] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e64]: "14"
+          - button "15/11/2026" [ref=f14e65] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e66]: "15"
+          - button "16/11/2026" [ref=f14e67] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e68]: "16"
+          - button "17/11/2026" [ref=f14e69] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e70]: "17"
+          - button "18/11/2026" [ref=f14e71] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e72]: "18"
+          - button "19/11/2026" [ref=f14e73] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e74]: "19"
+          - button "20/11/2026" [ref=f14e75] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e76]: "20"
+          - button "21/11/2026" [ref=f14e77] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e78]: "21"
+          - button "22/11/2026" [ref=f14e79] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e80]: "22"
+          - button "23/11/2026" [ref=f14e81] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e82]: "23"
+          - button "24/11/2026" [ref=f14e83] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e84]: "24"
+          - button "25/11/2026" [ref=f14e85] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e86]: "25"
+          - button "26/11/2026" [ref=f14e87] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e88]: "26"
+          - button "27/11/2026" [ref=f14e89] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e90]: "27"
+          - button "28/11/2026" [ref=f14e91] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e92]: "28"
+          - button "29/11/2026" [ref=f14e93] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e94]: "29"
+          - button "30/11/2026" [ref=f14e95] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f14e96]: "30"
+      - generic [ref=f14e99]:
+        - paragraph [ref=f14e101]: 10/11/2026
+        - generic [ref=f14e106]:
+          - heading "Sin movimientos" [level=3] [ref=f14e107]
+          - paragraph [ref=f14e108]: No hay movimientos ni previstos para este día.
+  - navigation "Navegación principal" [ref=f14e109]:
+    - link "Inicio" [ref=f14e110] [cursor=pointer]:
+      - /url: /
+    - link "Movimientos" [ref=f14e115] [cursor=pointer]:
+      - /url: /movimientos
+    - link "Estadísticas" [ref=f14e118] [cursor=pointer]:
+      - /url: /estadisticas
+    - button "Más" [ref=f14e122] [cursor=pointer]

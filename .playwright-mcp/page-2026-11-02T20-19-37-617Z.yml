@@ -1,0 +1,51 @@
+- generic [ref=f15e2]:
+  - generic [ref=f15e13]:
+    - generic [ref=f15e15]:
+      - banner [ref=f15e16]:
+        - generic [ref=f15e17]:
+          - heading "Compromisos" [level=1] [ref=f15e18]
+          - paragraph [ref=f15e19]: Cuotas pendientes, recurrencias y próximos vencimientos.
+        - generic [ref=f15e21]:
+          - button "Mes anterior" [ref=f15e22] [cursor=pointer]
+          - generic [ref=f15e25]: Noviembre de 2026
+          - button "Mes siguiente" [disabled] [ref=f15e26]
+      - generic [ref=f15e29]:
+        - paragraph [ref=f15e31]: Comprometido · Noviembre de 2026
+        - generic [ref=f15e32]:
+          - generic [ref=f15e33]:
+            - paragraph [ref=f15e34]: ARS
+            - generic [ref=f15e35]:
+              - generic [ref=f15e36]:
+                - paragraph [ref=f15e37]: Gastos comprometidos
+                - generic [ref=f15e38]: $ 0,00
+              - generic [ref=f15e39]:
+                - paragraph [ref=f15e40]: Ingresos previstos
+                - generic [ref=f15e41]: $ 0,00
+          - generic [ref=f15e42]:
+            - paragraph [ref=f15e43]: USD
+            - generic [ref=f15e44]:
+              - generic [ref=f15e45]:
+                - paragraph [ref=f15e46]: Gastos comprometidos
+                - generic [ref=f15e47]: US$ 0,00
+              - generic [ref=f15e48]:
+                - paragraph [ref=f15e49]: Ingresos previstos
+                - generic [ref=f15e50]: US$ 0,00
+      - generic [ref=f15e51]:
+        - group "Vista de compromisos" [ref=f15e53]:
+          - button "Próximos" [pressed] [ref=f15e54] [cursor=pointer]
+          - button "Cuotas" [ref=f15e55] [cursor=pointer]
+          - button "Recurrentes" [ref=f15e56] [cursor=pointer]
+        - generic [ref=f15e61]:
+          - heading "Sin vencimientos próximos" [level=3] [ref=f15e62]
+          - paragraph [ref=f15e63]: No hay cuotas ni recurrencias con vencimiento en Noviembre de 2026.
+    - navigation "Navegación principal" [ref=f15e64]:
+      - link "Inicio" [ref=f15e65] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f15e70] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f15e73] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f15e77] [cursor=pointer]
+  - status [ref=f15e9]:
+    - paragraph [ref=f15e10]: Actualización lista. Guardá lo que estés haciendo y elegí cuándo aplicarla.
+    - button "Actualizar" [ref=f15e11] [cursor=pointer]

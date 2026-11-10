@@ -102,7 +102,7 @@ transactionsRoutes.get('/summary', async (c) => {
     throw new ValidationError('Moneda inválida.');
   }
   
-  const summary = await getMonthlySummary(c.env, userId, period, currency);
+  const summary = await getMonthlySummary(c.env, userId, period, currency ?? 'ARS');
   return c.json(summary);
 });
 

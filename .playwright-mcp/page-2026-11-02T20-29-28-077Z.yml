@@ -1,0 +1,151 @@
+- generic [ref=f21e1]:
+  - generic [ref=f21e10]:
+    - generic [ref=f21e12]:
+      - banner [ref=f21e13]:
+        - generic [ref=f21e14]:
+          - generic [ref=f21e15]: Ajustes · Organización
+          - heading "Categorías" [level=1] [ref=f21e16]
+          - paragraph [ref=f21e17]: Agrupá tus movimientos para entender en qué se va la plata.
+        - generic [ref=f21e18]:
+          - button "Ver archivadas" [ref=f21e19] [cursor=pointer]
+          - button "Nueva categoría" [ref=f21e21] [cursor=pointer]
+      - generic [ref=f21e25]:
+        - generic [ref=f21e26]:
+          - heading "Gastos · 9" [level=2] [ref=f21e28]
+          - generic [ref=f21e29]:
+            - generic [ref=f21e30]:
+              - generic [ref=f21e36]:
+                - generic [ref=f21e37]: Alimentación
+                - generic [ref=f21e38]: Gasto · alimentacion
+              - generic [ref=f21e39]:
+                - button "Editar Alimentación" [ref=f21e40] [cursor=pointer]
+                - button "Archivar Alimentación" [ref=f21e44] [cursor=pointer]
+            - generic [ref=f21e48]:
+              - generic [ref=f21e55]:
+                - generic [ref=f21e56]: Transporte
+                - generic [ref=f21e57]: Gasto · transporte
+              - generic [ref=f21e58]:
+                - button "Editar Transporte" [ref=f21e59] [cursor=pointer]
+                - button "Archivar Transporte" [ref=f21e63] [cursor=pointer]
+            - generic [ref=f21e67]:
+              - generic [ref=f21e73]:
+                - generic [ref=f21e74]: Vivienda
+                - generic [ref=f21e75]: Gasto · vivienda
+              - generic [ref=f21e76]:
+                - button "Editar Vivienda" [ref=f21e77] [cursor=pointer]
+                - button "Archivar Vivienda" [ref=f21e81] [cursor=pointer]
+            - generic [ref=f21e85]:
+              - generic [ref=f21e90]:
+                - generic [ref=f21e91]: Servicios
+                - generic [ref=f21e92]: Gasto · servicios
+              - generic [ref=f21e93]:
+                - button "Editar Servicios" [ref=f21e94] [cursor=pointer]
+                - button "Archivar Servicios" [ref=f21e98] [cursor=pointer]
+            - generic [ref=f21e102]:
+              - generic [ref=f21e108]:
+                - generic [ref=f21e109]: Salud
+                - generic [ref=f21e110]: Gasto · salud
+              - generic [ref=f21e111]:
+                - button "Editar Salud" [ref=f21e112] [cursor=pointer]
+                - button "Archivar Salud" [ref=f21e116] [cursor=pointer]
+            - generic [ref=f21e120]:
+              - generic [ref=f21e125]:
+                - generic [ref=f21e126]: Entretenimiento
+                - generic [ref=f21e127]: Gasto · entretenimiento
+              - generic [ref=f21e128]:
+                - button "Editar Entretenimiento" [ref=f21e129] [cursor=pointer]
+                - button "Archivar Entretenimiento" [ref=f21e133] [cursor=pointer]
+            - generic [ref=f21e137]:
+              - generic [ref=f21e143]:
+                - generic [ref=f21e144]: Compras
+                - generic [ref=f21e145]: Gasto · compras
+              - generic [ref=f21e146]:
+                - button "Editar Compras" [ref=f21e147] [cursor=pointer]
+                - button "Archivar Compras" [ref=f21e151] [cursor=pointer]
+            - generic [ref=f21e155]:
+              - generic [ref=f21e161]:
+                - generic [ref=f21e162]: Educación
+                - generic [ref=f21e163]: Gasto · educacion
+              - generic [ref=f21e164]:
+                - button "Editar Educación" [ref=f21e165] [cursor=pointer]
+                - button "Archivar Educación" [ref=f21e169] [cursor=pointer]
+            - generic [ref=f21e173]:
+              - generic [ref=f21e180]:
+                - generic [ref=f21e181]: Otros gastos
+                - generic [ref=f21e182]: Gasto · otros-gastos
+              - generic [ref=f21e183]:
+                - button "Editar Otros gastos" [ref=f21e184] [cursor=pointer]
+                - button "Archivar Otros gastos" [ref=f21e188] [cursor=pointer]
+        - generic [ref=f21e192]:
+          - heading "Ingresos · 4" [level=2] [ref=f21e194]
+          - generic [ref=f21e195]:
+            - generic [ref=f21e196]:
+              - generic [ref=f21e202]:
+                - generic [ref=f21e203]: Salario
+                - generic [ref=f21e204]: Ingreso · salario
+              - generic [ref=f21e205]:
+                - button "Editar Salario" [ref=f21e206] [cursor=pointer]
+                - button "Archivar Salario" [ref=f21e210] [cursor=pointer]
+            - generic [ref=f21e214]:
+              - generic [ref=f21e219]:
+                - generic [ref=f21e220]: Freelance
+                - generic [ref=f21e221]: Ingreso · freelance
+              - generic [ref=f21e222]:
+                - button "Editar Freelance" [ref=f21e223] [cursor=pointer]
+                - button "Archivar Freelance" [ref=f21e227] [cursor=pointer]
+            - generic [ref=f21e231]:
+              - generic [ref=f21e237]:
+                - generic [ref=f21e238]: Inversiones
+                - generic [ref=f21e239]: Ingreso · inversiones
+              - generic [ref=f21e240]:
+                - button "Editar Inversiones" [ref=f21e241] [cursor=pointer]
+                - button "Archivar Inversiones" [ref=f21e245] [cursor=pointer]
+            - generic [ref=f21e249]:
+              - generic [ref=f21e254]:
+                - generic [ref=f21e255]: Otros ingresos
+                - generic [ref=f21e256]: Ingreso · otros-ingresos
+              - generic [ref=f21e257]:
+                - button "Editar Otros ingresos" [ref=f21e258] [cursor=pointer]
+                - button "Archivar Otros ingresos" [ref=f21e262] [cursor=pointer]
+    - navigation "Navegación principal" [ref=f21e266]:
+      - link "Inicio" [ref=f21e267] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f21e272] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f21e275] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f21e279] [cursor=pointer]
+  - dialog [ref=f21e285]:
+    - banner [ref=f21e286]:
+      - heading "Nueva categoría" [level=2] [ref=f21e288]
+      - button "Cerrar" [ref=f21e289] [cursor=pointer]
+    - generic [ref=f21e295]:
+      - group "Tipo *" [ref=f21e296]:
+        - generic [ref=f21e298]:
+          - generic [ref=f21e299] [cursor=pointer]:
+            - radio "Gasto" [checked]
+            - generic [ref=f21e301]: Gasto
+          - generic [ref=f21e303] [cursor=pointer]:
+            - radio "Ingreso"
+            - generic [ref=f21e305]: Ingreso
+      - generic [ref=f21e307]:
+        - generic [ref=f21e308]: Nombre *
+        - textbox "Nombre" [active] [invalid] [ref=f21e310]:
+          - /placeholder: "Ej.: Alimentación"
+        - alert [ref=f21e332]: Poné un nombre.
+      - generic [ref=f21e311]:
+        - generic [ref=f21e312]: Identificador
+        - textbox "Identificador" [invalid] [ref=f21e314]:
+          - /placeholder: alimentacion
+        - alert [ref=f21e333]: Poné un identificador.
+      - generic [ref=f21e316]:
+        - generic [ref=f21e317]:
+          - generic [ref=f21e318]: Ícono
+          - button "Ícono" [ref=f21e319] [cursor=pointer]:
+            - generic [ref=f21e320]: Etiqueta
+        - generic [ref=f21e323]:
+          - generic [ref=f21e324]: Orden
+          - spinbutton "Orden" [ref=f21e326]: "0"
+    - contentinfo [ref=f21e327]:
+      - button "Cancelar" [ref=f21e328] [cursor=pointer]
+      - button "Crear" [ref=f21e330] [cursor=pointer]

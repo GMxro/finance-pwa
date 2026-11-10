@@ -1,0 +1,33 @@
+- generic [ref=f14e2]:
+  - generic [ref=f14e10]:
+    - generic [ref=f14e12]:
+      - banner [ref=f14e13]:
+        - heading "Calendario" [level=1] [ref=f14e15]
+      - generic [ref=f14e17]:
+        - button "Mes anterior" [ref=f14e18] [cursor=pointer]
+        - generic [ref=f14e21]: Noviembre de 2026
+        - button "Mes siguiente" [disabled] [ref=f14e22]
+      - generic [ref=f14e25]:
+        - generic [ref=f14e26]:
+          - generic [aria-hidden] [ref=f14e27]:
+            - generic [ref=f14e28]: L
+            - generic [ref=f14e29]: M
+            - generic [ref=f14e30]: X
+            - generic [ref=f14e31]: J
+            - generic [ref=f14e32]: V
+            - generic [ref=f14e33]: S
+            - generic [ref=f14e34]: D
+          - group "Calendario mensual" [ref=f14e35]
+        - status "Cargando" [ref=f14e39]:
+          - generic [ref=f14e41]: Cargando...
+    - navigation "Navegación principal" [ref=f14e42]:
+      - link "Inicio" [ref=f14e43] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f14e48] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f14e51] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f14e55] [cursor=pointer]
+  - status [ref=f14e61]:
+    - paragraph [ref=f14e62]: Actualización lista. Guardá lo que estés haciendo y elegí cuándo aplicarla.
+    - button "Actualizar" [ref=f14e63] [cursor=pointer]

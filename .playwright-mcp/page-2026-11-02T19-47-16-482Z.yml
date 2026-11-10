@@ -1,0 +1,22 @@
+- generic [ref=f5e3]:
+  - button "Abrir modal padre" [active] [ref=f5e4] [cursor=pointer]
+  - generic [ref=f5e5]: parent-open
+  - generic [ref=f5e7]:
+    - generic [ref=f5e8]: Standalone
+    - button "Standalone" [ref=f5e9] [cursor=pointer]:
+      - generic [ref=f5e10]: Seleccionar
+  - dialog "Modal padre" [ref=f5e114]:
+    - generic [ref=f5e115]:
+      - generic [ref=f5e116]: Frecuencia
+      - button "Frecuencia" [ref=f5e117] [cursor=pointer]:
+        - generic [ref=f5e118]: Seleccionar
+    - generic [ref=f5e121]:
+      - generic [ref=f5e122]: Tipo
+      - button "Tipo" [ref=f5e123] [cursor=pointer]:
+        - generic [ref=f5e124]: Alfa
+    - generic [ref=f5e127]:
+      - generic [ref=f5e128]: Segmentado *
+      - group "Segmentado (obligatorio)" [ref=f5e129]:
+        - button "Alfa" [pressed] [ref=f5e130] [cursor=pointer]
+        - button "Beta" [ref=f5e131] [cursor=pointer]
+        - button "Gamma" [ref=f5e132] [cursor=pointer]

@@ -1,0 +1,21 @@
+- generic [ref=f20e10]:
+  - generic [ref=f20e12]:
+    - banner [ref=f20e13]:
+      - generic [ref=f20e14]:
+        - generic [ref=f20e15]: Límites por categoría
+        - heading "Presupuestos" [level=1] [ref=f20e16]
+      - button "Nuevo presupuesto" [ref=f20e18] [cursor=pointer]
+    - generic [ref=f20e23]:
+      - button "Mes anterior" [ref=f20e24] [cursor=pointer]
+      - generic [ref=f20e27]: Noviembre de 2026
+      - button "Mes siguiente" [disabled] [ref=f20e28]
+    - status "Cargando" [ref=f20e31]:
+      - generic [ref=f20e33]: Cargando...
+  - navigation "Navegación principal" [ref=f20e34]:
+    - link "Inicio" [ref=f20e35] [cursor=pointer]:
+      - /url: /
+    - link "Movimientos" [ref=f20e40] [cursor=pointer]:
+      - /url: /movimientos
+    - link "Estadísticas" [ref=f20e43] [cursor=pointer]:
+      - /url: /estadisticas
+    - button "Más" [ref=f20e47] [cursor=pointer]

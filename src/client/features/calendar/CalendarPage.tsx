@@ -1,5 +1,6 @@
 // Pages: Calendar
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { CurrencyCode } from '@domain/money';
 import { formatLocalDate, todayLocalISO } from '@domain/date';
 import { api, formatApiError } from '@shared/api/client';
@@ -83,6 +84,7 @@ function dayAriaLabel(day: CalendarDay): string {
 }
 
 export function CalendarPage() {
+  const navigate = useNavigate();
   const today = todayLocalISO();
   const [month, setMonth] = useState(today.slice(0, 7));
   const [days, setDays] = useState<CalendarDay[]>([]);
@@ -200,6 +202,7 @@ export function CalendarPage() {
 }
 
 function CalendarDayDetail({ day }: { day: CalendarDay }) {
+  const navigate = useNavigate();
   const currencies = CURRENCY_ORDER.filter((currency) => {
     const totals = day.byCurrency[currency];
     return totals !== undefined && totals.incomeMinor + totals.expenseMinor > 0;
@@ -283,7 +286,7 @@ function CalendarDayDetail({ day }: { day: CalendarDay }) {
       )}
 
       {!hasActivity && (
-        <EmptyState title="Sin movimientos" message="No hay movimientos ni previstos para este día." />
+        <EmptyState title="Sin movimientos" message="No hay movimientos ni previstos para este día." action={{ label: 'Nuevo movimiento', onClick: () => navigate('/movimientos?new=expense') }} />
       )}
     </div>
   );

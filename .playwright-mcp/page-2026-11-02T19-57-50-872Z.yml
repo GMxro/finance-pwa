@@ -1,0 +1,8 @@
+- generic [ref=f3e2]:
+  - status "Cargando la aplicación" [ref=f3e3]:
+    - generic [ref=f3e4]: Finanzas
+    - status "Cargando" [ref=f3e6]:
+      - generic [ref=f3e8]: Cargando...
+  - status [ref=f3e9]:
+    - paragraph [ref=f3e10]: Actualización lista. Guardá lo que estés haciendo y elegí cuándo aplicarla.
+    - button "Actualizar" [ref=f3e11] [cursor=pointer]

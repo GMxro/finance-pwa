@@ -1,0 +1,51 @@
+- generic [ref=f20e1]:
+  - generic [ref=f20e10]:
+    - generic [ref=f20e12]:
+      - banner [ref=f20e13]:
+        - generic [ref=f20e14]:
+          - generic [ref=f20e15]: Límites por categoría
+          - heading "Presupuestos" [level=1] [ref=f20e16]
+        - button "Nuevo presupuesto" [ref=f20e18] [cursor=pointer]
+      - generic [ref=f20e23]:
+        - button "Mes anterior" [ref=f20e24] [cursor=pointer]
+        - generic [ref=f20e27]: Noviembre de 2026
+        - button "Mes siguiente" [disabled] [ref=f20e28]
+      - generic [ref=f20e53]:
+        - generic [ref=f20e57]:
+          - heading "Sin presupuestos este mes" [level=3] [ref=f20e58]
+          - paragraph [ref=f20e59]: Definí un límite por categoría para ver cuánto te queda disponible.
+        - button "Crear el primero" [ref=f20e60] [cursor=pointer]
+    - navigation "Navegación principal" [ref=f20e34]:
+      - link "Inicio" [ref=f20e35] [cursor=pointer]:
+        - /url: /
+      - link "Movimientos" [ref=f20e40] [cursor=pointer]:
+        - /url: /movimientos
+      - link "Estadísticas" [ref=f20e43] [cursor=pointer]:
+        - /url: /estadisticas
+      - button "Más" [ref=f20e47] [cursor=pointer]
+  - dialog [ref=f20e62]:
+    - banner [ref=f20e63]:
+      - generic [ref=f20e64]:
+        - heading "Nuevo presupuesto" [level=2] [ref=f20e65]
+        - paragraph [ref=f20e66]: El presupuesto se reinicia cada mes calendario.
+      - button "Cerrar" [ref=f20e67] [cursor=pointer]
+    - generic [ref=f20e73]:
+      - generic [ref=f20e74]:
+        - generic [ref=f20e75]: Categoría *
+        - button "Categoría" [ref=f20e76] [cursor=pointer]:
+          - generic [ref=f20e77]: Alimentación
+      - generic [ref=f20e80]:
+        - generic [ref=f20e81]:
+          - generic [ref=f20e82]: Límite mensual *
+          - generic [ref=f20e83]:
+            - generic [aria-hidden]: $
+            - textbox "Límite mensual" [active] [ref=f20e84]:
+              - /placeholder: 0,00
+        - generic [ref=f20e85]:
+          - generic [ref=f20e86]: Moneda
+          - group "Moneda" [ref=f20e87]:
+            - button "ARS" [pressed] [ref=f20e88] [cursor=pointer]
+            - button "USD" [ref=f20e89] [cursor=pointer]
+    - contentinfo [ref=f20e90]:
+      - button "Cancelar" [ref=f20e91] [cursor=pointer]
+      - button "Crear" [ref=f20e93] [cursor=pointer]
