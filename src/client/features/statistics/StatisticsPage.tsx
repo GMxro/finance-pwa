@@ -107,7 +107,7 @@ export function StatisticsPage() {
       }
     } catch (e: any) {
       if (canUseStaleData(e)) {
-        const cached = await readCached(user.id).catch(() => []);
+        const cached = await readCached(user.id).catch((error) => { console.error('cache read failed', error); return []; });
         const current = cached.filter(tx => tx.occurredOn?.startsWith(month));
         setTransactions(current);
         setPreviousTransactions(cached.filter(tx => tx.occurredOn?.startsWith(previousMonth)));

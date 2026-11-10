@@ -89,7 +89,7 @@ export function OverviewPage() {
 
       const transactionErrors = [currentTxRes.error].filter(Boolean);
       const mayUseCache = transactionErrors.some((item) => canUseStaleData(item));
-      const cached = mayUseCache ? await readCached(user.id).catch(() => []) : [];
+      const cached = mayUseCache ? await readCached(user.id).catch((error) => { console.error('cache read failed', error); return []; }) : [];
       const cachedCurrent = cached.filter((tx) => !tx.deletedAt && tx.occurredOn?.startsWith(month));
 
       const currentRows = currentTxRes.data !== null
