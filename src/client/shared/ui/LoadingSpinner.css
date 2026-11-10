@@ -27,6 +27,4 @@
   font-size: var(--text-body);
 }
 
-@keyframes ui-spin {
-  to { transform: rotate(360deg); }
-}
+/* keyframes defined in Button.css (shared) */
