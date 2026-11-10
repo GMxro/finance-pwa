@@ -81,7 +81,7 @@
   gap: var(--gap-inline);
   align-items: center;
   min-width: 0;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
 .tx-date-row > * {
@@ -251,7 +251,7 @@
   font-size: var(--text-caption);
   font-weight: var(--weight-label);
   cursor: pointer;
-  min-height: 32px;
+  min-height: var(--control-h-sm);
   min-width: 44px;
   border: none;
 }
@@ -272,7 +272,7 @@
 .tx-compact-label {
   width: 88px;
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: var(--text-caption);
   font-weight: var(--weight-label);
   color: var(--color-stone);
 }
@@ -312,7 +312,7 @@
   color: var(--color-stone-strong);
   font-size: var(--text-caption);
   cursor: pointer;
-  min-height: 28px;
+  min-height: var(--control-h-sm);
   border: none;
 }
 
@@ -325,8 +325,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
   border-radius: var(--radius-pill);
   background: var(--color-inset);
   color: var(--color-stone-strong);

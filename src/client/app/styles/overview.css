@@ -25,7 +25,7 @@
 }
 
 .overview-net {
-  min-height: 140px;
+  min-height: auto;
 }
 
 .overview-net__amounts {
@@ -96,7 +96,6 @@
 
 .overview-amount-card {
   min-height: 100px;
-  height: 100%;
 }
 
 .overview-hero__eye {
@@ -139,7 +138,7 @@
 
 .overview-section-action {
   padding-right: 0;
-  margin-right: var(--space-6);
+  margin-right: 0;
 }
 
 @media (max-width: 380px) {

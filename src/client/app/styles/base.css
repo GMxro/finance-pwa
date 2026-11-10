@@ -19,7 +19,7 @@ html {
 }
 
 body {
-  min-width: 320px;
+  min-width: 0;
   min-height: 100dvh;
   font-family: var(--font-ui);
   font-size: var(--text-body);

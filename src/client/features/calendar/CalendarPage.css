@@ -170,6 +170,12 @@
   margin-bottom: var(--gap-section);
 }
 
+@media (max-width: 640px) {
+  .calendar-totals {
+    grid-template-columns: 1fr;
+  }
+}
+
 .calendar-total {
   display: flex;
   flex-direction: column;

@@ -2,8 +2,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--gap-field);
-  padding: var(--space-6);
+  gap: var(--space-2);
+  padding: var(--space-2);
   background: var(--color-paper);
   border-radius: var(--radius-card);
 }
