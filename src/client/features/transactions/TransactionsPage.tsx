@@ -809,7 +809,7 @@ export function TransactionsPage() {
                {formData.currency}
              </button>
            </div>
-           {fieldErrors.amount && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.amount}</p>}
+           {fieldErrors.amount && <p className="ui-field__error ui-field__error--inset" role="alert">{fieldErrors.amount}</p>}
 
            <div className="tx-compact-row">
              <span className="tx-compact-label">Fecha</span>
@@ -870,7 +870,7 @@ export function TransactionsPage() {
                </button>
              </div>
            </div>
-           {fieldErrors.occurredOn && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.occurredOn}</p>}
+           {fieldErrors.occurredOn && <p className="ui-field__error ui-field__error--inset" role="alert">{fieldErrors.occurredOn}</p>}
 
            {repeatMenuOpen && (
              <div className="tx-compact-repeat-menu">
@@ -919,7 +919,7 @@ export function TransactionsPage() {
                    />
                  </div>
                </div>
-               {fieldErrors.installmentsCount && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.installmentsCount}</p>}
+               {fieldErrors.installmentsCount && <p className="ui-field__error ui-field__error--inset" role="alert">{fieldErrors.installmentsCount}</p>}
                <div className="tx-compact-row">
                  <span className="tx-compact-label">Primer venc.</span>
                  <div className="tx-compact-value">
@@ -934,7 +934,7 @@ export function TransactionsPage() {
                    />
                  </div>
                </div>
-               {fieldErrors.firstDueOn && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.firstDueOn}</p>}
+               {fieldErrors.firstDueOn && <p className="ui-field__error ui-field__error--inset" role="alert">{fieldErrors.firstDueOn}</p>}
              </>
            )}
 
@@ -957,7 +957,7 @@ export function TransactionsPage() {
                    </select>
                  </div>
                </div>
-               {fieldErrors.recurringFrequency && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.recurringFrequency}</p>}
+               {fieldErrors.recurringFrequency && <p className="ui-field__error ui-field__error--inset" role="alert">{fieldErrors.recurringFrequency}</p>}
                <div className="tx-compact-row">
                  <span className="tx-compact-label">Fin (opc.)</span>
                  <div className="tx-compact-value">
@@ -972,7 +972,7 @@ export function TransactionsPage() {
                    />
                  </div>
                </div>
-               {fieldErrors.recurringEndOn && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.recurringEndOn}</p>}
+               {fieldErrors.recurringEndOn && <p className="ui-field__error ui-field__error--inset" role="alert">{fieldErrors.recurringEndOn}</p>}
                {recurringFrequency === 'weekly_days' && (
                  <div className="tx-compact-row" style={{ flexWrap: 'wrap', alignItems: 'flex-start', minHeight: 'auto', padding: 'var(--space-2) var(--space-3)' }}>
                    <span className="tx-compact-label">Días</span>
@@ -1030,7 +1030,7 @@ export function TransactionsPage() {
                />
              </div>
            </div>
-           {fieldErrors.categoryId && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.categoryId}</p>}
+           {fieldErrors.categoryId && <p className="ui-field__error ui-field__error--inset" role="alert">{fieldErrors.categoryId}</p>}
 
            {newCategoryOpen && (
              <div className="tx-new-category">
@@ -1082,7 +1082,7 @@ export function TransactionsPage() {
                />
              </div>
            </div>
-           {fieldErrors.accountId && <p className="ui-field__error" role="alert" style={{ padding: '0 var(--space-3)' }}>{fieldErrors.accountId}</p>}
+           {fieldErrors.accountId && <p className="ui-field__error ui-field__error--inset" role="alert">{fieldErrors.accountId}</p>}
 
            <div className="tx-compact-row">
              <span className="tx-compact-label">Descripción</span>
