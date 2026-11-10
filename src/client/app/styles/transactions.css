@@ -340,7 +340,7 @@
 .tx-compact-value-input {
   flex: 1;
   min-height: 44px;
-  font-size: var(--text-body);
+  font-size: var(--text-input);
   padding: var(--space-1) 0;
   border: none;
   background: transparent;
